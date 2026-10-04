@@ -1,5 +1,7 @@
 # Ticketing Platform
 
+La inceputul fiecarei sesiuni citeste `memory.md` (starea proiectului, decizii, urmatorul pas).
+
 Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlService). Proiectul e in faza de redesign complet al UI-ului.
 
 ## Structura

@@ -47,6 +47,8 @@ Constrângeri tehnice: HTML/CSS/JS fără build step, servit de HtmlService (ifr
 - Secțiunea News rămâne (confirmat).
 - Interfața e în limba română, cu diacritice.
 - Temă light și dark, după preferința sistemului (confirmat).
+- Interfața trebuie să fie expresivă, cu animații, tranziții și momente memorabile („standardul 2026”, nivel Awwwards); un aspect sobru de „tabel de birou” a fost respins explicit (confirmat).
+- Efectele ambientale sunt acceptate doar dacă se opresc la inactivitate, în tab ascuns și la `prefers-reduced-motion`.
 
 ## Evidence on Hand
 
