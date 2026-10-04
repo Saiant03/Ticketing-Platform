@@ -1,6 +1,6 @@
 # Plan: redesign „Panou split-flap”
 
-Status: planificat, neînceput. Contractul de direcție e în `.impeccable/surfaces/src-index-html.md`.
+Status: implementat (pașii 1–8). Rămâne testul pe `/dev`. Contractul de direcție e în `.impeccable/surfaces/src-index-html.md`.
 Înlocuiește complet lumea vizuală „Sistem de zone” (UI-ul curent din `src/`). Logica, apelurile `google.script.run` și backend-ul rămân.
 
 ## De ce

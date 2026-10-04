@@ -15,7 +15,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 VIEWPORTS = {"desktop": (1440, 900), "mobil": (390, 844)}
 
 
-def settle(page, ms=700):
+def settle(page, ms=900):
     page.wait_for_timeout(ms)
 
 
@@ -36,15 +36,16 @@ def run(browser, vname, size, scheme, errors):
     shot = lambda name: page.screenshot(path=OUT / f"{vname}-{scheme}-{name}.png")
 
     page.goto(URL)
-    settle(page, 1200)
+    settle(page, 2600)  # intrarea: plăcuțele se așază în ~1.5s
     shot("lista")
     page.click(".row[data-id='TIS-13']")
     settle(page)
     shot("detaliu")
     if vname == "mobil":
         page.click(".p-back")
-        settle(page, 400)
+        settle(page)
     page.click("#newBtn")
+    settle(page)
     page.fill("#nf-title", "Importul nu completează data")
     settle(page, 300)
     shot("tichet-nou")
@@ -60,10 +61,10 @@ def run(browser, vname, size, scheme, errors):
     shot("admin-detaliu")
     if scheme == "light":
         page.click(".tab[data-page='news']")
-        settle(page, 900)
+        settle(page, 1200)
         page.screenshot(path=OUT / f"{vname}-{scheme}-news.png", full_page=True)
         page.click(".tab[data-page='jurnal']")
-        settle(page, 900)
+        settle(page, 1200)
         shot("jurnal")
     ctx.close()
 

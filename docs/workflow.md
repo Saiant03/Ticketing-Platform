@@ -19,6 +19,9 @@ Codurile de admin NU se pun in cod. In editorul Apps Script: Project Settings > 
 ```bash
 python3 dev/preview.py                      # http://localhost:8080/ cu google.script.run simulat
 python3 dev/shoot.py docs/audit/<folder>    # screenshot-uri desktop + mobil, public + admin
+python3 dev/flow.py                         # 21 de pași funcționali
+python3 dev/a11y.py                         # contrast, etichete, ținte, scroll orizontal
+python3 dev/perf.py                         # cost în repaus (țintă < 5 ms/s)
 ```
 
 `dev/mock-gas.js` tine date de test in memorie (cod admin de test: `1234`). Cand adaugi o functie server noua, adaug-o si in mock.
@@ -37,7 +40,7 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py "work ticketing helpdesk 
 ```
 
 - Se alege directia vizuala (frontend-design, `impeccable`) si se fixeaza in `DESIGN.md` (radacina): culori, tipografie, spatiere, componente. Contractul de directie sta in `.impeccable/surfaces/`.
-- Tokens implementati in `src/styles.html`.
+- Tokens implementati in `src/Tokens.html`.
 
 ## 3. Redesign pe ecrane
 
@@ -54,24 +57,6 @@ Pentru fiecare: aplica design system-ul, pastreaza apelurile `google.script.run`
 ## Stare
 
 - Faza 1 (audit): gata, `docs/audit/AUDIT.md`.
-- Faza 2 (design system): gata, directia „Sistem de zone”, `PRODUCT.md` + `DESIGN.md`.
-- Faza 3 (redesign): gata pentru Tichete, News, Jurnal; screenshot-uri in `.impeccable/review/`.
-- Faza 4 (QA): flux functional verificat local cu `dev/mock-gas.js`; ramane testul pe `/dev` cu date reale.
-
-## Fisierele din editorul Apps Script
-
-Proiectul are acum 6 fisiere; in editor numele se scriu fara extensie pentru HTML:
-`Code.gs`, `Index`, `Tokens`, `Styles`, `Icons`, `App` (toate HTML in afara de `Code.gs`).
-
-## 5. Deploy
-
-GitHub Action `.github/workflows/deploy.yml`:
-- push pe `main` cu modificari in `src/` -> `clasp push` (actualizeaza HEAD, vizibil pe `/dev`).
-- rulare manuala cu `deploy = true` -> versiune noua pe deployment-ul `/exec` (productie).
-
-Secrete necesare in GitHub (Settings > Secrets and variables > Actions):
-- `CLASPRC_JSON` - continutul `~/.clasprc.json` dupa `clasp login`.
-- `SCRIPT_ID` - ID-ul proiectului Apps Script.
-- `DEPLOYMENT_ID` - ID-ul deployment-ului web app (`clasp deployments`).
-
-Fara secrete, action-ul face skip.
+- Faza 2 (design system): direcția „Sistem de zone” respinsă de utilizator („prea tabel de birou”); înlocuită cu „Panou split-flap” (contract în `.impeccable/surfaces/src-index-html.md`, plan în `docs/plan-split-flap.md`).
+- Faza 3 (redesign): „Panou split-flap” implementat pentru Tichete, News, Jurnal; `DESIGN.md` + `.impeccable/design.json` rescrise din build; screenshot-uri în `.impeccable/review/`.
+- Faza 4 (QA): local `flow.py` 21/21, `a11y.py` curat, `perf.py` 0.2 ms/s în repaus; rămâne testul pe `/dev` cu date reale.

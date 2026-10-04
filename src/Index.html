@@ -6,28 +6,29 @@
 <title>WFM Extended</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
 <?!= include('Tokens') ?>
 <?!= include('Styles') ?>
 </head>
 <body>
 <?!= include('Icons') ?>
 <a class="skip" href="#main">Sari la conținut</a>
+<div class="ambient" aria-hidden="true"><i></i><i></i></div>
 
-<header class="top">
+<header class="bar">
   <div class="brand">
-    <span class="mark" aria-hidden="true"><i style="background:var(--z-import)"></i><i style="background:var(--z-interfata)"></i><i style="background:var(--z-date)"></i><i style="background:var(--z-raportare)"></i><i style="background:var(--z-general)"></i><i style="background:var(--z-altul)"></i></span>
-    <span class="brand-name">WFM Extended</span>
+    <span class="brand-flaps" id="brandFlaps"></span>
+    <span class="brand-name">Extended</span>
   </div>
   <nav class="tabs" aria-label="Secțiuni">
     <button class="tab" data-page="tichete" aria-current="page">Tichete</button>
     <button class="tab" data-page="news">News</button>
     <button class="tab" data-page="jurnal" hidden>Jurnal</button>
   </nav>
-  <div class="top-actions">
-    <button class="btn btn-primary" id="newBtn" title="Tichet nou (N)"><svg class="ic"><use href="#i-plus"/></svg><span>Tichet nou</span></button>
+  <div class="bar-actions">
+    <button class="btn btn-sign" id="newBtn" title="Tichet nou (N)"><svg class="ic"><use href="#i-plus"/></svg><span>Tichet nou</span></button>
     <div class="admin-wrap">
-      <button class="btn btn-quiet" id="adminBtn" aria-haspopup="dialog" aria-expanded="false"><svg class="ic"><use href="#i-lock"/></svg><span id="adminLabel">Admin</span></button>
+      <button class="btn btn-bar" id="adminBtn" aria-haspopup="dialog" aria-expanded="false"><svg class="ic"><use href="#i-lock"/></svg><span id="adminLabel">Admin</span></button>
       <form class="pop" id="adminPop" hidden>
         <label class="lbl" for="pinInput">Codul tău de admin</label>
         <input class="input" type="password" id="pinInput" autocomplete="current-password" required>
@@ -43,67 +44,70 @@
 
 <main id="main" tabindex="-1">
   <!-- ===== Tichete ===== -->
-  <section class="page" id="page-tichete" aria-label="Tichete">
-    <div class="zones" id="zones">
-      <div class="zone-band" id="zoneBand" aria-hidden="true"></div>
-      <div class="zone-row" id="zoneRow" role="group" aria-label="Filtru pe zone"></div>
-    </div>
-
-    <div class="work">
-      <div class="list-col">
-        <div class="toolbar">
-          <label class="search">
-            <span class="sr">Caută</span>
-            <svg class="ic"><use href="#i-search"/></svg>
-            <input class="input" id="search" type="search" placeholder="Caută după cod, titlu, nume" autocomplete="off">
-            <kbd>/</kbd>
-          </label>
-          <div class="seg" id="statusSeg" role="group" aria-label="Status"></div>
-          <label class="sel-wrap"><span class="sr">Prioritate</span>
-            <select class="select" id="prioFilter"></select>
-          </label>
-          <button class="btn btn-quiet icon-only" id="exportBtn" title="Export CSV" aria-label="Export CSV" hidden><svg class="ic"><use href="#i-download"/></svg></button>
-        </div>
-        <div class="list-head">
-          <div class="list-meta" id="listMeta" aria-live="polite"></div>
-          <label class="sort" for="sortSel">Ordine
-            <select class="select" id="sortSel">
-              <option value="new">Cele mai noi</option>
-              <option value="prio">Prioritate</option>
-              <option value="upd">Modificate recent</option>
-            </select>
-          </label>
-        </div>
-        <div class="list" id="list" role="list"></div>
+  <section class="page" id="page-tichete" aria-labelledby="h-tichete">
+    <div class="board" id="board">
+      <div class="sheen" id="sheen" aria-hidden="true"></div>
+      <h1 class="sr" id="h-tichete">Tichete</h1>
+      <div class="board-head">
+        <dl class="counters" id="counters"></dl>
+        <div class="clock" id="clock"></div>
       </div>
 
-      <aside class="panel" id="panel" aria-label="Detaliu">
-        <div class="panel-inner" id="panelInner"></div>
-      </aside>
+      <div class="filters">
+        <label class="search">
+          <span class="sr">Caută</span>
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input class="input" id="search" type="search" placeholder="Caută după cod, titlu, nume" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <div class="seg" id="statusSeg" role="group" aria-label="Status"></div>
+        <div class="zchips" id="zoneRow" role="group" aria-label="Filtru pe zone"></div>
+      </div>
+
+      <div class="meta-line">
+        <div class="list-meta" id="listMeta" aria-live="polite"></div>
+        <label class="sel-wrap"><span class="sr">Prioritate</span>
+          <select class="select" id="prioFilter"></select>
+        </label>
+        <label class="sel-wrap"><span class="sr">Ordine</span>
+          <select class="select" id="sortSel">
+            <option value="new">Cele mai noi</option>
+            <option value="prio">Prioritate</option>
+            <option value="upd">Modificate recent</option>
+          </select>
+        </label>
+        <button class="btn btn-board icon-only" id="exportBtn" title="Export CSV" aria-label="Export CSV" hidden><svg class="ic"><use href="#i-download"/></svg></button>
+      </div>
+      <div class="cols" aria-hidden="true"><span>Ora</span><span>Cod</span><span>Zonă</span><span>Problemă</span><span class="c-n"></span><span>Prio</span><span>Status</span></div>
+      <div class="list" id="list" role="list"></div>
     </div>
+
+    <aside class="panel" id="panel" aria-label="Detaliu">
+      <div class="panel-inner" id="panelInner"></div>
+    </aside>
   </section>
 
   <!-- ===== News ===== -->
-  <section class="page" id="page-news" aria-label="News" hidden>
+  <section class="page hall-page" id="page-news" aria-labelledby="h-news" hidden>
     <div class="reading">
-      <div class="page-head">
-        <h1 class="h1">News</h1>
+      <header class="page-head">
+        <h1 class="display" id="h-news">News</h1>
         <p class="sub">Ce s-a schimbat în WFM Extended.</p>
         <button class="btn btn-primary" id="newsNewBtn" hidden><svg class="ic"><use href="#i-plus"/></svg><span>Anunț nou</span></button>
-      </div>
+      </header>
       <div id="newsCompose"></div>
       <div id="newsList"></div>
     </div>
   </section>
 
   <!-- ===== Jurnal (admin) ===== -->
-  <section class="page" id="page-jurnal" aria-label="Jurnal" hidden>
+  <section class="page hall-page" id="page-jurnal" aria-labelledby="h-jurnal" hidden>
     <div class="reading wide">
-      <div class="page-head">
-        <h1 class="h1">Jurnal</h1>
+      <header class="page-head">
+        <h1 class="display" id="h-jurnal">Jurnal</h1>
         <p class="sub">Ultimele 200 de acțiuni: cine, ce, când.</p>
         <button class="btn btn-quiet" id="journalRefresh"><svg class="ic"><use href="#i-refresh"/></svg><span>Reîncarcă</span></button>
-      </div>
+      </header>
       <div id="journal"></div>
     </div>
   </section>
@@ -114,9 +118,9 @@
 <div class="lightbox" id="lightbox" hidden>
   <div class="lb-bar">
     <span class="lb-name" id="lbName"></span>
-    <button class="btn btn-ghost-inv icon-only" id="lbOut" aria-label="Micșorează"><svg class="ic"><use href="#i-zoom-out"/></svg></button>
-    <button class="btn btn-ghost-inv icon-only" id="lbIn" aria-label="Mărește"><svg class="ic"><use href="#i-zoom-in"/></svg></button>
-    <button class="btn btn-ghost-inv icon-only" id="lbClose" aria-label="Închide"><svg class="ic"><use href="#i-close"/></svg></button>
+    <button class="btn btn-board icon-only" id="lbOut" aria-label="Micșorează"><svg class="ic"><use href="#i-zoom-out"/></svg></button>
+    <button class="btn btn-board icon-only" id="lbIn" aria-label="Mărește"><svg class="ic"><use href="#i-zoom-in"/></svg></button>
+    <button class="btn btn-board icon-only" id="lbClose" aria-label="Închide"><svg class="ic"><use href="#i-close"/></svg></button>
   </div>
   <img id="lbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
 </div>

@@ -1,89 +1,97 @@
 <style>
-  /* Design tokens WFM Extended. Singura sursă pentru culori, tipografie, spațiere. */
+  /* Design tokens WFM Extended, „Panou split-flap”. Singura sursă pentru culori, tipografie, spațiere, mișcare. */
   :root{
     color-scheme: light;
     --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-    --fs-xs: .75rem;   /* 12 */
-    --fs-sm: .8125rem; /* 13 */
-    --fs-md: .875rem;  /* 14, corp */
-    --fs-lg: 1rem;     /* 16 */
-    --fs-xl: 1.25rem;  /* 20 */
-    --fs-2xl: 1.5rem;  /* 24 */
+    /* lățimi Archivo (axa wdth) */
+    --w-plate: 75%;   /* plăcuțe, majuscule */
+    --w-title: 85%;   /* titluri de tichet */
+    --w-body: 100%;
+    --w-sign: 115%;   /* semnalistică */
+    --w-wide: 125%;   /* titluri de pagină */
 
-    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
-    --radius: 3px;
-    --header-h: 56px;
-    --panel-w: 440px;
-    --row-h: 52px;
+    --fs-xs: .75rem;    /* 12 */
+    --fs-sm: .8125rem;  /* 13 */
+    --fs-md: .875rem;   /* 14, corp */
+    --fs-row: .9375rem; /* 15, titlu de tichet */
+    --fs-lg: 1.0625rem; /* 17 */
+    --fs-xl: 1.375rem;  /* 22 */
+    --fs-2xl: 1.875rem; /* 30 */
+    --fs-display: clamp(3.25rem, 7.5vw, 6rem);
 
-    --bg: #F2F4F7;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+    --radius: 2px;
+    --bar-h: 60px;
+    --panel-w: 460px;
+    --row-h: 56px;
+
+    /* panoul: mereu întunecat, în ambele teme */
+    --b-case: #0B0C0E;
+    --b-plate: #1A1C20;
+    --b-plate-top: #202328;
+    --b-split: #050506;
+    --b-ink: #F4F4F0;
+    --b-ink-2: #A4A8AF;
+    --b-ph: #8F949C;
+    --b-line: #23262B;
+    --b-field: #15171A;
+    --b-field-line: #5E636B;
+    --b-hover: #15171A;
+    --b-sel: #24272C;
+
+    /* semnal + observații de status (doar pe panou sau pe galben) */
+    --sig: #FFC400;
+    --on-sig: #0B0C0E;
+    --st-open: #F4F4F0;
+    --st-work: #FFC400;
+    --st-done: #3DDC84;
+    --st-crit: #FF4D3D;
+
+    /* holul, tema light */
+    --bg: #F3F4F6;
     --surface: #FFFFFF;
-    --surface-2: #EBEEF3;
-    --surface-3: #E1E6ED;
-    --line: #D8DEE6;
-    --line-strong: #AEB8C5;
-    --ink: #0F1A2B;
-    --ink-2: #364559;
-    --ink-3: #56657A;
-    --sel: #E3ECF8;
-    --sel-line: #9DB8DE;
-
-    --primary: #123A6B;
-    --primary-hover: #0D2E57;
-    --on-primary: #FFFFFF;
-    --focus: #1F6FD1;
+    --surface-2: #E9EBEE;
+    --line: #D9DCE1;
+    --line-strong: #82888F;
+    --ink: #0B0C0E;
+    --ink-2: #393D44;
+    --ink-3: #5B6068;
+    --focus: #0B0C0E;
     --danger: #B42318;
     --danger-soft: #FCE9E7;
-    --ok: #16683F;
-    --ok-soft: #E3F3EA;
+    --ok: #12703F;
+    --amb-a: rgba(255,196,0,.16);
+    --amb-b: rgba(255,255,255,.9);
 
-    /* zonele WFM Extended: o culoare + o culoare de glif pentru pictogramă */
-    --z-import: #1F7FC8;     --z-import-on: #FFFFFF;
-    --z-interfata: #6F4FC2;  --z-interfata-on: #FFFFFF;
-    --z-date: #188A50;       --z-date-on: #FFFFFF;
-    --z-raportare: #E3A008;  --z-raportare-on: #0F1A2B;
-    --z-general: #A3ADB9;    --z-general-on: #0F1A2B;
-    --z-altul: #56657A;      --z-altul-on: #FFFFFF;
+    --shadow-pop: 0 14px 32px rgba(11,12,14,.18), 0 2px 6px rgba(11,12,14,.10);
+    --scrim: rgba(11,12,14,.5);
 
-    --shadow-pop: 0 10px 28px rgba(15,26,43,.16), 0 2px 6px rgba(15,26,43,.08);
-    --scrim: rgba(15,26,43,.36);
     --ease: cubic-bezier(.16,1,.3,1);
+    --ease-in: cubic-bezier(.55,0,.8,.2);
+    --t-panel: 280ms;
   }
 
   @media (prefers-color-scheme: dark){
     :root{
       color-scheme: dark;
-      --bg: #111315;
-      --surface: #17191C;
-      --surface-2: #1E2125;
-      --surface-3: #272B30;
-      --line: #2B2F35;
-      --line-strong: #464C55;
-      --ink: #ECEEF1;
-      --ink-2: #BDC2C9;
-      --ink-3: #979DA6;
-      --sel: #1C2735;
-      --sel-line: #3D5A80;
+      --bg: #0E0F11;
+      --surface: #16181B;
+      --surface-2: #1E2024;
+      --line: #2A2D32;
+      --line-strong: #666B73;
+      --ink: #F2F2EE;
+      --ink-2: #C6C8CC;
+      --ink-3: #9A9EA5;
+      --focus: #FFC400;
+      --danger: #FF6B5E;
+      --danger-soft: #34191A;
+      --ok: #3DDC84;
+      --amb-a: rgba(255,196,0,.07);
+      --amb-b: rgba(255,255,255,.035);
 
-      --primary: #2F6FBF;
-      --primary-hover: #3A7DD0;
-      --on-primary: #FFFFFF;
-      --focus: #6AA8F2;
-      --danger: #F0716A;
-      --danger-soft: #3A1E1E;
-      --ok: #5CC98D;
-      --ok-soft: #173123;
-
-      --z-import: #3E9BE2;     --z-import-on: #08121D;
-      --z-interfata: #9479DD;  --z-interfata-on: #0D0A18;
-      --z-date: #2FB06D;       --z-date-on: #06140C;
-      --z-raportare: #F0B323;  --z-raportare-on: #191204;
-      --z-general: #98A4B3;    --z-general-on: #0F141B;
-      --z-altul: #74839A;      --z-altul-on: #0B1017;
-
-      --shadow-pop: 0 12px 32px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3);
-      --scrim: rgba(0,0,0,.55);
+      --shadow-pop: 0 16px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+      --scrim: rgba(0,0,0,.6);
     }
   }
 </style>

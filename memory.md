@@ -15,11 +15,11 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 |---|---|
 | Cod Apps Script | `src/` (`Code.gs`, `Index`, `Tokens`, `Styles`, `Icons`, `App`) |
 | Adevărul despre produs | `PRODUCT.md` |
-| Design system-ul curent (încă „Sistem de zone”, va fi înlocuit) | `DESIGN.md`, `.impeccable/design.json` |
-| Contractul de direcție activ („Panou split-flap”) | `.impeccable/surfaces/src-index-html.md` |
-| **Planul următor** | `docs/plan-split-flap.md` |
+| Design system-ul curent („Panou split-flap”, scris din build) | `DESIGN.md`, `.impeccable/design.json` |
+| Contractul de direcție („Panou split-flap”) | `.impeccable/surfaces/src-index-html.md` |
+| Planul implementat | `docs/plan-split-flap.md` |
 | Auditul UI-ului original (9/20) | `docs/audit/AUDIT.md`, `docs/audit/current/` |
-| Screenshot-uri ale versiunii „Sistem de zone” | `.impeccable/review/` |
+| Screenshot-uri ale versiunii „Panou split-flap” (runda finală) | `.impeccable/review/` |
 | Workflow și deploy | `docs/workflow.md` |
 | Skill-uri vendorizate | `.claude/skills/` (`SOURCES.md`) |
 | Reguli pentru Claude | `CLAUDE.md` |
@@ -29,7 +29,14 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 1. Am adăugat skill-uri (frontend-design, impeccable, ui-ux-pro-max, redesign-existing-projects, google-apps-script, webapp-testing) și structura de workflow.
 2. Am importat codul original. Codurile de admin au fost scoase din cod: acum se citesc din Script Properties `ADMINS` (JSON `{"cod":"Nume"}`). Am făcut auditul UI-ului original.
 3. Redesign „Sistem de zone” (commit `5ed13d2`), cu culoare și pictogramă pe zonă, listă + panou, light/dark. Utilizatorul l-a pus pe Apps Script (cele 6 fișiere + `ADMINS` setat) și l-a văzut: „bază bună, dar prea sumbru, prea corporate, prea tabel de birou”.
-4. A cerut o **lume vizuală nouă**, cu animații, tranziții și nivel Awwwards. A ales direcția **„Panou split-flap”** și toate tipurile de animație (tranziții, micro-interacțiuni, momente wow, fundal/cursor ambient). Plan scris, cod neînceput.
+4. A cerut o **lume vizuală nouă**, cu animații, tranziții și nivel Awwwards. A ales direcția **„Panou split-flap”** și toate tipurile de animație (tranziții, micro-interacțiuni, momente wow, fundal/cursor ambient).
+5. **„Panou split-flap” implementat** după `docs/plan-split-flap.md` (doar `Tokens`, `Styles`, `Index`, `App`, `Icons`; `Code.gs` neschimbat, toate apelurile `google.script.run` păstrate):
+   - motorul de plăcuțe (`flap()` / `animateFlaps()` în `App.html`), un singur timer care se oprește la final; rotire la intrare (o dată pe sesiune, `tis_intro`), la schimbări din auto-refresh/admin și la trimitere;
+   - `vt()` cu View Transitions pentru filtre/sortare (rânduri), panoul de detaliu și schimbarea paginii; numele de tranziție se pun doar pe durata tranziției;
+   - ambient (lumini în hol + reflex pe panou) oprit după 6s, în tab ascuns și la reduced-motion; măsurat 0.2 ms/s în repaus (`dev/perf.py`);
+   - verificări: `flow.py` 21/21, `a11y.py` fără probleme (contrast AA pe panou și hol, contur câmpuri 3:1, fără scroll orizontal la 1440/1280/900/390), detectorul impeccable doar cu avertismente advisory;
+   - review final făcut inline (fără sub-agenți): verdict **ship**; DESIGN.md și `design.json` rescrise din build.
+   Utilizatorul încă nu l-a văzut pe Apps Script.
 
 ## Decizii confirmate de utilizator
 
@@ -56,8 +63,9 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 pip install playwright                 # o dată pe sesiune (Chromium e deja în /opt/pw-browsers/chromium)
 python3 dev/preview.py &               # http://localhost:8080/, google.script.run simulat, cod admin de test 1234
 python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390, light + dark
-python3 dev/flow.py                    # 21 de pași funcționali (selectori pentru UI-ul „Sistem de zone”; actualizează-i)
-python3 dev/a11y.py                    # contrast tokeni, etichete, ținte, scroll orizontal
+python3 dev/flow.py                    # 21 de pași funcționali (selectori pentru „Panou split-flap”)
+python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
+python3 dev/perf.py                    # ms/s de task-uri în repaus (țintă < 5)
 .claude/skills/impeccable/scripts/impeccable detect --json src/*.html
 ```
 
@@ -65,6 +73,7 @@ python3 dev/a11y.py                    # contrast tokeni, etichete, ținte, scro
 
 - `script.google.com` și `impeccable.style` sunt blocate de politica de rețea. Site-ul live nu poate fi deschis, iar rolul de direcții impeccable rulează degradat, fără challengeri.
 - Google Fonts se încarcă uneori prin proxy cu `ERR_TOO_MANY_RETRIES`; atunci screenshot-urile apar cu fontul de rezervă. Nu e bug de cod.
+- În Chromium headless (randare software) o View Transition are ~150ms până la randare; de aceea `flow.py` așteaptă 500ms după filtre și deschideri. Pe GPU real e 1–2 cadre.
 - Nu porni sub-agenți decât dacă utilizatorul cere explicit. Review-ul final impeccable se face inline, iar asta se spune utilizatorului.
 
 ## Cum pune utilizatorul codul în Apps Script
@@ -77,4 +86,4 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Implementează `docs/plan-split-flap.md`, în ordinea pașilor de acolo, apoi rescrie `DESIGN.md` și actualizează fișierul ăsta.
+Utilizatorul copiază cele 5 fișiere HTML în Apps Script și testează pe `/dev` (Chrome): rotirea la intrare, filtrele cu rearanjare animată, panoul care alunecă, trimiterea unui tichet, News, Jurnal. De urmărit acolo: dacă View Transitions și `animation-timeline` merg în iframe-ul Google și dacă panoul negru în tema light pare „sumbru” (alternativa din plan: panou grafit mai deschis). Apoi ajustări după feedback.

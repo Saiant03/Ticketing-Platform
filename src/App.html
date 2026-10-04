@@ -16,6 +16,10 @@
   const PRIOS = { scazuta: 'Scăzută', medie: 'Medie', ridicata: 'Ridicată', critica: 'Critică' };
   const PRIO_RANK = { scazuta: 1, medie: 2, ridicata: 3, critica: 4 };
   const NEWS_TYPES = { update: 'Update', fix: 'Fix', anunt: 'Anunț' };
+  const NT_CLS = { update: 'c-work', fix: 'c-done', anunt: 'c-open' };
+  const ST_CLS = { deschis: 'c-open', in_lucru: 'c-work', rezolvat: 'c-done' };
+  const ST_DOT = { deschis: 'open', in_lucru: 'work', rezolvat: 'done' };
+  const MON3 = ['IAN', 'FEB', 'MAR', 'APR', 'MAI', 'IUN', 'IUL', 'AUG', 'SEP', 'OCT', 'NOI', 'DEC'];
   const MAX_FILES = 5;
   const PAGE = 50;
   const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
@@ -32,7 +36,7 @@
     news: [], newsLoaded: false, newsLoading: false, newsErr: false, compose: null, newsConfirm: null,
     journal: null, journalLoading: false,
     thumbs: {}, full: {}, pending: {},
-    sig: '', nsig: '', flash: null
+    sig: '', nsig: '', flash: null, intro: false, flipNew: null
   };
 
   const $ = (sel, root) => (root || document).querySelector(sel);
@@ -80,21 +84,108 @@
   }
   function zoneOf(t) { return ZONES.find(z => z.key === (t.category || '')) || NO_ZONE; }
   function zoneLabel(z) { return z.key || 'Fără zonă'; }
-  function tile(z, lg) {
-    if (z.id === 'none') return `<span class="zt none${lg ? ' lg' : ''}" aria-hidden="true"><svg><use href="#z-none"/></svg></span>`;
-    return `<span class="zt${lg ? ' lg' : ''}" style="--zc:var(--z-${z.id});--zo:var(--z-${z.id}-on)" aria-hidden="true"><svg><use href="#z-${z.id}"/></svg></span>`;
+  function zi(z) { return `<svg class="zi" aria-hidden="true"><use href="#z-${z.id}"/></svg>`; }
+  function zoneCell(z) { return `<span class="r-zone${z.id === 'none' ? ' none' : ''}" data-z="${z.id}">${zi(z)}<span>${esc(zoneLabel(z))}</span></span>`; }
+  function stKey(st) { return STATUSES[st] ? st : 'deschis'; }
+  function statusFlap(t, prefix) {
+    const s = stKey(t.status);
+    return `<span class="r-st"><i class="dot dot-${ST_DOT[s]}" aria-hidden="true"></i>${flap(STATUSES[s], prefix + ':' + t.id, ST_CLS[s], STATUSES[s], 8)}</span>`;
   }
-  function statusHtml(st) {
-    const s = STATUSES[st] ? st : 'deschis';
-    return `<span class="st ${s}"><svg aria-hidden="true"><use href="#s-${s}"/></svg>${STATUSES[s]}</span>`;
-  }
+  function statusText(st) { return `<span class="st">${STATUSES[stKey(st)]}</span>`; }
   function prioHtml(p) {
     const k = PRIOS[p] ? p : 'medie', r = PRIO_RANK[k];
     let bars = '';
     for (let i = 1; i <= 4; i++) bars += `<i${i <= r ? ' class="on"' : ''}></i>`;
-    return `<span class="pr ${k}"><span class="bars" aria-hidden="true">${bars}</span>${PRIOS[k]}</span>`;
+    return `<span class="pr ${k}"><span class="bars" aria-hidden="true">${bars}</span><span class="lbl-pr">${PRIOS[k]}</span></span>`;
   }
-  function icon(id) { return `<svg class="ic" aria-hidden="true"><use href="#${id}"/></svg>`; }
+  function icon(id, cls) { return `<svg class="ic${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="#${id}"/></svg>`; }
+  function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function isToday(d) { return d.toDateString() === new Date().toDateString(); }
+  // ORA pe panou: ora de azi sau data scurtă (03 OCT)
+  function boardTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return isToday(d) ? hhmm(d) : pad(d.getDate()) + ' ' + MON3[d.getMonth()];
+  }
+
+  // ---------- motorul split-flap ----------
+  // flap() desenează valoarea finală; animateFlaps() rotește doar cheile care s-au schimbat față de ultima randare.
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const FLAP = new Map();
+  const GLYPHS = 'ABCDEFGHIJKLMNOPRSTUVXYZ0123456789-';
+  const Q = [];
+  let flapTimer = 0;
+  function flap(text, key, cls, label, len) {
+    let v = String(text == null ? '' : text).toUpperCase();
+    if (len && v.length < len) v += ' '.repeat(len - v.length);
+    const chars = Array.from(v).map(c => `<span class="ch" aria-hidden="true">${esc(c)}</span>`).join('');
+    return `<span class="flap${cls ? ' ' + cls : ''}"${key ? ` data-key="${esc(key)}"` : ''} data-v="${esc(v)}"><span class="sr">${esc(label == null ? text : label)}</span>${chars}</span>`;
+  }
+  function animateFlaps(root, o) {
+    if (!root) return;
+    o = o || {};
+    const vh = window.innerHeight;
+    root.querySelectorAll('.flap[data-key]').forEach(el => {
+      const k = el.dataset.key, v = el.dataset.v, prev = FLAP.get(k);
+      FLAP.set(k, v);
+      let from = null;
+      if (o.all) from = '';
+      else if (o.force && k.slice(k.indexOf(':') + 1) === o.force) from = '';
+      else if (prev !== undefined && prev !== v) from = prev;
+      if (from === null || REDUCED.matches || document.hidden) return;
+      const row = el.closest('[data-i]'), ri = row ? +row.dataset.i : 0;
+      if (o.limit && ri >= o.limit) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width || r.bottom < 0 || r.top > vh) return;
+      spin(el, from, (o.delay || 0) + (o.all ? ri * 35 : 0));
+    });
+  }
+  function spin(el, from, delay) {
+    const now = performance.now(), fin = Array.from(el.dataset.v), prev = Array.from(from);
+    el.querySelectorAll('.ch').forEach((c, i) => {
+      for (let k = Q.length - 1; k >= 0; k--) if (Q[k].c === c) Q.splice(k, 1);
+      const seq = [], n = 2 + Math.floor(Math.random() * 5);
+      for (let j = 0; j < n; j++) seq.push(GLYPHS[Math.floor(Math.random() * GLYPHS.length)]);
+      seq.push(fin[i] || ' ');
+      c.textContent = prev[i] || ' ';
+      Q.push({ c, seq, i: 0, at: now + delay + i * 28 });
+    });
+    if (!flapTimer) flapTimer = setInterval(flapTick, 45);
+  }
+  function flapTick() {
+    const now = performance.now();
+    for (let k = Q.length - 1; k >= 0; k--) {
+      const q = Q[k];
+      if (now < q.at) continue;
+      q.c.dataset.p = q.c.textContent;
+      q.c.textContent = q.seq[q.i++];
+      q.c.className = q.c.classList.contains('fa') ? 'ch fb' : 'ch fa';
+      if (q.i >= q.seq.length) Q.splice(k, 1); else q.at = now + 45;
+    }
+    if (!Q.length) { clearInterval(flapTimer); flapTimer = 0; }
+  }
+
+  // ---------- View Transitions ----------
+  // vt(fn, tip): rulează randarea într-o tranziție dacă browserul o suportă; altfel direct. Numele se pun doar pe durata tranziției.
+  const MOBILE = window.matchMedia('(max-width:900px)');
+  function vtNames(kind, on) {
+    if (kind.indexOf('list') >= 0) {
+      const lr = $('#list').getBoundingClientRect();
+      $$('#list .row').forEach(r => {
+        const b = on && r.getBoundingClientRect();
+        r.style.viewTransitionName = on && b.bottom > lr.top && b.top < lr.bottom ? 'r-' + r.dataset.id.replace(/[^\w-]/g, '_') : '';
+      });
+    }
+    if (kind.indexOf('panel') >= 0) $('#panel').style.viewTransitionName = on && !MOBILE.matches ? 'panel' : '';
+    if (kind.indexOf('page') >= 0) $('#main').style.viewTransitionName = on ? 'page' : '';
+  }
+  function vt(fn, kind) {
+    if (!document.startViewTransition || REDUCED.matches || document.hidden) { fn(); return Promise.resolve(); }
+    vtNames(kind, true);
+    const tr = document.startViewTransition(() => { fn(); vtNames(kind, true); });
+    tr.finished.finally(() => vtNames(kind, false));
+    return tr.updateCallbackDone.catch(() => {});
+  }
   function findTicket(id) {
     return S.tickets.find(t => t.id === id) || (S.archived || []).find(t => t.id === id) || null;
   }
@@ -109,7 +200,7 @@
   function toast(msg, kind) {
     const el = document.createElement('div');
     el.className = 'toast' + (kind === 'err' ? ' err' : '');
-    el.innerHTML = icon(kind === 'err' ? 'i-alert' : 'i-check') + '<span>' + esc(msg) + '</span>';
+    el.innerHTML = '<span class="t-ic">' + icon(kind === 'err' ? 'i-alert' : 'i-check') + '</span><span class="t-msg">' + esc(msg) + '</span>';
     $('#toasts').appendChild(el);
     setTimeout(() => el.remove(), kind === 'err' ? 7000 : 3500);
   }
@@ -143,25 +234,32 @@
   function resetFilters() {
     S.f = { q: '', status: 'active', prio: 'all', zone: null, sort: S.f.sort };
     $('#search').value = ''; $('#prioFilter').value = 'all';
-    S.shown = PAGE; renderZones(); renderToolbar(); renderList();
+    S.shown = PAGE; vt(() => { renderZones(); renderToolbar(); renderList(); }, 'list');
   }
 
-  // ---------- bara de zone ----------
+  // ---------- antetul panoului: contoare, ceas, zone ----------
+  function renderCounters() {
+    const box = $('#counters'), ready = !(S.loading && !S.tickets.length);
+    const n = st => S.tickets.filter(t => t.status === st).length;
+    const crit = S.tickets.filter(t => t.status !== 'rezolvat' && t.priority === 'critica').length;
+    const c = (lbl, v, key, cls) => `<div><dt>${lbl}</dt><dd>${flap(ready ? pad(v) : '', 'cnt:' + key, 'lg' + (cls ? ' ' + cls : ''), ready ? String(v) : 'se încarcă', 2)}</dd></div>`;
+    box.innerHTML = c('Deschise', n('deschis'), 'open') + c('În lucru', n('in_lucru'), 'work', 'c-work') + c('Critice', crit, 'crit', crit ? 'c-crit' : '');
+    if (ready) animateFlaps(box, S.intro ? { all: true, delay: 100 } : null);
+  }
+  function renderClock() {
+    const d = new Date(), el = $('#clock');
+    el.innerHTML = flap(hhmm(d), 'clock', 'lg', 'Ora ' + hhmm(d));
+    animateFlaps(el, S.intro ? { all: true, delay: 300 } : null);
+    clearTimeout(S.clockT);
+    S.clockT = setTimeout(renderClock, 60500 - d.getSeconds() * 1000 - d.getMilliseconds());
+  }
   function renderZones() {
     const active = S.tickets.filter(t => t.status !== 'rezolvat');
     const counts = {}; ZONES.forEach(z => { counts[z.key] = 0; }); counts[''] = 0;
     active.forEach(t => { counts[zoneOf(t).key]++; });
-    const band = $('#zoneBand');
-    band.classList.toggle('filtered', !!S.f.zone);
-    band.innerHTML = ZONES.concat([NO_ZONE]).filter(z => counts[z.key] > 0).map(z =>
-      `<span class="${S.f.zone === z.key ? 'on' : ''}" style="flex-grow:${counts[z.key]};background:${z.id === 'none' ? 'var(--line-strong)' : 'var(--z-' + z.id + ')'}"></span>`).join('');
-    const crit = active.filter(t => t.priority === 'critica').length;
-    $('#zoneRow').innerHTML = ZONES.map(z => {
-      const n = counts[z.key];
-      return `<button class="zbtn" data-zone="${esc(z.key)}" aria-pressed="${S.f.zone === z.key}" title="Arată doar zona ${esc(z.key)}">
-        ${tile(z)}<span class="zname">${esc(z.key)}</span><span class="zn${n ? '' : ' zero'}">${n}</span></button>`;
-    }).join('') +
-      `<div class="zone-total"><b>${active.length} active</b>${crit ? `<small class="crit">${crit} ${crit === 1 ? 'critic' : 'critice'}</small>` : '<small>niciun critic</small>'}</div>`;
+    $('#zoneRow').innerHTML = ZONES.map(z => `<button class="zchip" data-zone="${esc(z.key)}" aria-pressed="${S.f.zone === z.key}" title="Arată doar zona ${esc(z.key)}">
+        ${zi(z)}<span>${esc(z.key)}</span><span class="zn">${counts[z.key]}</span></button>`).join('');
+    renderCounters();
   }
 
   // ---------- toolbar ----------
@@ -180,33 +278,38 @@
       Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]}</option>`).join('');
   }
 
-  // ---------- listă ----------
-  function rowHtml(t) {
+  // ---------- listă (panoul de plecări) ----------
+  function rowHtml(t, i) {
     const z = zoneOf(t), nc = (t.comments || []).length, na = (t.attachments || []).length;
     const cur = S.sel === t.id && (S.panel === 'ticket');
-    return `<div role="listitem"><button class="row${t.status === 'rezolvat' ? ' resolved' : ''}${S.flash === t.id ? ' flash' : ''}" data-id="${esc(t.id)}"${cur ? ' aria-current="true"' : ''}>
-      ${tile(z)}
-      <span class="code">${esc(t.id)}</span>
-      <span class="t"><span class="title">${esc(t.title)}</span><span class="by">${esc(t.reporter)} · ${relDate(t.created)}</span></span>
-      ${statusHtml(t.status)}
+    const old = t.created && !isToday(new Date(t.created));
+    return `<div role="listitem"><button class="row${t.status === 'rezolvat' ? ' resolved' : ''}${S.flash === t.id ? ' flash' : ''}" data-id="${esc(t.id)}" data-i="${i}" style="--i:${i}"${cur ? ' aria-current="true"' : ''}>
+      <span class="r-time${old ? ' old' : ''}" title="${esc(absDate(t.created, true))}">${boardTime(t.created)}</span>
+      ${flap(t.id, 'cod:' + t.id, '', t.id, 6)}
+      ${zoneCell(z)}
+      <span class="r-t"><span class="r-title">${esc(t.title)}</span><span class="r-by">${esc(t.reporter)} · ${relDate(t.created)}</span></span>
+      <span class="r-n">${nc ? `<span title="${nc} comentarii">${icon('i-comment')}${nc}</span>` : ''}${na ? `<span title="${na} capturi">${icon('i-image')}${na}</span>` : ''}</span>
       ${prioHtml(t.priority)}
-      <span class="counts">${nc ? `<span title="${nc} comentarii">${icon('i-comment')}${nc}</span>` : ''}${na ? `<span title="${na} capturi">${icon('i-image')}${na}</span>` : ''}</span>
+      ${statusFlap(t, 'st')}
     </button></div>`;
+  }
+  function boardEmpty(title, text, extra) {
+    return `<div class="empty"><span class="sign-ar left" aria-hidden="true"><svg><use href="#i-sign"/></svg></span><h3>${title}</h3><p>${text}</p>${extra || ''}</div>`;
   }
   function renderList() {
     const list = $('#list'), meta = $('#listMeta');
     const archive = S.f.status === 'archive';
     if ((archive && S.archivedLoading) || (!archive && S.loading && !S.tickets.length)) {
       list.setAttribute('aria-busy', 'true');
-      list.innerHTML = Array.from({ length: 6 }, () => '<div class="skel"><i></i><i></i><i></i><i></i></div>').join('');
+      list.innerHTML = Array.from({ length: 8 }, () => '<div class="skel" aria-hidden="true"><i></i><i></i><i></i><i></i></div>').join('');
       meta.textContent = 'Se încarcă…';
       return;
     }
     list.removeAttribute('aria-busy');
     if (!archive && S.loadErr && !S.tickets.length) {
       meta.textContent = '';
-      list.innerHTML = `<div class="empty"><h3>Nu am putut încărca tichetele</h3><p>Verifică conexiunea și încearcă din nou.</p>
-        <button class="btn btn-quiet" data-act="reload">${icon('i-refresh')}Reîncearcă</button></div>`;
+      list.innerHTML = boardEmpty('Nu am putut încărca tichetele', 'Verifică conexiunea și încearcă din nou.',
+        `<button class="btn btn-board" data-act="reload">${icon('i-refresh')}Reîncearcă</button>`);
       return;
     }
     const vis = visible();
@@ -218,51 +321,58 @@
     meta.innerHTML = parts.join('');
 
     if (!vis.length) {
-      if (archive) list.innerHTML = '<div class="empty"><h3>Arhiva e goală</h3><p>Tichetele arhivate apar aici și pot fi restaurate.</p></div>';
-      else if (!S.tickets.length) list.innerHTML = `<div class="empty"><h3>Niciun tichet încă</h3><p>Primul tichet raportat va primi codul TIS-01.</p>
-        <button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button></div>`;
-      else list.innerHTML = `<div class="empty"><h3>Niciun tichet pentru filtrele alese</h3><p>Schimbă filtrele sau caută altfel. Dacă problema nu e raportată, deschide un tichet nou.</p>
-        <p><button class="linkish" data-clear="all">Resetează filtrele</button></p>
-        <button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button></div>`;
+      if (archive) list.innerHTML = boardEmpty('Arhiva e goală', 'Tichetele arhivate apar aici și pot fi restaurate.');
+      else if (!S.tickets.length) list.innerHTML = boardEmpty('Niciun tichet încă', 'Primul tichet raportat va primi codul TIS-01.',
+        `<button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button>`);
+      else list.innerHTML = boardEmpty('Niciun tichet pentru filtrele alese', 'Schimbă filtrele sau caută altfel. Dacă problema nu e raportată, deschide un tichet nou.',
+        `<p><button class="linkish" data-clear="all">Resetează filtrele</button></p><button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button>`);
       return;
     }
+    const fa = document.activeElement, fid = fa && fa.classList && fa.classList.contains('row') && list.contains(fa) ? fa.dataset.id : null;
     const slice = vis.slice(0, S.shown);
     list.innerHTML = slice.map(rowHtml).join('') +
       (vis.length > slice.length ? `<button class="more" data-act="more">Arată încă ${Math.min(PAGE, vis.length - slice.length)} din ${vis.length - slice.length} rămase</button>` : '');
+    if (fid) { const r = $(`.row[data-id="${CSS.escape(fid)}"]`, list); if (r) r.focus({ preventScroll: true }); }
+    if (S.intro && !REDUCED.matches) { list.classList.add('intro'); setTimeout(() => list.classList.remove('intro'), 1800); }
+    animateFlaps(list, S.intro ? { all: true, limit: 20, delay: 150 } : (S.flipNew ? { force: S.flipNew, delay: 250 } : null));
+    S.flipNew = null;
   }
 
-  // ---------- panou ----------
+  // ---------- panou de detaliu (holul) ----------
   function setPanel(mode, id) {
     S.panel = mode; S.confirm = null; S.editing = false;
     if (id !== undefined) S.sel = id;
-    renderPanel(); renderList();
-    $('#panel').classList.toggle('open', mode !== 'empty');
+    return vt(() => {
+      renderPanel(); renderList();
+      $('#panel').classList.toggle('open', mode !== 'empty');
+    }, mode === 'created' ? 'panel list' : 'panel');
   }
   function closePanel() {
     const id = S.sel;
-    setPanel('empty', null);
-    const row = id && $(`.row[data-id="${CSS.escape(id)}"]`);
-    if (row) row.focus();
+    return setPanel('empty', null).then(() => {
+      const row = id && $(`.row[data-id="${CSS.escape(id)}"]`);
+      if (row) row.focus();
+    });
   }
 
   function renderPanel() {
     const box = $('#panelInner');
-    if (S.panel !== 'ticket') { box.className = 'panel-inner'; box.style.removeProperty('--zc'); }
     if (S.panel === 'new') { box.innerHTML = newFormHtml(); wireNewForm(); return; }
-    if (S.panel === 'created') { box.innerHTML = createdHtml(); return; }
+    if (S.panel === 'created') { box.innerHTML = createdHtml(); animateFlaps(box, { all: true, delay: 120 }); return; }
     if (S.panel === 'ticket') {
       const t = findTicket(S.sel);
       if (!t) { S.panel = 'empty'; return renderPanel(); }
-      const z = zoneOf(t);
-      box.classList.add('zoned'); if (z.id === 'none') box.classList.add('none'); else box.style.setProperty('--zc', 'var(--z-' + z.id + ')');
-      box.innerHTML = ticketHtml(t); hydrate(box); return;
+      box.innerHTML = ticketHtml(t); hydrate(box); animateFlaps(box); return;
     }
-    box.innerHTML = `<div class="panel-empty">
-      <h2>${S.isAdmin ? 'Alege un tichet pentru triere' : 'Găsește sau raportează o problemă'}</h2>
+    box.innerHTML = `<div class="signs">
+      <h2 class="sign-h">${S.isAdmin ? 'Alege un tichet pentru triere' : 'Găsește sau raportează o problemă'}</h2>
       <ol>
-        <li>Caută în listă sau alege zona din WFM Extended de sus.</li>
-        <li>Dacă problema nu apare, apasă <b>Tichet nou</b>.</li>
-        <li>Primești un cod TIS cu care urmărești rezolvarea.</li>
+        <li class="sign"><span class="sign-ar left" aria-hidden="true"><svg><use href="#i-sign"/></svg></span>
+          <span><b>Caută pe panou</b><small>După cod, titlu sau nume. Filtrează pe zona din WFM Extended.</small></span></li>
+        <li class="sign"><span class="sign-ar up" aria-hidden="true"><svg><use href="#i-sign"/></svg></span>
+          <span><b>Nu apare? Tichet nou</b><small>Câmpuri puține; capturile se lipesc cu Ctrl+V.</small></span></li>
+        <li class="sign"><span class="sign-ar plate" aria-hidden="true">${flap('TIS')}</span>
+          <span><b>Urmărește codul</b><small>Primești un cod TIS. Statusul se schimbă pe panou.</small></span></li>
       </ol>
       <div class="keys"><kbd>/</kbd><span>caută</span><kbd>N</kbd><span>tichet nou</span><kbd>J</kbd><span>următorul tichet</span><kbd>K</kbd><span>tichetul anterior</span><kbd>Esc</kbd><span>închide panoul</span></div>
     </div>`;
@@ -270,11 +380,11 @@
 
   function ticketHtml(t) {
     const z = zoneOf(t), archived = !!t.archived;
-    const head = `<div class="p-head">
-      <button class="btn btn-quiet icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
-      ${tile(z, true)}<span class="zlabel">${esc(zoneLabel(z))}</span><span class="spacer"></span>
-      <span class="code">${esc(t.id)}</span>
-      <button class="btn btn-quiet icon-only" data-act="copy" data-code="${esc(t.id)}" aria-label="Copiază codul ${esc(t.id)}" title="Copiază codul">${icon('i-copy')}</button>
+    const strip = `<div class="p-strip">
+      <button class="btn btn-board icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
+      ${flap(t.id, 'pcod:' + t.id, '', t.id, 6)}
+      <button class="btn btn-board p-copy" data-act="copy" data-code="${esc(t.id)}" aria-label="Copiază codul ${esc(t.id)}" title="Copiază codul">${flap('Copiază', 'copy:' + t.id, 'sm', 'Copiază', 7)}</button>
+      ${statusFlap(t, 'pst')}
     </div>`;
     const titleBlock = S.editing
       ? `<form class="edit" data-form="edit">
@@ -282,16 +392,17 @@
           <div class="field"><label class="lbl" for="ed-desc">Descriere</label><textarea class="textarea" id="ed-desc" rows="6" maxlength="4000">${esc(t.desc)}</textarea></div>
           <div class="form-actions"><button type="button" class="btn btn-quiet" data-act="edit-cancel">Anulează</button><button type="submit" class="btn btn-primary">Salvează</button></div>
         </form>`
-      : `<h2 class="h2" id="p-title" tabindex="-1">${esc(t.title)}</h2>`;
+      : `<h2 class="p-title" id="p-title" tabindex="-1">${esc(t.title)}</h2>`;
     const facts = `<dl class="p-facts">
-      <dt>Status</dt><dd>${archived ? 'Arhivat · ' : ''}${statusHtml(t.status)}</dd>
+      ${archived ? '<dt>Stare</dt><dd>Arhivat</dd>' : ''}
+      <dt>Zonă</dt><dd class="p-zone">${zi(z)}${esc(zoneLabel(z))}</dd>
       <dt>Prioritate</dt><dd>${prioHtml(t.priority)}</dd>
       <dt>Raportat</dt><dd>${esc(t.reporter)} · <span title="${esc(absDate(t.created, true))}">${relDate(t.created)}</span></dd>
       ${t.updatedBy ? `<dt>Modificat</dt><dd>${esc(t.updatedBy)} · <span title="${esc(absDate(t.updatedAt, true))}">${relDate(t.updatedAt)}</span></dd>` : ''}
     </dl>`;
     const desc = S.editing ? '' : `<div class="p-section"><h3>Descriere</h3>${t.desc ? `<div class="desc">${esc(t.desc)}</div>` : '<p class="desc none">Fără descriere.</p>'}</div>`;
     const shots = (t.attachments || []).length ? `<div class="p-section"><h3>Capturi <span class="n">${t.attachments.length}</span></h3>${shotsHtml(t.attachments)}</div>` : '';
-    return head + titleBlock + facts + (S.isAdmin ? adminBoxHtml(t) : '') + desc + shots + (archived ? '' : commentsHtml(t));
+    return strip + titleBlock + facts + (S.isAdmin ? adminBoxHtml(t) : '') + desc + shots + (archived ? '' : commentsHtml(t));
   }
 
   function adminBoxHtml(t) {
@@ -359,16 +470,16 @@
     const sim = similarTo(S.draft.title);
     if (!sim.length) return '';
     return `<div class="similar"><p>Poate e deja raportat:</p>${sim.map(t =>
-      `<button type="button" data-open="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span>${statusHtml(t.status)}</button>`).join('')}</div>`;
+      `<button type="button" data-open="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span>${statusText(t.status)}</button>`).join('')}</div>`;
   }
   function newFormHtml() {
     const d = S.draft, e = S.formErr;
-    const zp = ZONES.map(z => `<button type="button" role="radio" data-zone-pick="${esc(z.key)}" aria-checked="${d.zone === z.key}">${tile(z)}${esc(z.key)}</button>`).join('');
+    const zp = ZONES.map(z => `<button type="button" role="radio" data-zone-pick="${esc(z.key)}" aria-checked="${d.zone === z.key}">${zi(z)}${esc(z.key)}</button>`).join('');
     const pr = Object.keys(PRIOS).map(k => `<button type="button" role="radio" data-prio-pick="${k}" aria-checked="${d.prio === k}">${PRIOS[k]}</button>`).join('');
     return `<form id="newForm" novalidate>
-      <div class="p-head">
+      <div class="f-head">
         <button type="button" class="btn btn-quiet icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
-        <h2 class="h2" id="nf-h" tabindex="-1">Tichet nou</h2><span class="spacer"></span>
+        <h2 class="sign-h" id="nf-h" tabindex="-1">Tichet nou</h2>
         <button type="button" class="btn btn-quiet icon-only" data-act="close" aria-label="Închide formularul">${icon('i-close')}</button>
       </div>
       <div class="field"><label class="lbl" for="nf-reporter">Numele tău</label>
@@ -392,7 +503,7 @@
       <div class="form-actions">
         <span class="hint" id="nf-progress" style="margin-right:auto" aria-live="polite"></span>
         <button type="button" class="btn btn-quiet" data-act="close">Renunță</button>
-        <button type="submit" class="btn btn-primary${S.submitting ? ' busy' : ''}" id="nf-submit"${S.submitting ? ' disabled' : ''}>Trimite tichetul</button>
+        <button type="submit" class="btn btn-primary${S.submitting ? ' busy' : ''}" id="nf-submit"${S.submitting ? ' disabled' : ''}>Trimite tichetul${icon('i-arrow', 'ar')}</button>
       </div>
     </form>`;
   }
@@ -408,12 +519,16 @@
     wireDrop($('#nf-drop'), $('#nf-file'), files => addFiles(S.draft.files, files, () => { $('#nf-thumbs').innerHTML = thumbsHtml(S.draft.files); }));
   }
   function createdHtml() {
+    const c = S.createdCode;
     return `<div class="done">
-      <p class="ok">${icon('i-check')}Tichet trimis</p>
-      <div class="big"><b>${esc(S.createdCode)}</b><button class="btn btn-quiet" data-act="copy" data-code="${esc(S.createdCode)}">${icon('i-copy')}Copiază</button></div>
-      <p>Păstrează codul ca referință. Starea tichetului apare în listă; adminii răspund în comentarii.</p>
-      <div class="form-actions" style="justify-content:flex-start;margin-top:var(--sp-5)">
-        <button class="btn btn-primary" data-open="${esc(S.createdCode)}">Deschide tichetul</button>
+      <div class="done-board">
+        ${flap(c, 'big:' + c, 'xl', c)}
+        <p class="done-label">${flap('Înregistrat', 'ok:' + c, 'c-done', 'Tichet înregistrat')}</p>
+      </div>
+      <p class="lead">Păstrează codul ca referință. Statusul tichetului se schimbă pe panou; adminii răspund în comentarii.</p>
+      <div class="form-actions">
+        <button class="btn btn-primary" data-open="${esc(c)}">Deschide tichetul${icon('i-arrow', 'ar')}</button>
+        <button class="btn btn-quiet" data-act="copy" data-code="${esc(c)}" aria-label="Copiază codul ${esc(c)}">${flap('Copiază', 'copyc:' + c, 'sm', 'Copiază', 7)}</button>
         <button class="btn btn-quiet" data-act="new">Raportează altul</button>
       </div></div>`;
   }
@@ -488,10 +603,17 @@
     if (!quiet) { S.loading = true; renderList(); }
     gs('getTickets').then(list => {
       S.tickets = list || []; S.loading = false; S.loadErr = false; S.sig = sig(S.tickets);
-      renderAll();
+      let seen = false;
+      try { seen = sessionStorage.getItem('tis_intro') === '1'; sessionStorage.setItem('tis_intro', '1'); } catch (x) {}
+      S.intro = !seen;
+      renderAll(); renderClock();
+      if (S.intro) animateFlaps($('#brandFlaps'), { all: true });
+      S.intro = false;
     }).catch(() => { S.loading = false; S.loadErr = true; renderList(); toast('Nu am putut încărca tichetele.', 'err'); });
   }
   function sig(list) { return list.map(t => [t.id, t.status, t.priority, t.category, t.updatedAt || 0, (t.comments || []).length, t.title].join(':')).join('|'); }
+  // ce se vede pe panou și în panoul de detaliu (fără ora modificării)
+  function vsig(list) { return list.map(t => [t.id, t.status, t.priority, t.category, t.title, t.desc, (t.comments || []).length].join(':')).join('|'); }
   function loadArchived() {
     S.archivedLoading = true; renderList();
     gs('getArchived', S.pin).then(list => { S.archived = list || []; S.archivedLoading = false; renderToolbar(); renderList(); })
@@ -513,9 +635,9 @@
         S.cmtName = S.cmtName || d.reporter;
         S.tickets = res.tickets; S.sig = sig(S.tickets);
         S.draft = { reporter: d.reporter, title: '', desc: '', zone: '', prio: 'medie', files: [] };
-        S.submitting = false; S.createdCode = res.code; S.flash = res.code; S.formErr = {};
+        S.submitting = false; S.createdCode = res.code; S.flash = res.code; S.flipNew = res.code; S.formErr = {};
         renderZones(); renderToolbar(); setPanel('created');
-        setTimeout(() => { S.flash = null; }, 1300);
+        setTimeout(() => { S.flash = null; }, 1700);
       })
       .catch(err => { S.submitting = false; S.formErr = { form: errMsg(err, 'Tichetul nu s-a salvat. Încearcă din nou.') }; renderPanel(); });
   }
@@ -524,9 +646,9 @@
     if (!S.isAdmin) return toast('Doar adminii pot face asta.', 'err');
     apply(); renderAll();
     gs(fn, ...args, S.pin).then(list => {
-      if (fn === 'restoreTicket' || fn === 'purgeTicket') { S.archived = list; load(true); }
-      else { S.tickets = list; S.sig = sig(list); }
-      renderAll(); if (okMsg) toast(okMsg);
+      if (fn === 'restoreTicket' || fn === 'purgeTicket') { S.archived = list; load(true); renderAll(); }
+      else { const same = vsig(list) === vsig(S.tickets); S.tickets = list; S.sig = sig(list); if (!same) renderAll(); }
+      if (okMsg) toast(okMsg);
     }).catch(e => { rollback(); renderAll(); toast(errMsg(e, 'Acțiunea nu a reușit.'), 'err'); if (adminErr(e)) logout(); });
   }
   function setField(t, key, val, fn, args, msg) {
@@ -570,7 +692,7 @@
     btn.setAttribute('aria-label', S.isAdmin ? 'Ieși din modul admin (' + S.adminName + ')' : 'Intră ca admin');
     $('.tab[data-page="jurnal"]').hidden = !S.isAdmin;
     $('#newsNewBtn').hidden = !S.isAdmin;
-    if (!S.isAdmin && S.page === 'jurnal') setPage('tichete');
+    if (!S.isAdmin && S.page === 'jurnal') setPage('tichete', true);
   }
   function openPop(open) {
     const pop = $('#adminPop');
@@ -622,9 +744,9 @@
         ? `<div class="confirm admin-actions"><span>Ștergi anunțul și capturile lui?</span><button class="btn btn-quiet" data-news-cancel>Anulează</button><button class="btn btn-danger" data-news-del="${esc(a.id)}">Șterge</button></div>`
         : `<div class="admin-actions"><button class="btn btn-quiet" data-news-edit="${esc(a.id)}">${icon('i-edit')}Editează</button><button class="btn btn-danger-quiet" data-news-ask="${esc(a.id)}">${icon('i-trash')}Șterge</button></div>`;
       return `<article class="news-item">
-        <div class="news-meta">${d ? `<time datetime="${d.toISOString()}">${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}</time>` : ''}
-          <span class="ntype ${type}"><i aria-hidden="true"></i>${NEWS_TYPES[type]}</span></div>
-        <div><h2>${esc(a.title)}</h2><p class="by">${esc(a.author)}${d ? ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) : ''}</p>
+        <div class="n-plate">${d ? `<time datetime="${d.toISOString()}">${flap(pad(d.getDate()) + ' ' + MON3[d.getMonth()], 'nd:' + a.id, '', d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear())}</time><span class="yr" aria-hidden="true">${d.getFullYear()}</span>` : ''}
+          ${flap(NEWS_TYPES[type], 'nt:' + a.id, NT_CLS[type], NEWS_TYPES[type], 6)}</div>
+        <div><h2>${esc(a.title)}</h2><p class="by">${esc(a.author)}${d ? ' · ' + hhmm(d) : ''}</p>
           <div class="news-body">${newsBody(a.body)}</div>
           ${(a.attachments || []).length ? shotsHtml(a.attachments) : ''}${actions}</div>
       </article>`;
@@ -684,43 +806,50 @@
     const box = $('#journal');
     if (S.journalLoading && !S.journal) { box.innerHTML = '<p class="sub">Se încarcă jurnalul…</p>'; return; }
     if (!S.journal || !S.journal.length) { box.innerHTML = '<div class="empty"><h3>Jurnalul e gol</h3><p>Acțiunile pe tichete și anunțuri apar aici.</p></div>'; return; }
-    box.innerHTML = `<table class="jt"><thead><tr><th scope="col">Când</th><th scope="col">Cine</th><th scope="col">Acțiune</th><th scope="col">Cod</th><th scope="col">Detaliu</th></tr></thead><tbody>${
-      S.journal.map(r => `<tr><td class="when" title="${esc(absDate(r.at, true))}">${esc(relDate(r.at))}</td><td>${esc(r.admin)}</td><td>${esc(humanAction(r.action))}</td>
-        <td>${/^TIS-/.test(r.cod) && findTicket(r.cod) ? `<button class="linkish" data-open="${esc(r.cod)}">${esc(r.cod)}</button>` : esc(r.cod)}</td><td>${esc(r.detail)}</td></tr>`).join('')
-    }</tbody></table>`;
+    const code = c => !c ? '' : /^TIS-/.test(c) && findTicket(c)
+      ? `<button class="jopen" data-open="${esc(c)}" aria-label="Deschide ${esc(c)}">${flap(c, null, '', '', 6)}</button>` : flap(c, null, '', c, 6);
+    box.innerHTML = `<div class="jt-wrap"><table class="jt"><thead><tr><th scope="col">Ora</th><th scope="col">Cod</th><th scope="col">Cine</th><th scope="col">Acțiune</th><th scope="col">Detaliu</th></tr></thead><tbody>${
+      S.journal.map(r => `<tr><td title="${esc(absDate(r.at, true))}">${r.at ? flap(boardTime(r.at), null, '', absDate(r.at, true), 6) : ''}</td><td>${code(r.cod)}</td>
+        <td>${esc(r.admin)}</td><td>${esc(humanAction(r.action))}</td><td class="dim">${esc(r.detail)}</td></tr>`).join('')
+    }</tbody></table></div>`;
   }
 
   // ---------- pagini ----------
-  function setPage(p) {
+  function setPage(p, instant) {
     S.page = p;
-    ['tichete', 'news', 'jurnal'].forEach(k => {
+    const apply = () => ['tichete', 'news', 'jurnal'].forEach(k => {
       $('#page-' + k).hidden = k !== p;
       const tab = $(`.tab[data-page="${k}"]`);
       if (k === p) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current');
     });
     if (p === 'news' && !S.newsLoaded) loadNews(); else if (p === 'news') renderNews();
     if (p === 'jurnal') loadJournal();
+    if (instant) { apply(); return Promise.resolve(); }
+    return vt(apply, 'page');
   }
   function openTicket(id, focusPanel) {
-    if (S.page !== 'tichete') setPage('tichete');
-    if (!findTicket(id)) return toast('Tichetul ' + id + ' nu e în lista curentă.', 'err');
-    setPanel('ticket', id);
-    const row = $(`.row[data-id="${CSS.escape(id)}"]`);
-    if (row) row.scrollIntoView({ block: 'nearest' });
-    if (focusPanel || window.matchMedia('(max-width:900px)').matches) { const h = $('#p-title'); if (h) h.focus(); }
+    if (S.page !== 'tichete') setPage('tichete', true);
+    if (!findTicket(id)) { toast('Tichetul ' + id + ' nu e în lista curentă.', 'err'); return Promise.resolve(); }
+    return setPanel('ticket', id).then(() => {
+      const row = $(`.row[data-id="${CSS.escape(id)}"]`);
+      if (row) row.scrollIntoView({ block: 'nearest' });
+      if (focusPanel || MOBILE.matches) { const h = $('#p-title'); if (h) h.focus(); }
+    });
   }
   function openNew() {
-    if (S.page !== 'tichete') setPage('tichete');
-    S.formErr = {}; setPanel('new');
-    const f = S.draft.reporter ? '#nf-title' : '#nf-reporter'; const el = $(f); if (el) el.focus();
+    if (S.page !== 'tichete') setPage('tichete', true);
+    S.formErr = {};
+    return setPanel('new').then(() => {
+      const el = $(S.draft.reporter ? '#nf-title' : '#nf-reporter'); if (el) el.focus();
+    });
   }
   function moveSel(dir) {
     const rows = $$('.row');
     if (!rows.length) return;
     let i = rows.findIndex(r => r.dataset.id === S.sel);
     i = i < 0 ? (dir > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, i + dir));
-    openTicket(rows[i].dataset.id);
-    const r = $(`.row[data-id="${CSS.escape(rows[i].dataset.id)}"]`); if (r) r.focus();
+    const id = rows[i].dataset.id;
+    openTicket(id).then(() => { const r = $(`.row[data-id="${CSS.escape(id)}"]`); if (r) r.focus(); });
   }
 
   function renderAll() { renderAdmin(); renderZones(); renderToolbar(); renderList(); renderPanel(); if (S.page === 'news') renderNews(); if (S.page === 'jurnal') renderJournal(); }
@@ -744,16 +873,20 @@
     if (t.id === 'lbIn') return lbZoom(LB.s + 0.5);
     if (t.id === 'lbOut') return lbZoom(LB.s - 0.5);
 
-    if (ds.zone !== undefined && t.classList.contains('zbtn')) { S.f.zone = S.f.zone === ds.zone ? null : ds.zone; S.shown = PAGE; renderZones(); renderList(); return; }
-    if (ds.status) { S.f.status = ds.status; S.shown = PAGE; if (ds.status === 'archive' && !S.archived) loadArchived(); renderToolbar(); renderList(); return; }
+    if (ds.zone !== undefined && t.classList.contains('zchip')) { S.f.zone = S.f.zone === ds.zone ? null : ds.zone; S.shown = PAGE; vt(() => { renderZones(); renderList(); }, 'list'); return; }
+    if (ds.status) {
+      S.f.status = ds.status; S.shown = PAGE;
+      if (ds.status === 'archive' && !S.archived) { loadArchived(); renderToolbar(); return; }
+      vt(() => { renderToolbar(); renderList(); }, 'list'); return;
+    }
     if (ds.clear) {
       if (ds.clear === 'all') return resetFilters();
       if (ds.clear === 'zone') S.f.zone = null;
       if (ds.clear === 'prio') { S.f.prio = 'all'; $('#prioFilter').value = 'all'; }
       if (ds.clear === 'q') { S.f.q = ''; $('#search').value = ''; }
-      renderZones(); renderList(); return;
+      vt(() => { renderZones(); renderList(); }, 'list'); return;
     }
-    if (t.classList.contains('row')) return S.sel === ds.id && S.panel === 'ticket' && !window.matchMedia('(max-width:900px)').matches ? closePanel() : openTicket(ds.id);
+    if (t.classList.contains('row')) return S.sel === ds.id && S.panel === 'ticket' && !MOBILE.matches ? closePanel() : openTicket(ds.id);
     if (ds.open) return openTicket(ds.open, true);
     if (ds.shot) return openLightbox(ds.shot, ds.name);
     if (ds.rm !== undefined) {
@@ -785,7 +918,7 @@
       case 'news-reload': return loadNews();
       case 'more': S.shown += PAGE; return renderList();
       case 'copy': {
-        const code = ds.code, ok = () => toast('Codul ' + code + ' a fost copiat.');
+        const code = ds.code, ok = () => { toast('Codul ' + code + ' a fost copiat.'); copied(t); };
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(ok, () => fallbackCopy(code, ok)); else fallbackCopy(code, ok);
         return;
       }
@@ -810,6 +943,17 @@
       case 'compose-cancel': S.compose = null; return renderNews();
     }
   });
+  // butonul de copiere: plăcuțele trec pe COPIAT, apoi revin
+  function copied(btn) {
+    const set = (txt, label) => {
+      const el = $('.flap[data-key]', btn); if (!el) return;
+      el.outerHTML = flap(txt, el.dataset.key, 'sm', label, 7);
+      animateFlaps(btn);
+    };
+    set('Copiat', 'Copiat');
+    clearTimeout(btn._ct);
+    btn._ct = setTimeout(() => { if (btn.isConnected) set('Copiază', 'Copiază'); }, 2200);
+  }
   function fallbackCopy(text, ok) {
     const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) {} ta.remove();
@@ -833,8 +977,8 @@
 
   document.addEventListener('change', e => {
     const el = e.target, t = findTicket(S.sel);
-    if (el.id === 'prioFilter') { S.f.prio = el.value; S.shown = PAGE; return renderList(); }
-    if (el.id === 'sortSel') { S.f.sort = el.value; return renderList(); }
+    if (el.id === 'prioFilter') { S.f.prio = el.value; S.shown = PAGE; return vt(renderList, 'list'); }
+    if (el.id === 'sortSel') { S.f.sort = el.value; return vt(renderList, 'list'); }
     if (el.id === 'ad-prio' && t) return setField(t, 'priority', el.value, 'updatePriority', [t.id, el.value], 'Prioritate: ' + PRIOS[el.value] + '.');
     if (el.id === 'ad-zone' && t) return setField(t, 'category', el.value, 'editTicket', [t.id, { category: el.value }], 'Zonă: ' + (el.value || 'fără zonă') + '.');
   });
@@ -872,8 +1016,8 @@
     if (S.page === 'news' && S.compose && !S.compose.id) { e.preventDefault(); addFiles(S.compose.files, imgs, () => { $('#nw-thumbs').innerHTML = thumbsHtml(S.compose.files); }); return; }
     if (S.page !== 'tichete') return;
     e.preventDefault();
-    if (S.panel !== 'new') openNew();
-    addFiles(S.draft.files, imgs, () => { const th = $('#nf-thumbs'); if (th) th.innerHTML = thumbsHtml(S.draft.files); });
+    const ready = S.panel !== 'new' ? openNew() : Promise.resolve();
+    addFiles(S.draft.files, imgs, () => ready.then(() => { const th = $('#nf-thumbs'); if (th) th.innerHTML = thumbsHtml(S.draft.files); }));
   });
 
   // ---------- lightbox ----------
@@ -935,9 +1079,40 @@
     }
   }, 20000);
 
+  // ---------- ambient: lumina din hol + reflexul de pe panou, oprite la inactivitate ----------
+  (function ambient() {
+    const body = document.body, board = $('#board'), sheen = $('#sheen');
+    let idleT = 0, last = 0, raf = 0, mx = 0, my = 0;
+    const sleep = () => { body.classList.add('idle'); board.classList.remove('lit'); };
+    const wake = () => {
+      const n = Date.now();
+      if (n - last < 500 && !body.classList.contains('idle')) return;
+      last = n; body.classList.remove('idle');
+      clearTimeout(idleT); idleT = setTimeout(sleep, 6000);
+    };
+    document.addEventListener('pointermove', e => {
+      wake();
+      if (REDUCED.matches || e.pointerType !== 'mouse' || !board.contains(e.target)) return;
+      mx = e.clientX; my = e.clientY;
+      if (!raf) raf = requestAnimationFrame(() => {
+        raf = 0;
+        const r = board.getBoundingClientRect();
+        sheen.style.transform = `translate3d(${mx - r.left}px,${my - r.top}px,0)`;
+        board.classList.add('lit');
+      });
+    }, { passive: true });
+    board.addEventListener('pointerleave', () => board.classList.remove('lit'));
+    document.addEventListener('keydown', wake);
+    document.addEventListener('pointerdown', wake);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) sleep(); else { wake(); renderClock(); } });
+    wake();
+  })();
+
   // ---------- start ----------
   initToolbar();
+  $('#brandFlaps').innerHTML = flap('WFM', 'brand:wfm', '', 'WFM');
   renderAll();
+  renderClock();
   load();
 })();
 </script>
