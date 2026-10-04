@@ -36,7 +36,7 @@ python3 dev/shoot.py docs/audit/<folder>    # screenshot-uri desktop + mobil, pu
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "work ticketing helpdesk internal tool" --design-system
 ```
 
-- Se alege directia vizuala (frontend-design) si se fixeaza in `docs/design/DESIGN.md`: culori, tipografie, spatiere, componente (buton, input, badge status/prioritate, tabel, card ticket, modal, toast).
+- Se alege directia vizuala (frontend-design, `impeccable`) si se fixeaza in `DESIGN.md` (radacina): culori, tipografie, spatiere, componente. Contractul de directie sta in `.impeccable/surfaces/`.
 - Tokens implementati in `src/styles.html`.
 
 ## 3. Redesign pe ecrane
@@ -50,6 +50,18 @@ Pentru fiecare: aplica design system-ul, pastreaza apelurile `google.script.run`
 - `webapp-testing`: screenshot-uri inainte/dupa, verificare responsive (375px, 768px, 1280px).
 - `impeccable` polish + harden: contrast, focus vizibil, texte lungi, liste goale, erori server.
 - Test manual pe URL-ul `/dev` al deployment-ului.
+
+## Stare
+
+- Faza 1 (audit): gata, `docs/audit/AUDIT.md`.
+- Faza 2 (design system): gata, directia „Sistem de zone”, `PRODUCT.md` + `DESIGN.md`.
+- Faza 3 (redesign): gata pentru Tichete, News, Jurnal; screenshot-uri in `.impeccable/review/`.
+- Faza 4 (QA): flux functional verificat local cu `dev/mock-gas.js`; ramane testul pe `/dev` cu date reale.
+
+## Fisierele din editorul Apps Script
+
+Proiectul are acum 6 fisiere; in editor numele se scriu fara extensie pentru HTML:
+`Code.gs`, `Index`, `Tokens`, `Styles`, `Icons`, `App` (toate HTML in afara de `Code.gs`).
 
 ## 5. Deploy
 

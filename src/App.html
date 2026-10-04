@@ -1,0 +1,943 @@
+<script>
+(function () {
+  'use strict';
+
+  // ---------- date de referință ----------
+  const ZONES = [
+    { key: 'Import', id: 'import' },
+    { key: 'Interfață', id: 'interfata' },
+    { key: 'Date', id: 'date' },
+    { key: 'Raportare', id: 'raportare' },
+    { key: 'General', id: 'general' },
+    { key: 'Altul', id: 'altul' }
+  ];
+  const NO_ZONE = { key: '', id: 'none' };
+  const STATUSES = { deschis: 'Deschis', in_lucru: 'În lucru', rezolvat: 'Rezolvat' };
+  const PRIOS = { scazuta: 'Scăzută', medie: 'Medie', ridicata: 'Ridicată', critica: 'Critică' };
+  const PRIO_RANK = { scazuta: 1, medie: 2, ridicata: 3, critica: 4 };
+  const NEWS_TYPES = { update: 'Update', fix: 'Fix', anunt: 'Anunț' };
+  const MAX_FILES = 5;
+  const PAGE = 50;
+  const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
+  const S = {
+    page: 'tichete',
+    tickets: [], loading: true, loadErr: false, archived: null, archivedLoading: false,
+    isAdmin: false, pin: '', adminName: '',
+    f: { q: '', status: 'active', prio: 'all', zone: null, sort: 'new' },
+    shown: PAGE,
+    panel: 'empty', sel: null, createdCode: null, confirm: null, editing: false,
+    draft: { reporter: '', title: '', desc: '', zone: '', prio: 'medie', files: [] }, submitting: false, formErr: {},
+    cmtDraft: {}, cmtName: '',
+    news: [], newsLoaded: false, newsLoading: false, newsErr: false, compose: null, newsConfirm: null,
+    journal: null, journalLoading: false,
+    thumbs: {}, full: {}, pending: {},
+    sig: '', nsig: '', flash: null
+  };
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+  try {
+    const p = sessionStorage.getItem('tis_pin'), n = sessionStorage.getItem('tis_admin');
+    if (p && n) { S.isAdmin = true; S.pin = p; S.adminName = n; }
+    S.draft.reporter = sessionStorage.getItem('tis_reporter') || '';
+    S.cmtName = S.draft.reporter;
+  } catch (e) {}
+
+  // ---------- utilitare ----------
+  function gasReady() { return typeof google !== 'undefined' && google.script && google.script.run; }
+  function gs(fn, ...args) {
+    return new Promise((res, rej) => {
+      if (!gasReady()) return rej(new Error('Deschide aplicația prin linkul publicat (…/exec).'));
+      google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args);
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  const MONTHS = ['ian.', 'feb.', 'mar.', 'apr.', 'mai', 'iun.', 'iul.', 'aug.', 'sept.', 'oct.', 'nov.', 'dec.'];
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function absDate(ts, withYear) {
+    if (!ts) return '';
+    const d = new Date(ts), now = new Date();
+    const y = (withYear || d.getFullYear() !== now.getFullYear()) ? ' ' + d.getFullYear() : '';
+    return d.getDate() + ' ' + MONTHS[d.getMonth()] + y + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function relDate(ts) {
+    if (!ts) return '';
+    const diff = (Date.now() - ts) / 1000;
+    if (diff < 60) return 'acum';
+    if (diff < 3600) return 'acum ' + Math.floor(diff / 60) + ' min';
+    if (diff < 86400) { const h = Math.floor(diff / 3600); return h === 1 ? 'acum o oră' : 'acum ' + h + ' ore'; }
+    const d = new Date(ts), y = new Date(); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return 'ieri, ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return absDate(ts);
+  }
+  function initials(name) {
+    const p = String(name || '?').trim().split(/\s+/);
+    return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+  }
+  function zoneOf(t) { return ZONES.find(z => z.key === (t.category || '')) || NO_ZONE; }
+  function zoneLabel(z) { return z.key || 'Fără zonă'; }
+  function tile(z, lg) {
+    if (z.id === 'none') return `<span class="zt none${lg ? ' lg' : ''}" aria-hidden="true"><svg><use href="#z-none"/></svg></span>`;
+    return `<span class="zt${lg ? ' lg' : ''}" style="--zc:var(--z-${z.id});--zo:var(--z-${z.id}-on)" aria-hidden="true"><svg><use href="#z-${z.id}"/></svg></span>`;
+  }
+  function statusHtml(st) {
+    const s = STATUSES[st] ? st : 'deschis';
+    return `<span class="st ${s}"><svg aria-hidden="true"><use href="#s-${s}"/></svg>${STATUSES[s]}</span>`;
+  }
+  function prioHtml(p) {
+    const k = PRIOS[p] ? p : 'medie', r = PRIO_RANK[k];
+    let bars = '';
+    for (let i = 1; i <= 4; i++) bars += `<i${i <= r ? ' class="on"' : ''}></i>`;
+    return `<span class="pr ${k}"><span class="bars" aria-hidden="true">${bars}</span>${PRIOS[k]}</span>`;
+  }
+  function icon(id) { return `<svg class="ic" aria-hidden="true"><use href="#${id}"/></svg>`; }
+  function findTicket(id) {
+    return S.tickets.find(t => t.id === id) || (S.archived || []).find(t => t.id === id) || null;
+  }
+  function isTyping(el) {
+    el = el || document.activeElement;
+    return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+  }
+  function errMsg(e, fallback) { return (e && e.message) || fallback; }
+  function adminErr(e) { return /admin/i.test(errMsg(e, '')); }
+
+  // ---------- toast ----------
+  function toast(msg, kind) {
+    const el = document.createElement('div');
+    el.className = 'toast' + (kind === 'err' ? ' err' : '');
+    el.innerHTML = icon(kind === 'err' ? 'i-alert' : 'i-check') + '<span>' + esc(msg) + '</span>';
+    $('#toasts').appendChild(el);
+    setTimeout(() => el.remove(), kind === 'err' ? 7000 : 3500);
+  }
+
+  // ---------- filtrare ----------
+  function inStatus(t, st) {
+    if (st === 'active') return t.status !== 'rezolvat';
+    if (st === 'all' || st === 'archive') return true;
+    return t.status === st;
+  }
+  function matchesQuery(t, q) {
+    if (!q) return true;
+    const hay = [t.id, t.title, t.reporter, t.desc, t.category].join(' ').toLowerCase();
+    return q.split(/\s+/).every(w => hay.indexOf(w) >= 0);
+  }
+  function visible() {
+    const f = S.f, q = f.q.trim().toLowerCase();
+    const src = f.status === 'archive' ? (S.archived || []) : S.tickets;
+    const out = src.filter(t =>
+      inStatus(t, f.status) &&
+      (!f.zone || zoneOf(t).key === f.zone) &&
+      (f.prio === 'all' || t.priority === f.prio) &&
+      matchesQuery(t, q));
+    const upd = t => t.updatedAt || t.created || 0;
+    if (f.sort === 'prio') out.sort((a, b) => (PRIO_RANK[b.priority] || 0) - (PRIO_RANK[a.priority] || 0) || b.n - a.n);
+    else if (f.sort === 'upd') out.sort((a, b) => upd(b) - upd(a));
+    else out.sort((a, b) => b.n - a.n);
+    return out;
+  }
+  function filtersActive() { return !!(S.f.q.trim() || S.f.zone || S.f.prio !== 'all' || S.f.status !== 'active'); }
+  function resetFilters() {
+    S.f = { q: '', status: 'active', prio: 'all', zone: null, sort: S.f.sort };
+    $('#search').value = ''; $('#prioFilter').value = 'all';
+    S.shown = PAGE; renderZones(); renderToolbar(); renderList();
+  }
+
+  // ---------- bara de zone ----------
+  function renderZones() {
+    const active = S.tickets.filter(t => t.status !== 'rezolvat');
+    const counts = {}; ZONES.forEach(z => { counts[z.key] = 0; }); counts[''] = 0;
+    active.forEach(t => { counts[zoneOf(t).key]++; });
+    const band = $('#zoneBand');
+    band.classList.toggle('filtered', !!S.f.zone);
+    band.innerHTML = ZONES.concat([NO_ZONE]).filter(z => counts[z.key] > 0).map(z =>
+      `<span class="${S.f.zone === z.key ? 'on' : ''}" style="flex-grow:${counts[z.key]};background:${z.id === 'none' ? 'var(--line-strong)' : 'var(--z-' + z.id + ')'}"></span>`).join('');
+    const crit = active.filter(t => t.priority === 'critica').length;
+    $('#zoneRow').innerHTML = ZONES.map(z => {
+      const n = counts[z.key];
+      return `<button class="zbtn" data-zone="${esc(z.key)}" aria-pressed="${S.f.zone === z.key}" title="Arată doar zona ${esc(z.key)}">
+        ${tile(z)}<span class="zname">${esc(z.key)}</span><span class="zn${n ? '' : ' zero'}">${n}</span></button>`;
+    }).join('') +
+      `<div class="zone-total"><b>${active.length} active</b>${crit ? `<small class="crit">${crit} ${crit === 1 ? 'critic' : 'critice'}</small>` : '<small>niciun critic</small>'}</div>`;
+  }
+
+  // ---------- toolbar ----------
+  function renderToolbar() {
+    const opts = [['active', 'Active'], ['deschis', 'Deschise'], ['in_lucru', 'În lucru'], ['rezolvat', 'Rezolvate'], ['all', 'Toate']];
+    if (S.isAdmin) opts.push(['archive', 'Arhivă']);
+    if (!S.isAdmin && S.f.status === 'archive') S.f.status = 'active';
+    $('#statusSeg').innerHTML = opts.map(([k, l]) => {
+      const n = k === 'archive' ? (S.archived ? S.archived.length : '') : S.tickets.filter(t => inStatus(t, k)).length;
+      return `<button data-status="${k}" aria-pressed="${S.f.status === k}">${l}${n !== '' ? ` <span class="n">${n}</span>` : ''}</button>`;
+    }).join('');
+    $('#exportBtn').hidden = !S.isAdmin;
+  }
+  function initToolbar() {
+    $('#prioFilter').innerHTML = '<option value="all">Orice prioritate</option>' +
+      Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]}</option>`).join('');
+  }
+
+  // ---------- listă ----------
+  function rowHtml(t) {
+    const z = zoneOf(t), nc = (t.comments || []).length, na = (t.attachments || []).length;
+    const cur = S.sel === t.id && (S.panel === 'ticket');
+    return `<div role="listitem"><button class="row${t.status === 'rezolvat' ? ' resolved' : ''}${S.flash === t.id ? ' flash' : ''}" data-id="${esc(t.id)}"${cur ? ' aria-current="true"' : ''}>
+      ${tile(z)}
+      <span class="code">${esc(t.id)}</span>
+      <span class="t"><span class="title">${esc(t.title)}</span><span class="by">${esc(t.reporter)} · ${relDate(t.created)}</span></span>
+      ${statusHtml(t.status)}
+      ${prioHtml(t.priority)}
+      <span class="counts">${nc ? `<span title="${nc} comentarii">${icon('i-comment')}${nc}</span>` : ''}${na ? `<span title="${na} capturi">${icon('i-image')}${na}</span>` : ''}</span>
+    </button></div>`;
+  }
+  function renderList() {
+    const list = $('#list'), meta = $('#listMeta');
+    const archive = S.f.status === 'archive';
+    if ((archive && S.archivedLoading) || (!archive && S.loading && !S.tickets.length)) {
+      list.setAttribute('aria-busy', 'true');
+      list.innerHTML = Array.from({ length: 6 }, () => '<div class="skel"><i></i><i></i><i></i><i></i></div>').join('');
+      meta.textContent = 'Se încarcă…';
+      return;
+    }
+    list.removeAttribute('aria-busy');
+    if (!archive && S.loadErr && !S.tickets.length) {
+      meta.textContent = '';
+      list.innerHTML = `<div class="empty"><h3>Nu am putut încărca tichetele</h3><p>Verifică conexiunea și încearcă din nou.</p>
+        <button class="btn btn-quiet" data-act="reload">${icon('i-refresh')}Reîncearcă</button></div>`;
+      return;
+    }
+    const vis = visible();
+    const parts = [`<span>${vis.length} ${vis.length === 1 ? 'tichet' : 'tichete'}</span>`];
+    if (S.f.zone) parts.push(`<button class="chip" data-clear="zone" aria-label="Elimină filtrul zonă ${esc(S.f.zone)}">Zona: ${esc(S.f.zone)} ${icon('i-close')}</button>`);
+    if (S.f.prio !== 'all') parts.push(`<button class="chip" data-clear="prio" aria-label="Elimină filtrul prioritate">Prioritate: ${PRIOS[S.f.prio]} ${icon('i-close')}</button>`);
+    if (S.f.q.trim()) parts.push(`<button class="chip" data-clear="q" aria-label="Șterge căutarea">„${esc(S.f.q.trim())}” ${icon('i-close')}</button>`);
+    if (filtersActive()) parts.push('<button class="linkish" data-clear="all">Resetează filtrele</button>');
+    meta.innerHTML = parts.join('');
+
+    if (!vis.length) {
+      if (archive) list.innerHTML = '<div class="empty"><h3>Arhiva e goală</h3><p>Tichetele arhivate apar aici și pot fi restaurate.</p></div>';
+      else if (!S.tickets.length) list.innerHTML = `<div class="empty"><h3>Niciun tichet încă</h3><p>Primul tichet raportat va primi codul TIS-01.</p>
+        <button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button></div>`;
+      else list.innerHTML = `<div class="empty"><h3>Niciun tichet pentru filtrele alese</h3><p>Schimbă filtrele sau caută altfel. Dacă problema nu e raportată, deschide un tichet nou.</p>
+        <p><button class="linkish" data-clear="all">Resetează filtrele</button></p>
+        <button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button></div>`;
+      return;
+    }
+    const slice = vis.slice(0, S.shown);
+    list.innerHTML = slice.map(rowHtml).join('') +
+      (vis.length > slice.length ? `<button class="more" data-act="more">Arată încă ${Math.min(PAGE, vis.length - slice.length)} din ${vis.length - slice.length} rămase</button>` : '');
+  }
+
+  // ---------- panou ----------
+  function setPanel(mode, id) {
+    S.panel = mode; S.confirm = null; S.editing = false;
+    if (id !== undefined) S.sel = id;
+    renderPanel(); renderList();
+    $('#panel').classList.toggle('open', mode !== 'empty');
+  }
+  function closePanel() {
+    const id = S.sel;
+    setPanel('empty', null);
+    const row = id && $(`.row[data-id="${CSS.escape(id)}"]`);
+    if (row) row.focus();
+  }
+
+  function renderPanel() {
+    const box = $('#panelInner');
+    if (S.panel !== 'ticket') { box.className = 'panel-inner'; box.style.removeProperty('--zc'); }
+    if (S.panel === 'new') { box.innerHTML = newFormHtml(); wireNewForm(); return; }
+    if (S.panel === 'created') { box.innerHTML = createdHtml(); return; }
+    if (S.panel === 'ticket') {
+      const t = findTicket(S.sel);
+      if (!t) { S.panel = 'empty'; return renderPanel(); }
+      const z = zoneOf(t);
+      box.classList.add('zoned'); if (z.id === 'none') box.classList.add('none'); else box.style.setProperty('--zc', 'var(--z-' + z.id + ')');
+      box.innerHTML = ticketHtml(t); hydrate(box); return;
+    }
+    box.innerHTML = `<div class="panel-empty">
+      <h2>${S.isAdmin ? 'Alege un tichet pentru triere' : 'Găsește sau raportează o problemă'}</h2>
+      <ol>
+        <li>Caută în listă sau alege zona din WFM Extended de sus.</li>
+        <li>Dacă problema nu apare, apasă <b>Tichet nou</b>.</li>
+        <li>Primești un cod TIS cu care urmărești rezolvarea.</li>
+      </ol>
+      <div class="keys"><kbd>/</kbd><span>caută</span><kbd>N</kbd><span>tichet nou</span><kbd>J</kbd><span>următorul tichet</span><kbd>K</kbd><span>tichetul anterior</span><kbd>Esc</kbd><span>închide panoul</span></div>
+    </div>`;
+  }
+
+  function ticketHtml(t) {
+    const z = zoneOf(t), archived = !!t.archived;
+    const head = `<div class="p-head">
+      <button class="btn btn-quiet icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
+      ${tile(z, true)}<span class="zlabel">${esc(zoneLabel(z))}</span><span class="spacer"></span>
+      <span class="code">${esc(t.id)}</span>
+      <button class="btn btn-quiet icon-only" data-act="copy" data-code="${esc(t.id)}" aria-label="Copiază codul ${esc(t.id)}" title="Copiază codul">${icon('i-copy')}</button>
+    </div>`;
+    const titleBlock = S.editing
+      ? `<form class="edit" data-form="edit">
+          <div class="field"><label class="lbl" for="ed-title">Titlu</label><input class="input" id="ed-title" maxlength="200" value="${esc(t.title)}" required></div>
+          <div class="field"><label class="lbl" for="ed-desc">Descriere</label><textarea class="textarea" id="ed-desc" rows="6" maxlength="4000">${esc(t.desc)}</textarea></div>
+          <div class="form-actions"><button type="button" class="btn btn-quiet" data-act="edit-cancel">Anulează</button><button type="submit" class="btn btn-primary">Salvează</button></div>
+        </form>`
+      : `<h2 class="h2" id="p-title" tabindex="-1">${esc(t.title)}</h2>`;
+    const facts = `<dl class="p-facts">
+      <dt>Status</dt><dd>${archived ? 'Arhivat · ' : ''}${statusHtml(t.status)}</dd>
+      <dt>Prioritate</dt><dd>${prioHtml(t.priority)}</dd>
+      <dt>Raportat</dt><dd>${esc(t.reporter)} · <span title="${esc(absDate(t.created, true))}">${relDate(t.created)}</span></dd>
+      ${t.updatedBy ? `<dt>Modificat</dt><dd>${esc(t.updatedBy)} · <span title="${esc(absDate(t.updatedAt, true))}">${relDate(t.updatedAt)}</span></dd>` : ''}
+    </dl>`;
+    const desc = S.editing ? '' : `<div class="p-section"><h3>Descriere</h3>${t.desc ? `<div class="desc">${esc(t.desc)}</div>` : '<p class="desc none">Fără descriere.</p>'}</div>`;
+    const shots = (t.attachments || []).length ? `<div class="p-section"><h3>Capturi <span class="n">${t.attachments.length}</span></h3>${shotsHtml(t.attachments)}</div>` : '';
+    return head + titleBlock + facts + (S.isAdmin ? adminBoxHtml(t) : '') + desc + shots + (archived ? '' : commentsHtml(t));
+  }
+
+  function adminBoxHtml(t) {
+    if (t.archived) {
+      return `<div class="admin-box"><div class="full admin-actions">
+        <button class="btn btn-quiet" data-act="restore">${icon('i-restore')}Restaurează</button>
+        <button class="btn btn-danger-quiet" data-act="purge-ask">${icon('i-trash')}Șterge definitiv</button></div>
+        ${S.confirm === 'purge' ? `<div class="full confirm"><span>Ștergi definitiv ${esc(t.id)} și capturile lui? Nu se mai poate recupera.</span>
+          <button class="btn btn-quiet" data-act="confirm-cancel">Anulează</button><button class="btn btn-danger" data-act="purge">Șterge definitiv</button></div>` : ''}
+      </div>`;
+    }
+    const seg = Object.keys(STATUSES).map(k =>
+      `<button data-set-status="${k}" aria-pressed="${t.status === k}"><svg class="ic" aria-hidden="true"><use href="#s-${k}"/></svg>${STATUSES[k]}</button>`).join('');
+    const pOpts = Object.keys(PRIOS).map(k => `<option value="${k}"${t.priority === k ? ' selected' : ''}>${PRIOS[k]}</option>`).join('');
+    const zOpts = `<option value=""${!t.category ? ' selected' : ''}>Fără zonă</option>` +
+      ZONES.map(z => `<option value="${esc(z.key)}"${t.category === z.key ? ' selected' : ''}>${esc(z.key)}</option>`).join('');
+    return `<div class="admin-box">
+      <div class="full"><span class="lbl" id="lbl-st">Status</span><div class="seg" role="group" aria-labelledby="lbl-st">${seg}</div></div>
+      <div><label class="lbl" for="ad-prio">Prioritate</label><select class="select" id="ad-prio">${pOpts}</select></div>
+      <div><label class="lbl" for="ad-zone">Zonă</label><select class="select" id="ad-zone">${zOpts}</select></div>
+      <div class="full admin-actions">
+        <button class="btn btn-quiet" data-act="edit"${S.editing ? ' disabled' : ''}>${icon('i-edit')}Editează textul</button>
+        <button class="btn btn-quiet" data-act="archive-ask">${icon('i-archive')}Arhivează</button>
+      </div>
+      ${S.confirm === 'archive' ? `<div class="full confirm"><span>Arhivezi ${esc(t.id)}? Dispare din listă; îl poți restaura din Arhivă.</span>
+        <button class="btn btn-quiet" data-act="confirm-cancel">Anulează</button><button class="btn btn-danger" data-act="archive">Arhivează</button></div>` : ''}
+    </div>`;
+  }
+
+  function commentsHtml(t) {
+    const cs = t.comments || [];
+    const thread = cs.length ? cs.map(c => `<div class="cmt${c.admin ? ' admin' : ''}">
+        <span class="avatar" aria-hidden="true">${esc(initials(c.author))}</span>
+        <div><div class="cmt-h"><b>${esc(c.author)}</b>${c.admin ? '<span class="role">admin</span>' : ''} · <span title="${esc(absDate(c.at, true))}">${relDate(c.at)}</span></div>
+        <div class="cmt-t">${esc(c.text)}</div></div></div>`).join('')
+      : '<p class="desc none">Niciun comentariu. Adaugă detalii sau întreabă de stadiu.</p>';
+    const draft = S.cmtDraft[t.id] || '';
+    return `<div class="p-section"><h3>Comentarii <span class="n">${cs.length || ''}</span></h3>
+      <div class="thread">${thread}</div>
+      <form class="composer" data-form="comment" novalidate>
+        ${S.isAdmin ? '' : `<label class="sr" for="cm-name">Numele tău</label><input class="input" id="cm-name" placeholder="Numele tău" maxlength="120" value="${esc(S.cmtName)}" autocomplete="name">`}
+        <label class="sr" for="cm-text">Comentariu</label>
+        <textarea class="textarea" id="cm-text" rows="3" maxlength="4000" placeholder="Scrie un comentariu${S.isAdmin ? ' ca ' + esc(S.adminName) : ''}">${esc(draft)}</textarea>
+        <p class="field-err" id="cm-err" hidden></p>
+        <div class="form-actions"><span class="hint" style="margin-right:auto">Ctrl+Enter trimite</span><button type="submit" class="btn btn-primary">Trimite</button></div>
+      </form></div>`;
+  }
+
+  function shotsHtml(atts) {
+    return `<div class="shots">${atts.map(a => `<button class="shot" data-shot="${esc(a.id)}" data-name="${esc(a.name)}" aria-label="Deschide captura ${esc(a.name)}">
+      <img src="${BLANK}" data-thumb="${esc(a.id)}" alt=""></button>`).join('')}</div>`;
+  }
+
+  // ---------- formular tichet nou ----------
+  function similarTo(title) {
+    const words = title.toLowerCase().split(/[^a-zăâîșțşţ0-9]+/i).filter(w => w.length >= 4);
+    if (!words.length) return [];
+    return S.tickets
+      .map(t => { const h = (t.title + ' ' + t.desc).toLowerCase(); return { t, s: words.filter(w => h.indexOf(w) >= 0).length }; })
+      .filter(x => x.s > 0 && x.s >= Math.min(2, words.length))
+      .sort((a, b) => b.s - a.s || (a.t.status === 'rezolvat') - (b.t.status === 'rezolvat'))
+      .slice(0, 3).map(x => x.t);
+  }
+  function similarHtml() {
+    const sim = similarTo(S.draft.title);
+    if (!sim.length) return '';
+    return `<div class="similar"><p>Poate e deja raportat:</p>${sim.map(t =>
+      `<button type="button" data-open="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span>${statusHtml(t.status)}</button>`).join('')}</div>`;
+  }
+  function newFormHtml() {
+    const d = S.draft, e = S.formErr;
+    const zp = ZONES.map(z => `<button type="button" role="radio" data-zone-pick="${esc(z.key)}" aria-checked="${d.zone === z.key}">${tile(z)}${esc(z.key)}</button>`).join('');
+    const pr = Object.keys(PRIOS).map(k => `<button type="button" role="radio" data-prio-pick="${k}" aria-checked="${d.prio === k}">${PRIOS[k]}</button>`).join('');
+    return `<form id="newForm" novalidate>
+      <div class="p-head">
+        <button type="button" class="btn btn-quiet icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
+        <h2 class="h2" id="nf-h" tabindex="-1">Tichet nou</h2><span class="spacer"></span>
+        <button type="button" class="btn btn-quiet icon-only" data-act="close" aria-label="Închide formularul">${icon('i-close')}</button>
+      </div>
+      <div class="field"><label class="lbl" for="nf-reporter">Numele tău</label>
+        <input class="input" id="nf-reporter" maxlength="120" autocomplete="name" value="${esc(d.reporter)}"${e.reporter ? ' aria-invalid="true" aria-describedby="nf-reporter-err"' : ''}>
+        ${e.reporter ? `<p class="field-err" id="nf-reporter-err">${esc(e.reporter)}</p>` : ''}</div>
+      <div class="field"><label class="lbl" for="nf-title">Ce nu merge?</label>
+        <input class="input" id="nf-title" maxlength="200" placeholder="ex. Câmpul dată nu se completează la import" value="${esc(d.title)}"${e.title ? ' aria-invalid="true" aria-describedby="nf-title-err"' : ''}>
+        ${e.title ? `<p class="field-err" id="nf-title-err">${esc(e.title)}</p>` : ''}
+        <div id="nf-similar">${similarHtml()}</div></div>
+      <div class="field"><span class="lbl" id="nf-zone-l">Zona din WFM Extended <span class="opt">· opțional</span></span>
+        <div class="zpick" role="radiogroup" aria-labelledby="nf-zone-l">${zp}</div></div>
+      <div class="field"><span class="lbl" id="nf-prio-l">Prioritate</span>
+        <div class="seg full" role="radiogroup" aria-labelledby="nf-prio-l">${pr}</div></div>
+      <div class="field"><label class="lbl" for="nf-desc">Descriere <span class="opt">· pași, ce te așteptai, ce s-a întâmplat</span></label>
+        <textarea class="textarea" id="nf-desc" rows="5" maxlength="4000">${esc(d.desc)}</textarea></div>
+      <div class="field"><span class="lbl" id="nf-files-l">Capturi <span class="opt">· opțional, max ${MAX_FILES}</span></span>
+        <div class="drop" id="nf-drop" role="button" tabindex="0" aria-labelledby="nf-files-l nf-drop-t">${icon('i-image')}<span id="nf-drop-t">Lipește cu <kbd>Ctrl</kbd>+<kbd>V</kbd>, trage aici sau <u>alege fișiere</u></span></div>
+        <input type="file" id="nf-file" accept="image/*" multiple hidden>
+        <div class="thumbs" id="nf-thumbs">${thumbsHtml(d.files)}</div></div>
+      <p class="field-err" id="nf-err" role="alert"${e.form ? '' : ' hidden'}>${esc(e.form || '')}</p>
+      <div class="form-actions">
+        <span class="hint" id="nf-progress" style="margin-right:auto" aria-live="polite"></span>
+        <button type="button" class="btn btn-quiet" data-act="close">Renunță</button>
+        <button type="submit" class="btn btn-primary${S.submitting ? ' busy' : ''}" id="nf-submit"${S.submitting ? ' disabled' : ''}>Trimite tichetul</button>
+      </div>
+    </form>`;
+  }
+  function thumbsHtml(files) {
+    return files.map((f, i) => `<div class="thumb"><img src="${f.dataUrl}" alt="${esc(f.name)}"><button type="button" data-rm="${i}" aria-label="Elimină ${esc(f.name)}">${icon('i-close')}</button></div>`).join('');
+  }
+  function wireNewForm() {
+    const d = S.draft;
+    const bind = (id, key, after) => { const el = $(id); el.addEventListener('input', () => { d[key] = el.value; if (S.formErr[key]) { delete S.formErr[key]; el.removeAttribute('aria-invalid'); const er = $(id + '-err'); if (er) er.remove(); } if (after) after(); }); };
+    bind('#nf-reporter', 'reporter');
+    bind('#nf-title', 'title', () => { $('#nf-similar').innerHTML = similarHtml(); });
+    bind('#nf-desc', 'desc');
+    wireDrop($('#nf-drop'), $('#nf-file'), files => addFiles(S.draft.files, files, () => { $('#nf-thumbs').innerHTML = thumbsHtml(S.draft.files); }));
+  }
+  function createdHtml() {
+    return `<div class="done">
+      <p class="ok">${icon('i-check')}Tichet trimis</p>
+      <div class="big"><b>${esc(S.createdCode)}</b><button class="btn btn-quiet" data-act="copy" data-code="${esc(S.createdCode)}">${icon('i-copy')}Copiază</button></div>
+      <p>Păstrează codul ca referință. Starea tichetului apare în listă; adminii răspund în comentarii.</p>
+      <div class="form-actions" style="justify-content:flex-start;margin-top:var(--sp-5)">
+        <button class="btn btn-primary" data-open="${esc(S.createdCode)}">Deschide tichetul</button>
+        <button class="btn btn-quiet" data-act="new">Raportează altul</button>
+      </div></div>`;
+  }
+
+  // ---------- fișiere ----------
+  function compress(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onerror = () => rej(new Error('Nu am putut citi imaginea.'));
+      r.onload = () => {
+        const img = new Image();
+        img.onerror = () => rej(new Error('Fișierul nu e o imagine validă.'));
+        img.onload = () => {
+          let w = img.width, h = img.height; const max = 1600;
+          if (w > max) { h = Math.round(h * max / w); w = max; }
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+          res({ dataUrl: c.toDataURL('image/jpeg', 0.85), name: (file.name || 'captura').replace(/\.[^.]+$/, '') + '.jpg' });
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+  function addFiles(arr, list, done) {
+    let files = Array.from(list || []).filter(f => /^image\//.test(f.type));
+    if (!files.length) return;
+    const room = MAX_FILES - arr.length;
+    if (room <= 0) { toast('Poți atașa cel mult ' + MAX_FILES + ' capturi.', 'err'); return; }
+    if (files.length > room) { toast('Am păstrat primele ' + room + ' imagini (maxim ' + MAX_FILES + ').', 'err'); files = files.slice(0, room); }
+    files.forEach(f => compress(f).then(r => { arr.push(r); done(); }).catch(e => toast(errMsg(e, 'Imagine invalidă.'), 'err')));
+  }
+  function wireDrop(dz, input, onFiles) {
+    if (!dz) return;
+    dz.addEventListener('click', () => input.click());
+    dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+    input.addEventListener('change', () => { onFiles(input.files); input.value = ''; });
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); onFiles(e.dataTransfer.files); });
+  }
+  function uploadAll(files, progressEl) {
+    const out = [];
+    return files.reduce((p, f, i) => p.then(() => {
+      if (progressEl) progressEl.textContent = `Se încarcă captura ${i + 1} din ${files.length}…`;
+      return gs('uploadAttachment', f.dataUrl.split(',')[1], 'image/jpeg', f.name).then(r => { out.push(r); });
+    }), Promise.resolve()).then(() => out);
+  }
+
+  // ---------- imagini ----------
+  function loadThumb(id) {
+    if (S.thumbs[id]) return Promise.resolve(S.thumbs[id]);
+    if (S.pending['t' + id]) return S.pending['t' + id];
+    const p = gs('getAttachmentThumb', id).catch(() => gs('getAttachment', id))
+      .then(r => { const u = 'data:' + r.mime + ';base64,' + r.data; S.thumbs[id] = u; return u; })
+      .finally(() => { delete S.pending['t' + id]; });
+    return (S.pending['t' + id] = p);
+  }
+  function loadFull(id) {
+    if (S.full[id]) return Promise.resolve(S.full[id]);
+    return gs('getAttachment', id).then(r => (S.full[id] = 'data:' + r.mime + ';base64,' + r.data));
+  }
+  function hydrate(root) {
+    $$('img[data-thumb]', root).forEach(img => {
+      loadThumb(img.dataset.thumb).then(u => { img.src = u; img.classList.add('ready'); }).catch(() => {});
+    });
+  }
+
+  // ---------- acțiuni server ----------
+  function load(quiet) {
+    if (!gasReady()) { S.loading = false; S.loadErr = true; renderAll(); toast('Deschide aplicația prin linkul publicat (…/exec).', 'err'); return; }
+    if (!quiet) { S.loading = true; renderList(); }
+    gs('getTickets').then(list => {
+      S.tickets = list || []; S.loading = false; S.loadErr = false; S.sig = sig(S.tickets);
+      renderAll();
+    }).catch(() => { S.loading = false; S.loadErr = true; renderList(); toast('Nu am putut încărca tichetele.', 'err'); });
+  }
+  function sig(list) { return list.map(t => [t.id, t.status, t.priority, t.category, t.updatedAt || 0, (t.comments || []).length, t.title].join(':')).join('|'); }
+  function loadArchived() {
+    S.archivedLoading = true; renderList();
+    gs('getArchived', S.pin).then(list => { S.archived = list || []; S.archivedLoading = false; renderToolbar(); renderList(); })
+      .catch(e => { S.archivedLoading = false; S.f.status = 'active'; renderToolbar(); renderList(); toast(errMsg(e, 'Nu am putut încărca arhiva.'), 'err'); if (adminErr(e)) logout(); });
+  }
+
+  function submitNew() {
+    const d = S.draft, e = {};
+    d.reporter = d.reporter.trim(); d.title = d.title.trim();
+    if (!d.reporter) e.reporter = 'Scrie numele tău, ca adminii să știe pe cine întreabă.';
+    if (!d.title) e.title = 'Scrie pe scurt ce nu merge.';
+    S.formErr = e;
+    if (e.reporter || e.title) { renderPanel(); $(e.reporter ? '#nf-reporter' : '#nf-title').focus(); return; }
+    S.submitting = true; renderPanel();
+    uploadAll(d.files.slice(), $('#nf-progress'))
+      .then(atts => { $('#nf-progress').textContent = 'Se salvează…'; return gs('addTicket', { reporter: d.reporter, title: d.title, desc: d.desc.trim(), priority: d.prio, category: d.zone, attachments: atts }); })
+      .then(res => {
+        try { sessionStorage.setItem('tis_reporter', d.reporter); } catch (x) {}
+        S.cmtName = S.cmtName || d.reporter;
+        S.tickets = res.tickets; S.sig = sig(S.tickets);
+        S.draft = { reporter: d.reporter, title: '', desc: '', zone: '', prio: 'medie', files: [] };
+        S.submitting = false; S.createdCode = res.code; S.flash = res.code; S.formErr = {};
+        renderZones(); renderToolbar(); setPanel('created');
+        setTimeout(() => { S.flash = null; }, 1300);
+      })
+      .catch(err => { S.submitting = false; S.formErr = { form: errMsg(err, 'Tichetul nu s-a salvat. Încearcă din nou.') }; renderPanel(); });
+  }
+
+  function adminCall(fn, args, apply, rollback, okMsg) {
+    if (!S.isAdmin) return toast('Doar adminii pot face asta.', 'err');
+    apply(); renderAll();
+    gs(fn, ...args, S.pin).then(list => {
+      if (fn === 'restoreTicket' || fn === 'purgeTicket') { S.archived = list; load(true); }
+      else { S.tickets = list; S.sig = sig(list); }
+      renderAll(); if (okMsg) toast(okMsg);
+    }).catch(e => { rollback(); renderAll(); toast(errMsg(e, 'Acțiunea nu a reușit.'), 'err'); if (adminErr(e)) logout(); });
+  }
+  function setField(t, key, val, fn, args, msg) {
+    const prev = t[key];
+    adminCall(fn, args, () => { t[key] = val; t.updatedBy = S.adminName; t.updatedAt = Date.now(); }, () => { t[key] = prev; }, msg);
+  }
+
+  function sendComment(form) {
+    const t = findTicket(S.sel); if (!t) return;
+    const text = $('#cm-text', form).value.trim(), nameEl = $('#cm-name', form), name = nameEl ? nameEl.value.trim() : '';
+    const err = $('#cm-err', form);
+    const fail = (m, el) => { err.textContent = m; err.hidden = false; el.focus(); };
+    if (!S.isAdmin && !name) return fail('Scrie numele tău.', nameEl);
+    if (!text) return fail('Comentariul e gol.', $('#cm-text', form));
+    if (!S.isAdmin) { S.cmtName = name; try { sessionStorage.setItem('tis_reporter', name); } catch (x) {} }
+    const c = { author: S.isAdmin ? S.adminName : name, admin: S.isAdmin, text, at: Date.now() };
+    t.comments = (t.comments || []).concat([c]); S.cmtDraft[t.id] = '';
+    renderPanel(); renderList();
+    gs('addComment', t.id, text, S.isAdmin ? '' : name, S.isAdmin ? S.pin : '')
+      .then(list => { S.tickets = list; S.sig = sig(list); renderAll(); })
+      .catch(e => { t.comments = t.comments.filter(x => x !== c); S.cmtDraft[t.id] = text; renderPanel(); toast(errMsg(e, 'Comentariul nu s-a trimis.'), 'err'); });
+  }
+
+  function exportCsv() {
+    gs('exportTicketsCsv', S.pin).then(csv => {
+      const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a'); a.href = url; a.download = 'tichete-' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast('Export descărcat.');
+    }).catch(e => toast(errMsg(e, 'Exportul nu a reușit.'), 'err'));
+  }
+
+  // ---------- admin ----------
+  function renderAdmin() {
+    document.body.classList.toggle('admin-on', S.isAdmin);
+    const btn = $('#adminBtn');
+    btn.innerHTML = S.isAdmin
+      ? `<span class="dot" aria-hidden="true"></span><span>${esc(S.adminName)}</span>${icon('i-logout')}`
+      : `${icon('i-lock')}<span>Admin</span>`;
+    btn.title = S.isAdmin ? 'Ieși din modul admin' : 'Intră ca admin';
+    btn.setAttribute('aria-label', S.isAdmin ? 'Ieși din modul admin (' + S.adminName + ')' : 'Intră ca admin');
+    $('.tab[data-page="jurnal"]').hidden = !S.isAdmin;
+    $('#newsNewBtn').hidden = !S.isAdmin;
+    if (!S.isAdmin && S.page === 'jurnal') setPage('tichete');
+  }
+  function openPop(open) {
+    const pop = $('#adminPop');
+    pop.hidden = !open; $('#adminBtn').setAttribute('aria-expanded', String(open));
+    if (open) { $('#pinErr').hidden = true; $('#pinInput').value = ''; $('#pinInput').focus(); }
+  }
+  function login(e) {
+    e.preventDefault();
+    const pin = $('#pinInput').value; if (!pin) return;
+    const btn = $('#pinSubmit'); btn.classList.add('busy'); btn.disabled = true;
+    gs('verifyPin', pin).then(name => {
+      if (!name) { $('#pinErr').textContent = 'Cod greșit.'; $('#pinErr').hidden = false; $('#pinInput').select(); return; }
+      S.isAdmin = true; S.pin = pin; S.adminName = name;
+      try { sessionStorage.setItem('tis_pin', pin); sessionStorage.setItem('tis_admin', name); } catch (x) {}
+      openPop(false); renderAll(); toast('Ești autentificat ca ' + name + '.');
+    }).catch(err => { $('#pinErr').textContent = errMsg(err, 'Verificarea nu a reușit.'); $('#pinErr').hidden = false; })
+      .finally(() => { btn.classList.remove('busy'); btn.disabled = false; });
+  }
+  function logout() {
+    S.isAdmin = false; S.pin = ''; S.adminName = ''; S.archived = null; S.confirm = null; S.editing = false;
+    if (S.f.status === 'archive') S.f.status = 'active';
+    if (S.panel === 'ticket' && !S.tickets.find(t => t.id === S.sel)) S.panel = 'empty';
+    try { sessionStorage.removeItem('tis_pin'); sessionStorage.removeItem('tis_admin'); } catch (x) {}
+    renderAll();
+  }
+
+  // ---------- News ----------
+  function loadNews() {
+    S.newsLoading = true; renderNews();
+    gs('getNews').then(list => { S.news = list || []; S.newsLoaded = true; S.newsLoading = false; S.newsErr = false; S.nsig = nsig(S.news); renderNews(); })
+      .catch(() => { S.newsLoading = false; S.newsErr = true; renderNews(); });
+  }
+  function nsig(list) { return list.map(a => a.id + ':' + a.title + ':' + a.type + ':' + String(a.body).length).join('|'); }
+  function newsBody(text) {
+    return String(text || '').split(/\n{2,}/).map(b => '<p>' + esc(b).replace(/\n/g, '<br>') + '</p>').join('');
+  }
+  function renderNews() {
+    $('#newsNewBtn').hidden = !S.isAdmin || !!S.compose;
+    $('#newsCompose').innerHTML = S.compose ? composeHtml() : '';
+    if (S.compose) wireCompose();
+    const box = $('#newsList');
+    if (S.newsLoading && !S.news.length) { box.innerHTML = '<p class="sub">Se încarcă anunțurile…</p>'; return; }
+    if (S.newsErr && !S.news.length) { box.innerHTML = `<div class="empty"><h3>Nu am putut încărca anunțurile</h3><button class="btn btn-quiet" data-act="news-reload">${icon('i-refresh')}Reîncearcă</button></div>`; return; }
+    if (!S.news.length) { box.innerHTML = `<div class="empty"><h3>Niciun anunț încă</h3><p>${S.isAdmin ? 'Publică primul update sau fix cu butonul Anunț nou.' : 'Aici apar update-urile și fix-urile din WFM Extended.'}</p></div>`; return; }
+    box.innerHTML = S.news.map(a => {
+      const type = NEWS_TYPES[a.type] ? a.type : 'anunt';
+      const d = a.created ? new Date(a.created) : null;
+      const actions = !S.isAdmin ? '' : S.newsConfirm === a.id
+        ? `<div class="confirm admin-actions"><span>Ștergi anunțul și capturile lui?</span><button class="btn btn-quiet" data-news-cancel>Anulează</button><button class="btn btn-danger" data-news-del="${esc(a.id)}">Șterge</button></div>`
+        : `<div class="admin-actions"><button class="btn btn-quiet" data-news-edit="${esc(a.id)}">${icon('i-edit')}Editează</button><button class="btn btn-danger-quiet" data-news-ask="${esc(a.id)}">${icon('i-trash')}Șterge</button></div>`;
+      return `<article class="news-item">
+        <div class="news-meta">${d ? `<time datetime="${d.toISOString()}">${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}</time>` : ''}
+          <span class="ntype ${type}"><i aria-hidden="true"></i>${NEWS_TYPES[type]}</span></div>
+        <div><h2>${esc(a.title)}</h2><p class="by">${esc(a.author)}${d ? ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) : ''}</p>
+          <div class="news-body">${newsBody(a.body)}</div>
+          ${(a.attachments || []).length ? shotsHtml(a.attachments) : ''}${actions}</div>
+      </article>`;
+    }).join('');
+    hydrate(box);
+  }
+  function composeHtml() {
+    const c = S.compose;
+    const types = Object.keys(NEWS_TYPES).map(k => `<button type="button" role="radio" data-ntype="${k}" aria-checked="${c.type === k}">${NEWS_TYPES[k]}</button>`).join('');
+    return `<form class="compose" id="composeForm" novalidate>
+      <h2>${c.id ? 'Editezi ' + esc(c.id) : 'Anunț nou'}</h2>
+      <div class="field"><label class="lbl" for="nw-title">Titlu</label><input class="input" id="nw-title" maxlength="200" value="${esc(c.title)}"></div>
+      <div class="field"><span class="lbl" id="nw-type-l">Tip</span><div class="seg" role="radiogroup" aria-labelledby="nw-type-l">${types}</div></div>
+      <div class="field"><label class="lbl" for="nw-body">Conținut <span class="opt">· primul paragraf e rezumatul; separă paragrafele cu un rând gol</span></label>
+        <textarea class="textarea" id="nw-body" rows="7" maxlength="8000">${esc(c.body)}</textarea></div>
+      ${c.id ? '<p class="hint">Capturile anunțului rămân neschimbate.</p>' : `<div class="field"><span class="lbl" id="nw-files-l">Capturi <span class="opt">· opțional, max ${MAX_FILES}</span></span>
+        <div class="drop" id="nw-drop" role="button" tabindex="0" aria-labelledby="nw-files-l">${icon('i-image')}<span>Lipește cu <kbd>Ctrl</kbd>+<kbd>V</kbd>, trage aici sau <u>alege fișiere</u></span></div>
+        <input type="file" id="nw-file" accept="image/*" multiple hidden><div class="thumbs" id="nw-thumbs">${thumbsHtml(c.files)}</div></div>`}
+      <p class="field-err" id="nw-err" role="alert" hidden></p>
+      <div class="form-actions"><span class="hint" id="nw-progress" style="margin-right:auto" aria-live="polite"></span>
+        <button type="button" class="btn btn-quiet" data-act="compose-cancel">Renunță</button>
+        <button type="submit" class="btn btn-primary" id="nw-submit">${c.id ? 'Salvează' : 'Publică'}</button></div>
+    </form>`;
+  }
+  function wireCompose() {
+    const c = S.compose;
+    $('#nw-title').addEventListener('input', e => { c.title = e.target.value; });
+    $('#nw-body').addEventListener('input', e => { c.body = e.target.value; });
+    if (!c.id) wireDrop($('#nw-drop'), $('#nw-file'), files => addFiles(c.files, files, () => { $('#nw-thumbs').innerHTML = thumbsHtml(c.files); }));
+  }
+  function publish() {
+    const c = S.compose, err = $('#nw-err'), btn = $('#nw-submit');
+    c.title = c.title.trim(); c.body = c.body.trim();
+    if (!c.title || !c.body) { err.textContent = 'Completează titlul și conținutul.'; err.hidden = false; $(c.title ? '#nw-body' : '#nw-title').focus(); return; }
+    btn.classList.add('busy'); btn.disabled = true;
+    const done = (list, msg) => { S.news = list; S.nsig = nsig(list); S.compose = null; renderNews(); toast(msg); };
+    const fail = e => { btn.classList.remove('busy'); btn.disabled = false; err.textContent = errMsg(e, 'Nu s-a salvat.'); err.hidden = false; if (adminErr(e)) logout(); };
+    if (c.id) {
+      gs('editNews', c.id, { title: c.title, body: c.body, type: c.type }, S.pin).then(l => done(l, 'Anunț actualizat.')).catch(fail);
+    } else {
+      uploadAll(c.files.slice(), $('#nw-progress'))
+        .then(atts => gs('addNews', { title: c.title, body: c.body, type: c.type, attachments: atts }, S.pin))
+        .then(l => done(l, 'Anunț publicat.')).catch(fail);
+    }
+  }
+
+  // ---------- Jurnal ----------
+  function loadJournal() {
+    S.journalLoading = true; renderJournal();
+    gs('getJournal', S.pin, 200).then(list => { S.journal = list || []; S.journalLoading = false; renderJournal(); })
+      .catch(e => { S.journalLoading = false; renderJournal(); toast(errMsg(e, 'Nu am putut încărca jurnalul.'), 'err'); if (adminErr(e)) logout(); });
+  }
+  function humanAction(a) {
+    return String(a || '').replace(/^(status|prioritate) → (\w+)$/, (m, k, v) => k + ': ' + ((k === 'status' ? STATUSES : PRIOS)[v] || v));
+  }
+  function renderJournal() {
+    const box = $('#journal');
+    if (S.journalLoading && !S.journal) { box.innerHTML = '<p class="sub">Se încarcă jurnalul…</p>'; return; }
+    if (!S.journal || !S.journal.length) { box.innerHTML = '<div class="empty"><h3>Jurnalul e gol</h3><p>Acțiunile pe tichete și anunțuri apar aici.</p></div>'; return; }
+    box.innerHTML = `<table class="jt"><thead><tr><th scope="col">Când</th><th scope="col">Cine</th><th scope="col">Acțiune</th><th scope="col">Cod</th><th scope="col">Detaliu</th></tr></thead><tbody>${
+      S.journal.map(r => `<tr><td class="when" title="${esc(absDate(r.at, true))}">${esc(relDate(r.at))}</td><td>${esc(r.admin)}</td><td>${esc(humanAction(r.action))}</td>
+        <td>${/^TIS-/.test(r.cod) && findTicket(r.cod) ? `<button class="linkish" data-open="${esc(r.cod)}">${esc(r.cod)}</button>` : esc(r.cod)}</td><td>${esc(r.detail)}</td></tr>`).join('')
+    }</tbody></table>`;
+  }
+
+  // ---------- pagini ----------
+  function setPage(p) {
+    S.page = p;
+    ['tichete', 'news', 'jurnal'].forEach(k => {
+      $('#page-' + k).hidden = k !== p;
+      const tab = $(`.tab[data-page="${k}"]`);
+      if (k === p) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current');
+    });
+    if (p === 'news' && !S.newsLoaded) loadNews(); else if (p === 'news') renderNews();
+    if (p === 'jurnal') loadJournal();
+  }
+  function openTicket(id, focusPanel) {
+    if (S.page !== 'tichete') setPage('tichete');
+    if (!findTicket(id)) return toast('Tichetul ' + id + ' nu e în lista curentă.', 'err');
+    setPanel('ticket', id);
+    const row = $(`.row[data-id="${CSS.escape(id)}"]`);
+    if (row) row.scrollIntoView({ block: 'nearest' });
+    if (focusPanel || window.matchMedia('(max-width:900px)').matches) { const h = $('#p-title'); if (h) h.focus(); }
+  }
+  function openNew() {
+    if (S.page !== 'tichete') setPage('tichete');
+    S.formErr = {}; setPanel('new');
+    const f = S.draft.reporter ? '#nf-title' : '#nf-reporter'; const el = $(f); if (el) el.focus();
+  }
+  function moveSel(dir) {
+    const rows = $$('.row');
+    if (!rows.length) return;
+    let i = rows.findIndex(r => r.dataset.id === S.sel);
+    i = i < 0 ? (dir > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, i + dir));
+    openTicket(rows[i].dataset.id);
+    const r = $(`.row[data-id="${CSS.escape(rows[i].dataset.id)}"]`); if (r) r.focus();
+  }
+
+  function renderAll() { renderAdmin(); renderZones(); renderToolbar(); renderList(); renderPanel(); if (S.page === 'news') renderNews(); if (S.page === 'jurnal') renderJournal(); }
+
+  // ---------- evenimente ----------
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button, [data-shot]');
+    const pop = $('#adminPop');
+    if (!pop.hidden && !e.target.closest('.admin-wrap')) openPop(false);
+    if (!t) return;
+    const ds = t.dataset;
+
+    if (t.classList.contains('tab')) return setPage(ds.page);
+    if (t.id === 'newBtn') return openNew();
+    if (t.id === 'adminBtn') { if (S.isAdmin) { logout(); toast('Ai ieșit din modul admin.'); } else openPop(pop.hidden); return; }
+    if (t.id === 'pinCancel') return openPop(false);
+    if (t.id === 'exportBtn') return exportCsv();
+    if (t.id === 'newsNewBtn') { S.compose = { title: '', body: '', type: 'update', files: [] }; renderNews(); $('#nw-title').focus(); return; }
+    if (t.id === 'journalRefresh') return loadJournal();
+    if (t.id === 'lbClose') return closeLightbox();
+    if (t.id === 'lbIn') return lbZoom(LB.s + 0.5);
+    if (t.id === 'lbOut') return lbZoom(LB.s - 0.5);
+
+    if (ds.zone !== undefined && t.classList.contains('zbtn')) { S.f.zone = S.f.zone === ds.zone ? null : ds.zone; S.shown = PAGE; renderZones(); renderList(); return; }
+    if (ds.status) { S.f.status = ds.status; S.shown = PAGE; if (ds.status === 'archive' && !S.archived) loadArchived(); renderToolbar(); renderList(); return; }
+    if (ds.clear) {
+      if (ds.clear === 'all') return resetFilters();
+      if (ds.clear === 'zone') S.f.zone = null;
+      if (ds.clear === 'prio') { S.f.prio = 'all'; $('#prioFilter').value = 'all'; }
+      if (ds.clear === 'q') { S.f.q = ''; $('#search').value = ''; }
+      renderZones(); renderList(); return;
+    }
+    if (t.classList.contains('row')) return S.sel === ds.id && S.panel === 'ticket' && !window.matchMedia('(max-width:900px)').matches ? closePanel() : openTicket(ds.id);
+    if (ds.open) return openTicket(ds.open, true);
+    if (ds.shot) return openLightbox(ds.shot, ds.name);
+    if (ds.rm !== undefined) {
+      const inCompose = !!t.closest('#composeForm'), arr = inCompose ? S.compose.files : S.draft.files;
+      arr.splice(+ds.rm, 1);
+      if (inCompose) $('#nw-thumbs').innerHTML = thumbsHtml(arr); else $('#nf-thumbs').innerHTML = thumbsHtml(arr);
+      return;
+    }
+    if (ds.zonePick !== undefined) { S.draft.zone = S.draft.zone === ds.zonePick ? '' : ds.zonePick; $$('[data-zone-pick]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.zonePick === S.draft.zone))); return; }
+    if (ds.prioPick) { S.draft.prio = ds.prioPick; $$('[data-prio-pick]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.prioPick === ds.prioPick))); return; }
+    if (ds.ntype) { S.compose.type = ds.ntype; $$('[data-ntype]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.ntype === ds.ntype))); return; }
+
+    const cur = findTicket(S.sel);
+    if (ds.setStatus && cur && cur.status !== ds.setStatus) return setField(cur, 'status', ds.setStatus, 'updateStatus', [cur.id, ds.setStatus], 'Status: ' + STATUSES[ds.setStatus] + '.');
+    if (ds.newsEdit) { const a = S.news.find(x => x.id === ds.newsEdit); S.compose = { id: a.id, title: a.title, body: a.body, type: a.type || 'anunt', files: [] }; S.newsConfirm = null; renderNews(); $('#nw-title').focus(); window.scrollTo(0, 0); return; }
+    if (ds.newsAsk) { S.newsConfirm = ds.newsAsk; renderNews(); return; }
+    if (ds.newsCancel !== undefined) { S.newsConfirm = null; renderNews(); return; }
+    if (ds.newsDel) {
+      const id = ds.newsDel, prev = S.news; S.news = S.news.filter(a => a.id !== id); S.newsConfirm = null; renderNews();
+      gs('deleteNews', id, S.pin).then(l => { S.news = l; S.nsig = nsig(l); renderNews(); toast('Anunț șters.'); })
+        .catch(err => { S.news = prev; renderNews(); toast(errMsg(err, 'Ștergerea nu a reușit.'), 'err'); if (adminErr(err)) logout(); });
+      return;
+    }
+
+    switch (ds.act) {
+      case 'new': return openNew();
+      case 'close': return closePanel();
+      case 'reload': return load();
+      case 'news-reload': return loadNews();
+      case 'more': S.shown += PAGE; return renderList();
+      case 'copy': {
+        const code = ds.code, ok = () => toast('Codul ' + code + ' a fost copiat.');
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(ok, () => fallbackCopy(code, ok)); else fallbackCopy(code, ok);
+        return;
+      }
+      case 'edit': S.editing = true; renderPanel(); $('#ed-title').focus(); return;
+      case 'edit-cancel': S.editing = false; return renderPanel();
+      case 'archive-ask': S.confirm = 'archive'; return renderPanel();
+      case 'purge-ask': S.confirm = 'purge'; return renderPanel();
+      case 'confirm-cancel': S.confirm = null; return renderPanel();
+      case 'archive': {
+        const prevList = S.tickets.slice();
+        S.panel = 'empty'; $('#panel').classList.remove('open');
+        return adminCall('deleteTicket', [cur.id], () => { S.tickets = S.tickets.filter(x => x !== cur); }, () => { S.tickets = prevList; }, cur.id + ' arhivat.');
+      }
+      case 'restore':
+        S.panel = 'empty'; $('#panel').classList.remove('open');
+        return adminCall('restoreTicket', [cur.id], () => { S.archived = S.archived.filter(x => x !== cur); }, () => { S.archived.push(cur); }, cur.id + ' restaurat.');
+      case 'purge': {
+        const prev = S.archived.slice();
+        S.panel = 'empty'; $('#panel').classList.remove('open');
+        return adminCall('purgeTicket', [cur.id], () => { S.archived = S.archived.filter(x => x !== cur); }, () => { S.archived = prev; }, cur.id + ' șters definitiv.');
+      }
+      case 'compose-cancel': S.compose = null; return renderNews();
+    }
+  });
+  function fallbackCopy(text, ok) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) {} ta.remove();
+  }
+
+  document.addEventListener('submit', e => {
+    const f = e.target;
+    if (f.id === 'adminPop') return login(e);
+    e.preventDefault();
+    if (f.id === 'newForm') return submitNew();
+    if (f.id === 'composeForm') return publish();
+    if (f.dataset.form === 'comment') return sendComment(f);
+    if (f.dataset.form === 'edit') {
+      const t = findTicket(S.sel), title = $('#ed-title').value.trim(), desc = $('#ed-desc').value.trim();
+      if (!title) { $('#ed-title').setAttribute('aria-invalid', 'true'); $('#ed-title').focus(); return; }
+      const prev = { title: t.title, desc: t.desc };
+      S.editing = false;
+      adminCall('editTicket', [t.id, { title, desc }], () => { t.title = title; t.desc = desc; t.updatedBy = S.adminName; t.updatedAt = Date.now(); }, () => { t.title = prev.title; t.desc = prev.desc; }, 'Tichet actualizat.');
+    }
+  });
+
+  document.addEventListener('change', e => {
+    const el = e.target, t = findTicket(S.sel);
+    if (el.id === 'prioFilter') { S.f.prio = el.value; S.shown = PAGE; return renderList(); }
+    if (el.id === 'sortSel') { S.f.sort = el.value; return renderList(); }
+    if (el.id === 'ad-prio' && t) return setField(t, 'priority', el.value, 'updatePriority', [t.id, el.value], 'Prioritate: ' + PRIOS[el.value] + '.');
+    if (el.id === 'ad-zone' && t) return setField(t, 'category', el.value, 'editTicket', [t.id, { category: el.value }], 'Zonă: ' + (el.value || 'fără zonă') + '.');
+  });
+
+  document.addEventListener('input', e => {
+    if (e.target.id === 'search') { S.f.q = e.target.value; S.shown = PAGE; renderList(); }
+    if (e.target.id === 'cm-text' && S.sel) S.cmtDraft[S.sel] = e.target.value;
+    if (e.target.id === 'cm-name') S.cmtName = e.target.value;
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!$('#lightbox').hidden) { if (e.key === 'Escape') closeLightbox(); return; }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.tagName === 'TEXTAREA') {
+      const f = e.target.closest('form'); if (f) { e.preventDefault(); f.requestSubmit(); } return;
+    }
+    if (e.key === 'Escape') {
+      if (!$('#adminPop').hidden) { openPop(false); $('#adminBtn').focus(); return; }
+      if (S.confirm) { S.confirm = null; renderPanel(); return; }
+      if (e.target.id === 'search' && S.f.q) { e.target.value = ''; S.f.q = ''; renderList(); return; }
+      if (S.panel !== 'empty' && S.page === 'tichete') { closePanel(); return; }
+      return;
+    }
+    if (isTyping(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (S.page !== 'tichete') return;
+    if (e.key === '/') { e.preventDefault(); $('#search').focus(); }
+    else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openNew(); }
+    else if (e.key === 'j') { e.preventDefault(); moveSel(1); }
+    else if (e.key === 'k') { e.preventDefault(); moveSel(-1); }
+  });
+
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData && e.clipboardData.items; if (!items) return;
+    const imgs = Array.from(items).filter(i => i.type.indexOf('image') === 0).map(i => i.getAsFile()).filter(Boolean);
+    if (!imgs.length) return;
+    if (S.page === 'news' && S.compose && !S.compose.id) { e.preventDefault(); addFiles(S.compose.files, imgs, () => { $('#nw-thumbs').innerHTML = thumbsHtml(S.compose.files); }); return; }
+    if (S.page !== 'tichete') return;
+    e.preventDefault();
+    if (S.panel !== 'new') openNew();
+    addFiles(S.draft.files, imgs, () => { const th = $('#nf-thumbs'); if (th) th.innerHTML = thumbsHtml(S.draft.files); });
+  });
+
+  // ---------- lightbox ----------
+  const LB = { s: 1, x: 0, y: 0, drag: false, sx: 0, sy: 0, ox: 0, oy: 0, ptr: {}, pd: 0, ps: 1, ret: null };
+  function lbApply() { const img = $('#lbImg'); img.style.transform = `translate(${LB.x}px,${LB.y}px) scale(${LB.s})`; img.classList.toggle('zoomed', LB.s > 1.01); }
+  function lbReset() { LB.s = 1; LB.x = 0; LB.y = 0; lbApply(); }
+  function lbZoom(ns, cx, cy) {
+    ns = Math.max(1, Math.min(6, ns));
+    const r = $('#lbImg').getBoundingClientRect(), mx = r.left + r.width / 2, my = r.top + r.height / 2;
+    const ox = (cx == null ? mx : cx) - mx, oy = (cy == null ? my : cy) - my;
+    LB.x = ox - ns * (ox - LB.x) / LB.s; LB.y = oy - ns * (oy - LB.y) / LB.s; LB.s = ns;
+    if (LB.s <= 1.001) { LB.s = 1; LB.x = 0; LB.y = 0; }
+    lbApply();
+  }
+  function openLightbox(id, name) {
+    LB.ret = document.activeElement;
+    const lb = $('#lightbox'), img = $('#lbImg');
+    lbReset(); img.src = S.full[id] || S.thumbs[id] || BLANK; img.alt = 'Captură: ' + (name || '');
+    $('#lbName').textContent = name || '';
+    lb.hidden = false; $('#lbClose').focus();
+    loadFull(id).then(u => { img.src = u; }).catch(() => toast('Captura nu s-a putut încărca.', 'err'));
+  }
+  function closeLightbox() { $('#lightbox').hidden = true; lbReset(); if (LB.ret) LB.ret.focus(); }
+  (function wireLightbox() {
+    const lb = $('#lightbox'), img = $('#lbImg');
+    lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
+    img.addEventListener('dblclick', e => { if (LB.s > 1) lbReset(); else lbZoom(2.5, e.clientX, e.clientY); });
+    img.addEventListener('wheel', e => { e.preventDefault(); lbZoom(LB.s * (e.deltaY < 0 ? 1.15 : 0.87), e.clientX, e.clientY); }, { passive: false });
+    img.addEventListener('pointerdown', e => {
+      img.setPointerCapture(e.pointerId); LB.ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
+      const ids = Object.keys(LB.ptr);
+      if (ids.length === 2) { const a = LB.ptr[ids[0]], b = LB.ptr[ids[1]]; LB.pd = Math.hypot(a.x - b.x, a.y - b.y); LB.ps = LB.s; }
+      else if (LB.s > 1) { LB.drag = true; LB.sx = e.clientX; LB.sy = e.clientY; LB.ox = LB.x; LB.oy = LB.y; img.classList.add('drag'); }
+    });
+    img.addEventListener('pointermove', e => {
+      if (!LB.ptr[e.pointerId]) return;
+      LB.ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
+      const ids = Object.keys(LB.ptr);
+      if (ids.length === 2) { const a = LB.ptr[ids[0]], b = LB.ptr[ids[1]]; if (LB.pd > 0) lbZoom(LB.ps * Math.hypot(a.x - b.x, a.y - b.y) / LB.pd, (a.x + b.x) / 2, (a.y + b.y) / 2); }
+      else if (LB.drag) { LB.x = LB.ox + e.clientX - LB.sx; LB.y = LB.oy + e.clientY - LB.sy; lbApply(); }
+    });
+    const up = e => { delete LB.ptr[e.pointerId]; if (Object.keys(LB.ptr).length < 2) { LB.drag = false; img.classList.remove('drag'); } };
+    img.addEventListener('pointerup', up); img.addEventListener('pointercancel', up);
+  })();
+
+  // ---------- reîmprospătare automată ----------
+  setInterval(() => {
+    if (document.hidden || !gasReady()) return;
+    if (S.page === 'tichete' && !S.loading && !S.submitting) {
+      gs('getTickets').then(list => {
+        const s = sig(list || []); if (s === S.sig) return;
+        S.tickets = list; S.sig = s;
+        renderZones(); renderToolbar(); renderList();
+        const inPanel = $('#panel').contains(document.activeElement) && isTyping();
+        if (S.panel === 'ticket' && !S.editing && !inPanel) renderPanel();
+      }).catch(() => {});
+    } else if (S.page === 'news' && S.newsLoaded && !S.compose) {
+      gs('getNews').then(list => { const s = nsig(list || []); if (s !== S.nsig) { S.news = list; S.nsig = s; renderNews(); } }).catch(() => {});
+    }
+  }, 20000);
+
+  // ---------- start ----------
+  initToolbar();
+  renderAll();
+  load();
+})();
+</script>

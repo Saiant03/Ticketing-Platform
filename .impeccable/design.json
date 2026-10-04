@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T23:09:59.594770Z",
+  "title": "Design System: WFM Extended",
+  "extensions": {
+    "colorMeta": {
+      "night-ink": {
+        "role": "primary",
+        "displayName": "Night Ink"
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Primary Navy"
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Cool Ground"
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Graphite Ground"
+      },
+      "zone-import": {
+        "role": "category",
+        "displayName": "Zona Import"
+      },
+      "zone-interfata": {
+        "role": "category",
+        "displayName": "Zona Interfață"
+      },
+      "zone-date": {
+        "role": "category",
+        "displayName": "Zona Date"
+      },
+      "zone-raportare": {
+        "role": "category",
+        "displayName": "Zona Raportare"
+      },
+      "zone-general": {
+        "role": "category",
+        "displayName": "Zona General"
+      },
+      "zone-altul": {
+        "role": "category",
+        "displayName": "Zona Altul"
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Danger"
+      }
+    },
+    "shadows": [
+      {
+        "name": "pop",
+        "value": "0 10px 28px rgba(15,26,43,.16), 0 2px 6px rgba(15,26,43,.08)",
+        "purpose": "Doar popover admin și toast."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(.16,1,.3,1)",
+        "purpose": "Panou pe mobil, bandă de zone, toast."
+      },
+      {
+        "name": "state",
+        "value": "150ms",
+        "purpose": "Hover și focus pe controale."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-columns",
+        "value": "1280px"
+      },
+      {
+        "name": "narrow-panel",
+        "value": "1080px"
+      },
+      {
+        "name": "single-column",
+        "value": "900px"
+      },
+      {
+        "name": "phone",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acțiunea principală a ecranului.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path d=\"M12 5v14M5 12h14\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"square\"/></svg>Tichet nou</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:0;border-radius:3px;background:var(--primary,#123A6B);color:#fff;font:600 14px Archivo,system-ui,sans-serif;cursor:pointer;transition:background-color .15s}.ds-btn-primary:hover{background:var(--primary-hover,#0D2E57)}.ds-btn-primary:focus-visible{outline:2px solid var(--focus,#1F6FD1);outline-offset:2px}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Acțiuni secundare.",
+      "html": "<button class=\"ds-btn-quiet\">Renunță</button>",
+      "css": ".ds-btn-quiet{height:36px;padding:0 12px;border:1px solid var(--line,#D8DEE6);border-radius:3px;background:var(--surface,#fff);color:var(--ink-2,#364559);font:600 14px Archivo,system-ui,sans-serif;cursor:pointer}.ds-btn-quiet:hover{border-color:var(--line-strong,#AEB8C5);color:var(--ink,#0F1A2B)}.ds-btn-quiet:focus-visible{outline:2px solid var(--focus,#1F6FD1);outline-offset:2px}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Câmp de text standard.",
+      "html": "<input class=\"ds-input\" placeholder=\"Caută după cod, titlu, nume\">",
+      "css": ".ds-input{width:280px;height:36px;padding:0 12px;border:1px solid var(--line-strong,#AEB8C5);border-radius:3px;background:var(--surface,#fff);color:var(--ink,#0F1A2B);font:400 14px Archivo,system-ui,sans-serif}.ds-input:focus{outline:none;border-color:var(--focus,#1F6FD1);box-shadow:0 0 0 3px rgba(31,111,209,.25)}"
+    },
+    {
+      "name": "Segmented Status",
+      "kind": "custom",
+      "refersTo": "segmented",
+      "description": "Filtru și setare de status.",
+      "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">Active 6</button><button>Deschise 4</button><button>Rezolvate 1</button></div>",
+      "css": ".ds-seg{display:inline-flex;border:1px solid var(--line-strong,#AEB8C5);border-radius:3px;overflow:hidden;font:500 13px Archivo,system-ui,sans-serif}.ds-seg button{height:34px;padding:0 12px;border:0;border-left:1px solid var(--line,#D8DEE6);background:var(--surface,#fff);color:var(--ink-2,#364559);cursor:pointer}.ds-seg button:first-child{border-left:0}.ds-seg button:hover{background:var(--surface-2,#EBEEF3)}.ds-seg button[aria-pressed=true]{background:var(--ink,#0F1A2B);color:var(--surface,#fff);font-weight:600}"
+    },
+    {
+      "name": "Zone Tile",
+      "kind": "custom",
+      "refersTo": "zone-tile",
+      "description": "Pictograma de zonă, folosită identic peste tot.",
+      "html": "<span class=\"ds-zt\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\"><path fill=\"currentColor\" d=\"M3 14h4.5v7H3zm6.75-5h4.5v12h-4.5zM16.5 3H21v18h-4.5z\"/></svg></span>",
+      "css": ".ds-zt{width:24px;height:24px;display:inline-grid;place-items:center;background:var(--z-raportare,#E3A008);color:var(--z-raportare-on,#0F1A2B)}"
+    },
+    {
+      "name": "Zone Bar",
+      "kind": "custom",
+      "refersTo": "zone-bar",
+      "description": "Încărcarea pe zone, filtru cu un click.",
+      "html": "<div class=\"ds-zb\"><div class=\"ds-band\"><i style=\"flex-grow:1;background:#1F7FC8\"></i><i style=\"flex-grow:2;background:#6F4FC2\"></i><i style=\"flex-grow:1;background:#188A50\"></i><i style=\"flex-grow:1;background:#E3A008\"></i></div></div>",
+      "css": ".ds-zb{width:420px}.ds-band{display:flex;gap:2px;height:8px}.ds-band i{display:block}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Harta de zone",
+    "overview": "WFM Extended e tratat ca un sistem de informare, nu ca un dashboard decorat. Modelul e programul de identitate al lui Otl Aicher pentru München 1972: fiecare zonă a aplicației are o culoare plată și o pictogramă geometrică, folosite identic peste tot. Restul interfeței rămâne neutru și dens, ca zonele să fie singurul lucru colorat pe care ochiul îl caută.",
+    "keyCharacteristics": [
+      "Culoare doar pentru zone; status și prioritate se citesc din formă și text.",
+      "Un singur font grotesc (Archivo), cifre tabulare peste tot.",
+      "Colțuri drepte la pictograme, 3px la controale, linii de 1px, fără umbre decorative.",
+      "Temă light implicit, dark după preferința sistemului, aceleași roluri de token."
+    ],
+    "rules": [
+      {
+        "name": "The Zone Owns Color Rule",
+        "body": "Culorile saturate aparțin exclusiv celor șase zone. Status, prioritate, selecție și navigație folosesc cerneală, linii și formă.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means Now Rule",
+        "body": "Roșul apare doar pentru Critică, erori și ștergere. Nicio zonă și niciun element decorativ nu folosește roșu.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "font-variant-numeric: tabular-nums pe body; codurile TIS, contoarele și orele se aliniază pe coloane.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Fără font monospace sau serif. Codurile TIS sunt Archivo 700 cu tracking +0.02em.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do folosește aceeași pictogramă și culoare de zonă în bară, rând, panou și formular.",
+      "Do codifică status și prioritate prin formă și text.",
+      "Do păstrează un singur buton primar vizibil pe fiecare zonă de ecran.",
+      "Do confirmă inline acțiunile distructive, cu numele tichetului în text.",
+      "Do verifică fiecare culoare nouă de text la minim 4.5:1, iar glifurile de zonă la minim 3:1."
+    ],
+    "donts": [
+      "Don't folosi culori de zonă pentru status, selecție sau decor.",
+      "Don't adăuga gradient, glass, glow, fundaluri animate sau cursor personalizat.",
+      "Don't folosi bordură colorată laterală pe rânduri sau carduri; zona se arată prin pictogramă și prin banda de sus a panoului.",
+      "Don't deschide modale pentru sarcini care încap în panou.",
+      "Don't introduce un al doilea font."
+    ]
+  }
+}

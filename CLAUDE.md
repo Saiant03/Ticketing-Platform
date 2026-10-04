@@ -6,7 +6,7 @@ Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlSer
 
 - `src/` - codul Apps Script, sincronizat cu clasp (`rootDir`). Fisiere `.gs` (server) si `.html` (UI).
 - `docs/audit/` - rezultatele auditului pe UI-ul curent (screenshot-uri, probleme gasite).
-- `docs/design/` - design system-ul ales (`DESIGN.md`) si deciziile de redesign.
+- `PRODUCT.md` / `DESIGN.md` - adevarul despre produs si design system-ul (tokens, reguli); `.impeccable/` - contractul de directie si screenshot-urile de review.
 - `docs/workflow.md` - fazele de lucru si comenzile.
 - `dev/` - rulare locala cu `google.script.run` simulat (`preview.py`, `mock-gas.js`) si screenshot-uri (`shoot.py`).
 - `.claude/skills/` - skill-urile folosite in proiect (vezi `SOURCES.md`).
@@ -23,7 +23,7 @@ Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlSer
 - Fara framework-uri care cer build step. CDN-uri doar daca sunt necesare.
 - `<meta name="viewport">` se pune in HTML, plus `.addMetaTag('viewport', ...)` pe `HtmlOutput` in `doGet`.
 - Design tokens (culori, spatiere, fonturi) ca CSS custom properties intr-un singur fisier.
-- Inainte de orice schimbare vizuala, verifica `docs/design/DESIGN.md`.
+- Inainte de orice schimbare vizuala, verifica `DESIGN.md` (radacina repo-ului). Culorile de zona sunt doar pentru zone.
 
 ## Skill-uri si cand se folosesc
 

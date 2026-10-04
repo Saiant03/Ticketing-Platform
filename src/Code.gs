@@ -20,10 +20,15 @@ var JOURNAL_HEADERS = ['Data', 'Admin', 'Actiune', 'Cod', 'Detaliu'];
 var NEWS_TYPES = ['update', 'fix', 'anunt'];
 
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
+  return HtmlService.createTemplateFromFile('Index').evaluate()
     .setTitle('WFM Extended')
     .setFaviconUrl('https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/1f3ab.png')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/** Include un fișier HTML (CSS/JS) în template: <?!= include('Styles') ?> */
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 
 function getSheet_() {
@@ -77,6 +82,10 @@ function adminName_(pin) {
   return admins.hasOwnProperty(String(pin)) ? admins[String(pin)] : '';
 }
 
+// Codurile de cel puțin atâtea caractere nu pot fi ghicite prin încercări și trec
+// și în timpul blocării, ca încercările greșite ale altcuiva să nu blocheze adminii.
+var LONG_PIN = 12;
+
 /** Verifică codul de admin, cu protecție la încercări repetate (blocare 60s după 5 greșeli). */
 function verifyPin(pin) {
   var props = PropertiesService.getScriptProperties();
@@ -84,6 +93,8 @@ function verifyPin(pin) {
   var raw = props.getProperty('PINLOCK');
   var st = raw ? JSON.parse(raw) : { fails: 0, since: 0 };
   var now = Date.now();
+  var longName = String(pin).length >= LONG_PIN ? adminName_(pin) : '';
+  if (longName) return longName;
   if (st.fails >= MAXF && (now - st.since) < WINDOW) {
     var wait = Math.ceil((WINDOW - (now - st.since)) / 1000);
     throw new Error('Prea multe încercări greșite. Reîncearcă în ' + wait + ' secunde.');
@@ -175,15 +186,28 @@ function uploadAttachment(b64, mime, name) {
   return { id: f.getId(), name: safeName };
 }
 
-/** Returnează conținutul unei capturi (doar din folderul nostru). Public. */
-function getAttachment(id) {
+/** Fișierul cu ID-ul dat, doar dacă e în folderul de capturi. */
+function ownFile_(id) {
   var f = DriveApp.getFileById(String(id));
   var folderId = getFolder_().getId();
-  var parents = f.getParents(), ok = false;
-  while (parents.hasNext()) { if (parents.next().getId() === folderId) { ok = true; break; } }
-  if (!ok) throw new Error('Fișier neautorizat.');
-  var blob = f.getBlob();
+  var parents = f.getParents();
+  while (parents.hasNext()) { if (parents.next().getId() === folderId) return f; }
+  throw new Error('Fișier neautorizat.');
+}
+
+/** Returnează conținutul unei capturi (doar din folderul nostru). Public. */
+function getAttachment(id) {
+  var blob = ownFile_(id).getBlob();
   return { data: Utilities.base64Encode(blob.getBytes()), mime: blob.getContentType() };
+}
+
+/** Miniatura unei capturi (doar din folderul nostru), pentru liste. Public. */
+function getAttachmentThumb(id) {
+  var f = ownFile_(id);
+  var thumb = null;
+  try { thumb = f.getThumbnail(); } catch (e) {}
+  var blob = thumb || f.getBlob();
+  return { data: Utilities.base64Encode(blob.getBytes()), mime: blob.getContentType() || 'image/png' };
 }
 
 /** Adaugă un tichet. Public. Returnează {code, tickets}. */

@@ -2,7 +2,7 @@
 // Admin de test: cod "1234" -> "Admin Test".
 (function () {
   var DAY = 86400000, now = Date.now();
-  var ADMINS = { '1234': 'Admin Test' };
+  var ADMINS = { '1234': 'Admin Test', 'cod-lung-de-test': 'Admin Test' };
   var IMG = 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iNjQwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzJhMmYzYSIvPjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjU2MCIgaGVpZ2h0PSI0NCIgcng9IjYiIGZpbGw9IiMzYTQxNTAiLz48cmVjdCB4PSI0MCIgeT0iMTEwIiB3aWR0aD0iMzYwIiBoZWlnaHQ9IjIwIiByeD0iNCIgZmlsbD0iIzNhNDE1MCIvPjxyZWN0IHg9IjQwIiB5PSIxNDUiIHdpZHRoPSI0NjAiIGhlaWdodD0iMjAiIHJ4PSI0IiBmaWxsPSIjM2E0MTUwIi8+PHJlY3QgeD0iNDAiIHk9IjE4MCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMCIgcng9IjQiIGZpbGw9IiMzYTQxNTAiLz48dGV4dCB4PSIzMjAiIHk9IjMzMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiM4YTkzYTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPmNhcHR1cmEgKG1vY2spPC90ZXh0Pjwvc3ZnPg==';
   function t(n, title, status, priority, category, reporter, ago, extra) {
     return Object.assign({
@@ -43,6 +43,7 @@
     getArchived: function (pin) { need(pin); return db.archived; },
     getNews: function () { return db.news; },
     getAttachment: function () { return { data: IMG, mime: 'image/svg+xml' }; },
+    getAttachmentThumb: function () { return { data: IMG, mime: 'image/svg+xml' }; },
     uploadAttachment: function (b64, mime, name) { return { id: 'up' + Date.now(), name: name }; },
     addTicket: function (p) {
       var n = Math.max.apply(null, db.tickets.map(function (x) { return x.n; }).concat([0])) + 1;
@@ -62,7 +63,17 @@
     restoreTicket: function (cod, pin) { need(pin); var x = db.archived.filter(function (y) { return y.id === cod; })[0]; db.archived = db.archived.filter(function (y) { return y !== x; }); if (x) { x.archived = false; db.tickets.unshift(x); } return db.archived; },
     purgeTicket: function (cod, pin) { need(pin); db.archived = db.archived.filter(function (y) { return y.id !== cod; }); return db.archived; },
     exportTicketsCsv: function (pin) { need(pin); return 'Cod,Titlu\n' + db.tickets.map(function (x) { return x.id + ',' + x.title; }).join('\n'); },
-    getJournal: function (pin) { need(pin); return []; },
+    getJournal: function (pin, limit) {
+      need(pin);
+      return [
+        { at: now - 0.2 * DAY, admin: 'Admin Test', action: 'status → in_lucru', cod: 'TIS-13', detail: '' },
+        { at: now - 0.2 * DAY, admin: 'Admin Test', action: 'comentariu', cod: 'TIS-13', detail: '(admin)' },
+        { at: now - 0.5 * DAY, admin: 'Ioana Marin', action: 'comentariu', cod: 'TIS-13', detail: '(specialist)' },
+        { at: now - DAY, admin: 'Admin Test', action: 'anunț publicat', cod: 'NW-02', detail: 'Import automat activat pentru toate echipele' },
+        { at: now - 4 * DAY, admin: 'Admin Test', action: 'status → rezolvat', cod: 'TIS-09', detail: '' },
+        { at: now - 10 * DAY, admin: 'Admin Test', action: 'arhivat', cod: 'TIS-03', detail: '' }
+      ].slice(0, limit || 100);
+    },
     addNews: function (p, pin) { var n = need(pin); var k = db.news.length + 1; db.news.unshift({ id: 'NW-0' + k, n: k, title: p.title, body: p.body, type: p.type, author: n, created: Date.now(), attachments: p.attachments || [] }); return db.news; },
     editNews: function (id, p, pin) { need(pin); db.news.forEach(function (a) { if (a.id === id) Object.assign(a, p); }); return db.news; },
     deleteNews: function (id, pin) { need(pin); db.news = db.news.filter(function (a) { return a.id !== id; }); return db.news; }
