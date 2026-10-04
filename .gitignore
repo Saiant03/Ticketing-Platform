@@ -1,0 +1,7 @@
+.clasp.json
+.clasprc.json
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+screenshots/

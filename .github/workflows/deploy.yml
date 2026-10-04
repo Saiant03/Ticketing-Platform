@@ -1,0 +1,49 @@
+name: Deploy Apps Script
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/**"]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Creeaza si o versiune noua pe deployment-ul /exec (nu doar push la HEAD)"
+        type: boolean
+        default: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verifica secretele
+        id: check
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ]; then
+            echo "Lipsesc secretele CLASPRC_JSON / SCRIPT_ID. Vezi docs/workflow.md. Skip."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 20
+
+      - name: clasp push
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          npm install -g @google/clasp
+          echo "$CLASPRC_JSON" > ~/.clasprc.json
+          printf '{"scriptId":"%s","rootDir":"src"}' "$SCRIPT_ID" > .clasp.json
+          clasp push --force
+
+      - name: clasp deploy (versiune noua pe /exec)
+        if: steps.check.outputs.ready == 'true' && inputs.deploy && env.DEPLOYMENT_ID != ''
+        run: clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA::7}"
