@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Tichete · Ciornă WFM Extended</title>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Italiana&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080910;
+    --ink:#EBEDF4; --muted:#969DAD; --desc:#BFC5D2;
+    --border:rgba(255,255,255,.14);
+    --glass:rgba(12,13,22,.82); --glass-hi:rgba(255,255,255,.06);
+    --field:rgba(255,255,255,.035);
+    --accent:#8B84FF; --accent2:#57D6E0; --accentInk:#B9B4FF;
+    --accentSoft:rgba(139,132,255,.15);
+    --elev-1:0 2px 8px rgba(0,0,0,.30);
+    --elev-2:0 6px 18px rgba(0,0,0,.38);
+    --elev-3:0 12px 34px rgba(0,0,0,.44);
+    --elev-4:0 22px 54px rgba(0,0,0,.52);
+    --sheen:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 46%);
+  }
+  *{box-sizing:border-box}
+  html{scroll-padding-bottom:96px;scroll-padding-top:16px}
+  html,body{margin:0}
+  body{background:#07080d;color:var(--ink);
+    font-family:'Schibsted Grotesk',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;
+    min-height:100vh;position:relative;overflow-x:hidden}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:-.2px}
+
+  .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:.5}
+  .b1{width:560px;height:560px;background:#4B3BE8;top:-160px;left:-100px;animation:float1 26s ease-in-out infinite}
+  .b2{width:480px;height:480px;background:#127C9B;bottom:-180px;right:-80px;animation:float2 30s ease-in-out infinite}
+  .b3{width:420px;height:420px;background:#7B2FD0;top:38%;left:52%;opacity:.32;animation:float3 34s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,50px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-50px,-30px)}}
+  @keyframes float3{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-40px)}}
+
+  .wrap{max-width:900px;margin:0 auto;padding:30px 20px 104px}
+
+  /* fundal viu pe canvas */
+  .bgfx{position:fixed;inset:0;z-index:-2;width:100%;height:100%;display:block}
+
+  .bgwave{display:none}
+  /* cursor personalizat cu inel dublu */
+  .cursor-inner{position:fixed;top:0;left:0;width:6px;height:6px;border:2px solid #fff;border-radius:50%;
+    transform:translate(-50%,-50%);pointer-events:none;z-index:9999;mix-blend-mode:difference}
+  .cursor-outer{position:fixed;top:0;left:0;width:40px;height:40px;border:1.5px solid rgba(160,150,255,.7);
+    border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9998;
+    transition:transform .28s ease,background .28s ease,border-color .28s ease}
+  .cursor-outer.big{transform:translate(-50%,-50%) scale(1.6);background:rgba(139,132,255,.12);border-color:rgba(139,132,255,.85)}
+  @media (hover:hover) and (pointer:fine){ body{cursor:none} a,button,.card,.dd-btn,.nav-item,.mini,.shot{cursor:none} }
+  @media (pointer:coarse){ .cursor-inner,.cursor-outer{display:none} }
+
+  body::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% -10%,transparent 55%,rgba(4,5,10,.55) 100%)}
+
+  /* ===== meniu premium (repozitionabil) ===== */
+  .nav{--nav-gap:6px;position:relative;z-index:55;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px}
+  .nav-inner{position:relative;display:flex;gap:var(--nav-gap);padding:7px;border-radius:16px;
+    background:var(--sheen),rgba(12,13,22,.82);border:1px solid var(--border);
+    -webkit-backdrop-filter:blur(22px) saturate(165%);backdrop-filter:blur(22px) saturate(165%);
+    box-shadow:var(--elev-3),inset 0 1px 0 rgba(255,255,255,.1)}
+  .nav-item{position:relative;z-index:2;display:flex;align-items:center;gap:9px;border:none;background:transparent;
+    color:var(--muted);font-family:inherit;font-weight:600;font-size:14px;letter-spacing:.2px;padding:11px 20px;
+    border-radius:11px;cursor:pointer;transition:color .2s ease;white-space:nowrap;min-height:44px}
+  .nav-item svg{width:17px;height:17px;transition:transform .25s ease}
+  .nav-item:hover{color:var(--ink)}
+  .nav-item.on{color:#fff}
+  .nav-item.on svg{transform:scale(1.06)}
+  .nav-ind{position:absolute;z-index:1;top:7px;left:7px;height:calc(100% - 14px);border-radius:11px;
+    background:linear-gradient(135deg,#6E62E8,#4A3FC4);box-shadow:0 6px 16px rgba(0,0,0,.34),0 1px 0 rgba(255,255,255,.20) inset;
+    transition:transform .32s cubic-bezier(.3,.8,.25,1),width .32s cubic-bezier(.3,.8,.25,1),height .32s cubic-bezier(.3,.8,.25,1)}
+  .nav-pos{width:40px;height:40px;min-width:40px;border-radius:11px;border:1px solid var(--border);background:var(--field);
+    color:var(--muted);cursor:pointer;display:grid;place-items:center;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    transition:color .16s ease,transform .16s ease}
+  .nav-pos:hover{color:var(--ink);transform:rotate(90deg)}
+
+  /* pilula de admin din bara de jos */
+  .nav-admin{display:flex;align-items:center;gap:12px;padding:7px 14px 7px 12px;border-radius:16px;
+    background:var(--sheen),rgba(12,13,22,.82);border:1px solid var(--border);
+    -webkit-backdrop-filter:blur(22px) saturate(165%);backdrop-filter:blur(22px) saturate(165%);
+    box-shadow:var(--elev-3),inset 0 1px 0 rgba(255,255,255,.1)}
+  .nav-admin .admin-chip{display:flex;align-items:center;gap:7px;border:none;background:transparent;padding:0;color:var(--accentInk);font-weight:600;font-size:13px}
+  .nav-admin .adot{width:7px;height:7px;border-radius:50%;background:#74D69A}
+  .nav-admin .count{display:flex;align-items:baseline;gap:6px;text-align:left;padding-left:12px;border-left:1px solid var(--border)}
+  .nav-admin .count span{font-size:18px;font-weight:700;line-height:1}
+  .nav-admin .count small{font-size:11px;color:var(--muted)}
+  @media (max-width:760px){ .nav-admin{display:none !important} }
+
+  /* ascund bara de scroll nativă; folosim linia de progres de sus */
+  html{scrollbar-width:none;-ms-overflow-style:none}
+  ::-webkit-scrollbar{width:0;height:0;display:none}
+  /* linie fină de progres al derulării (accent) */
+  .scrollprog{position:fixed;top:0;left:0;height:3px;width:0;z-index:200;pointer-events:none;
+    background:linear-gradient(90deg,#8B84FF,#57D6E0);
+    border-radius:0 3px 3px 0;width:100%;transform-origin:left center;transform:scaleX(0);transition:transform .08s linear}
+
+
+  /* poziții: stânga (rail vertical) */
+  body.nav-left .nav{position:fixed;left:20px;top:50%;transform:translateY(-50%);margin:0;flex-direction:column-reverse}
+  body.nav-left .nav-inner{flex-direction:column}
+  body.nav-left .nav-item{padding:13px 16px;justify-content:flex-start}
+  body.nav-left .wrap{padding-left:132px}
+
+  /* poziții: jos (bară centrată) */
+  body.nav-bottom .nav{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);margin:0}
+  body.nav-bottom .wrap{padding-bottom:132px}
+
+  /* zonă de estompare care separă bara de jos de conținut (elimină suprapunerea vizuală) */
+  .navscrim{position:fixed;left:0;right:0;bottom:0;height:150px;z-index:54;pointer-events:none;display:none;
+    background:linear-gradient(to top,rgba(8,9,16,.94),rgba(8,9,16,.72) 42%,rgba(8,9,16,0))}
+  body.nav-bottom .navscrim{display:block}
+  /* bara de jos: ancorată clar deasupra, cu elevație mai mare */
+  body.nav-bottom .nav{z-index:56;bottom:24px}
+  body.nav-bottom .nav-inner{box-shadow:var(--elev-4),inset 0 1px 0 rgba(255,255,255,.12)}
+  body.nav-bottom .nav-admin{box-shadow:var(--elev-4),inset 0 1px 0 rgba(255,255,255,.12)}
+  /* mai mult spațiu, ca ultimele carduri și filtrele să nu ajungă sub bară */
+  body.nav-bottom .wrap{padding-bottom:168px}
+
+
+  /* poziția sus (implicit) rămâne în flux; pe ecrane mici forțez sus */
+  @media (max-width:760px){
+    body.nav-left .nav, body.nav-bottom .nav{position:static;left:auto;top:auto;bottom:auto;transform:none;flex-direction:row;margin-top:20px}
+    body.nav-left .nav-inner{flex-direction:row}
+    body.nav-left .wrap, body.nav-bottom .wrap{padding-left:20px;padding-bottom:104px}
+  }
+
+  header.top{position:relative;text-align:center;padding:14px 0 26px;border-bottom:1px solid var(--border)}
+  .brand{margin:0;font-family:'Italiana',serif;font-weight:400;text-transform:uppercase;
+    font-size:clamp(40px,8.5vw,84px);letter-spacing:.10em;line-height:1.0;
+    background:linear-gradient(120deg,#EDEBFF,#B9B4FF 46%,#7FE3EA);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+    filter:drop-shadow(0 1px 10px rgba(0,0,0,.5))}
+  .reload-fab{position:absolute;top:8px;right:0}
+  .count{font-size:24px;font-weight:700;line-height:1;text-align:right}
+  .count small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+
+  .tabs{display:inline-flex;gap:4px;margin-top:18px;padding:5px;border-radius:13px;border:1px solid var(--border);
+    background:var(--field);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .tabs button{border:none;background:transparent;color:var(--muted);font-weight:600;font-size:13.5px;padding:9px 17px;
+    border-radius:9px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;
+    transition:color .16s ease,background .2s ease,box-shadow .2s ease}
+  .tabs button svg{width:15px;height:15px}
+  .tabs button.on{background:linear-gradient(135deg,#6E62E8,#4A3FC4);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.34),0 1px 0 rgba(255,255,255,.20) inset}
+
+
+  /* accesibilitate: focus vizibil la navigarea cu tastatura */
+  button:focus-visible, a:focus-visible, [tabindex]:focus-visible,
+  .dd-btn:focus-visible, .fab:focus-visible, .tabs button:focus-visible,
+  .filters button:focus-visible, .prio button:focus-visible, .mini:focus-visible,
+  .icon-btn:focus-visible, .dd-item:focus-visible, .car-nav:focus-visible, .copy-btn:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px; border-radius:9px;
+  }
+  .car-dots span:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+
+  /* ținte de atingere mai confortabile (min ~40px) fără a strica densitatea */
+  .filters button, .tabs button{ min-height:40px }
+  .mini{ min-height:38px }
+  .dd-btn{ min-height:38px }
+  .icon-btn{ min-height:40px; min-width:40px }
+
+  .glass{background:var(--sheen),var(--glass);
+    -webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);
+    border:1px solid var(--border);
+    box-shadow:var(--elev-3),inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.03)}
+
+  .icon-btn{border:1px solid var(--border);background:var(--field);border-radius:10px;padding:9px;
+    display:grid;place-items:center;color:var(--muted);cursor:pointer;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .icon-btn:hover{color:var(--ink)}
+  /* chip admin + contor (doar pentru admini) */
+  .admin-chip{display:none;align-items:center;gap:7px;border:1px solid rgba(139,132,255,.4);background:var(--accentSoft);
+    color:var(--accentInk);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .admin-chip .adot{width:7px;height:7px;border-radius:50%;background:#74D69A}
+
+  /* buton plutitor admin (colț dreapta-jos) */
+  .fab-wrap{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:10px}
+  .fab-label{opacity:0;transform:translateX(6px);pointer-events:none;transition:opacity .18s ease,transform .18s ease;
+    font-size:12.5px;font-weight:600;color:var(--muted);border-radius:10px;padding:7px 11px;white-space:nowrap}
+  .fab-wrap:hover .fab-label{opacity:1;transform:none}
+  .fab-wrap.admin .fab-label{color:#F4A29C;border-color:rgba(240,96,90,.3)}
+  .fab{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;cursor:pointer;border:1px solid rgba(255,255,255,.08);
+    background:rgba(18,20,30,.5);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);
+    color:rgba(150,157,173,.55);box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);opacity:.65;
+    transition:color .18s ease,border-color .18s ease,transform .15s ease,box-shadow .2s ease,opacity .2s ease,background .2s ease}
+  .fab:hover{opacity:1;color:var(--muted);transform:translateY(-1px)}
+  .fab svg{width:20px;height:20px}
+  .fab .ico-out{display:none}
+  .fab-wrap.admin .fab{opacity:1;color:#F06B64;border-color:rgba(240,96,90,.45);background:rgba(44,16,20,.55);
+    box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 1px rgba(240,96,90,.4),inset 0 1px 0 rgba(255,255,255,.06)}
+  .fab-wrap.admin .fab:hover{color:#FF8B84;box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(240,96,90,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+  .fab-wrap.admin .fab .ico-lock{display:none}
+  .fab-wrap.admin .fab .ico-out{display:block}
+
+  /* popover PIN, ancorat deasupra butonului plutitor */
+  .adminbar{display:none;position:fixed;right:22px;bottom:80px;z-index:60;width:270px;flex-direction:column;gap:9px;
+    border-radius:14px;padding:14px;animation:ddIn .18s ease both}
+  .adminbar.show{display:flex}
+  .adminbar label{font-size:12.5px;color:var(--muted);font-weight:500}
+  .adminbar .ab-row{display:flex;gap:8px}
+  .adminbar .ab-row button{flex:1;padding:9px 12px;font-size:13px;font-weight:600;border-radius:9px;cursor:pointer;font-family:inherit}
+
+  .btn-primary{background:linear-gradient(135deg,#6E62E8,#4A3FC4);color:#fff;border:none;box-shadow:0 6px 16px rgba(0,0,0,.34),0 1px 0 rgba(255,255,255,.20) inset}
+  .btn-ghost{background:var(--field);color:var(--muted);border:1px solid var(--border)}
+  .btn-danger{background:linear-gradient(135deg,#F0605A,#D8433C);color:#fff;border:none}
+
+  .stack{display:flex;flex-direction:column;gap:24px;margin-top:24px}
+  #createSection{order:1} #listSection{order:2}
+  .stack.admin #listSection{order:1} .stack.admin #createSection{order:2}
+
+  .panel{border-radius:18px;padding:22px}
+  h2{margin:0 0 18px;font-family:'Italiana',serif;font-weight:400;font-size:22px;
+    letter-spacing:.03em;color:var(--ink)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .form-grid .full{grid-column:1 / -1}
+  label.fld{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px}
+  label.fld .hint{font-weight:400;color:#6F7686}
+  .fld-wrap{margin-bottom:15px}
+  input,textarea{width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;
+    color:var(--ink);background:var(--field);font-family:inherit;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  ::placeholder{color:#7C8393}
+  textarea{resize:vertical;line-height:1.5}
+  input:focus,textarea:focus{outline:none;border-color:rgba(139,132,255,.6);box-shadow:0 0 0 3px rgba(139,132,255,.22)}
+
+  /* zona de capturi */
+  .dropzone{border:1px dashed rgba(255,255,255,.18);border-radius:12px;padding:16px;text-align:center;color:var(--muted);
+    font-size:13px;background:var(--field);cursor:pointer;transition:border-color .15s ease,background .15s ease;
+    display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+  .dropzone:hover,.dropzone.over{border-color:rgba(139,132,255,.6);background:var(--accentSoft);color:var(--accentInk)}
+  .dropzone b{color:var(--accentInk);font-weight:600}
+  .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .thumb{position:relative;width:96px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--border);
+    background:#0d0f16;animation:ddIn .18s ease both}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .rm{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;
+    background:rgba(8,9,16,.8);color:#fff;cursor:pointer;display:grid;place-items:center}
+  .thumb .rm:hover{background:#E85D54}
+
+  .prio{display:flex;gap:6px;flex-wrap:wrap}
+  .prio button{width:auto;border:1px solid var(--border);background:var(--field);color:var(--muted);border-radius:9px;padding:7px 11px;
+    font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .14s ease;font-family:inherit}
+  .prio button.on{border-color:rgba(139,132,255,.55);background:var(--accentSoft);color:var(--accentInk);font-weight:600}
+  .dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+  .submit{margin-top:6px;width:100%;background:linear-gradient(135deg,#6E62E8,#5348D6 45%,#443AB8);color:#fff;border:none;border-radius:11px;
+    padding:12px 14px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 10px 24px rgba(0,0,0,.40),0 0 0 1px rgba(255,255,255,.08) inset,0 1px 0 rgba(255,255,255,.22) inset;
+    transition:transform .12s ease,box-shadow .15s ease,filter .15s ease;font-family:inherit}
+  .submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 16px 34px rgba(0,0,0,.46),0 0 0 1px rgba(255,255,255,.1) inset;filter:brightness(1.05)}
+  .submit:active:not(:disabled){transform:scale(.985)}
+  .submit:disabled{opacity:.6;cursor:progress}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .search{position:relative;flex:1 1 200px}
+  .search input{padding-left:36px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .filters{display:flex;gap:6px;flex-wrap:wrap}
+  .filters button{width:auto;border:1px solid var(--border);background:var(--field);color:var(--muted);border-radius:9px;padding:9px 12px;
+    font-size:13px;font-weight:500;cursor:pointer;transition:color .14s ease,background .2s ease,border-color .14s ease,box-shadow .2s ease;font-family:inherit}
+  .filters button.on{border-color:transparent;background:linear-gradient(135deg,#6E62E8,#4A3FC4);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.34),0 1px 0 rgba(255,255,255,.20) inset}
+
+  .list{display:flex;flex-direction:column;gap:12px}
+  .card{position:relative;border-radius:16px;padding:16px 18px;border-left:3px solid #9AA3AF;transition:transform .14s ease,box-shadow .15s ease}
+  .card{box-shadow:var(--elev-2),inset 0 1px 0 rgba(255,255,255,.07)}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--elev-4),0 0 0 1px rgba(139,132,255,.14),inset 0 1px 0 rgba(255,255,255,.1)}
+  .card.raise{z-index:30}
+  .card .row1{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .code{font-size:13px;font-weight:600;color:var(--accentInk);letter-spacing:.3px}
+  .badge{font-size:12px;font-weight:600;border-radius:20px;padding:3px 10px}
+  .meta{font-size:12px;color:var(--muted);margin-left:auto}
+  .card h3{margin:0 0 5px;font-size:15px;font-weight:600;line-height:1.3}
+  .card p.desc{margin:0 0 10px;font-size:13.5px;color:var(--desc);line-height:1.5;white-space:pre-wrap}
+
+  /* capturi pe card */
+  .shots{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 12px}
+  .shot{position:relative;width:110px;height:78px;border-radius:10px;overflow:hidden;border:1px solid var(--border);
+    background:rgba(255,255,255,.04);cursor:zoom-in;padding:0;transition:transform .14s ease,border-color .14s ease}
+  .shot:hover{transform:translateY(-1px);border-color:rgba(139,132,255,.5)}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .25s ease}
+  .shot img.ready{opacity:1}
+  .shot .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
+  .shot img.ready + .ph{display:none}
+
+  .reply{margin:4px 0 10px;padding:11px 13px;border-radius:12px;background:rgba(87,214,224,.08);border:1px solid rgba(87,214,224,.22)}
+  .reply .rhead{font-size:12px;font-weight:600;color:#7FE3EA;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .reply .rtext{font-size:13.5px;color:var(--desc);white-space:pre-wrap;line-height:1.5}
+
+  .row2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;flex-wrap:wrap}
+  .row2 .who{font-size:12.5px;color:var(--muted)}
+  .actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+  .dd{position:relative;display:inline-block}
+  .dd-btn{display:flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--field);color:var(--ink);border-radius:9px;
+    padding:6px 10px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    transition:border-color .14s ease,box-shadow .16s ease}
+  .dd-btn:hover{border-color:rgba(255,255,255,.22)}
+  .dd.open .dd-btn{border-color:rgba(139,132,255,.6);box-shadow:0 0 0 3px rgba(139,132,255,.18)}
+  .dd-ind{width:8px;height:8px;border-radius:2px;display:inline-block;flex:none}
+  .dd .chev{transition:transform .18s ease;color:var(--muted)}
+  .dd.open .chev{transform:rotate(180deg)}
+  .dd-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:158px;z-index:40;border-radius:12px;padding:6px;
+    display:flex;flex-direction:column;gap:2px;animation:ddIn .16s ease both;box-shadow:var(--elev-4)}
+  @keyframes ddIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+  .dd-item{display:flex;align-items:center;gap:9px;border:none;background:transparent;color:var(--ink);border-radius:8px;padding:8px 10px;
+    font-size:13px;font-weight:500;cursor:pointer;text-align:left;font-family:inherit;width:100%}
+  .dd-item:hover{background:rgba(255,255,255,.06)}
+  .dd-item.sel{background:var(--accentSoft);color:var(--accentInk)}
+  .dd-label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:4px 10px 2px}
+
+  .mini{border:1px solid var(--border);background:var(--field);color:var(--muted);border-radius:9px;padding:6px 11px;font-size:12.5px;
+    font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+  .mini:hover{color:var(--ink)}
+  .mini.icon{padding:7px}
+  .mini.danger{color:#EE928C}
+  .mini.danger:hover{border-color:rgba(240,96,90,.5);color:#F4ADA8}
+
+  .replyedit{margin-top:11px;display:flex;flex-direction:column;gap:9px;animation:ddIn .18s ease both}
+  .replyedit .re-actions{display:flex;gap:8px;justify-content:flex-end}
+  .replyedit button{width:auto;padding:8px 13px;font-size:12.5px;font-weight:600;border-radius:9px;cursor:pointer;font-family:inherit}
+  .confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .confirm span{font-size:12.5px;color:var(--desc)}
+  .confirm button{width:auto;padding:6px 12px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit}
+
+  .empty{border:1px dashed var(--border);border-radius:16px;padding:52px 20px;text-align:center;color:var(--muted)}
+  .empty svg{opacity:.6;margin-bottom:10px}
+  .banner{margin-top:16px;display:flex;gap:8px;align-items:center;border-radius:12px;padding:11px 13px;font-size:13px;
+    -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);
+    box-shadow:var(--elev-2),inset 0 1px 0 rgba(255,255,255,.06)}
+  .banner.err{background:rgba(240,96,90,.14);color:#F2ADA8;border:1px solid rgba(240,96,90,.32)}
+  .banner.ok{background:rgba(116,214,154,.14);color:#8FE0AD;border:1px solid rgba(116,214,154,.32)}
+  @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+  /* ===== card News pronunțat ===== */
+  .newscard{position:relative;border-radius:20px;padding:26px 28px;border:1px solid var(--tc-border,var(--border));
+    background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    box-shadow:var(--elev-3), inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden}
+  .newscard::before{content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,var(--tc-tint,transparent),transparent 44%)}
+  .newscard::after{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--tc,transparent)}
+  .newscard > *{position:relative}
+  .news-head{text-align:center;margin-bottom:6px}
+  .news-badge{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;letter-spacing:.3px;
+    border-radius:20px;padding:6px 15px;text-transform:uppercase}
+  .news-badge .dot{width:8px;height:8px;border-radius:50%}
+  .newscard h3{font-size:22px;font-weight:700;line-height:1.25;letter-spacing:-.3px;text-align:center;margin:14px 0 6px}
+  .news-meta{text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:18px}
+  .news-body{margin:22px auto 0;max-width:66ch;text-align:left}
+  .news-body p{font-size:15px;line-height:1.75;color:#CDD3DE;font-weight:500;margin:0 0 15px}
+  .news-body p:last-child{margin-bottom:0}
+  .news-body p.lead{font-size:17px;line-height:1.6;font-weight:700;color:var(--ink);margin-bottom:18px;letter-spacing:-.2px}
+  .news-foot{display:flex;justify-content:flex-end;margin-top:16px}
+
+  .carousel{position:relative;margin:8px auto 2px;max-width:600px;border-radius:16px;overflow:hidden;
+    border:1px solid var(--border);background:rgba(0,0,0,.28)}
+  .car-track{display:flex;transition:transform .34s cubic-bezier(.3,.7,.3,1)}
+  .car-slide{min-width:100%;height:340px;display:grid;place-items:center;position:relative;overflow:hidden}
+  .car-slide img{max-width:100%;max-height:340px;object-fit:contain;cursor:zoom-in;opacity:0;transition:opacity .25s ease,transform .45s cubic-bezier(.2,.7,.2,1)}
+  .car-slide img.ready{opacity:1}
+  .car-slide:hover img.ready{transform:scale(1.07)}
+  .car-slide .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
+  .car-slide img.ready ~ .ph{display:none}
+  .car-nav{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;
+    border:1px solid var(--border);background:rgba(8,9,16,.55);color:#fff;cursor:pointer;display:grid;place-items:center;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:background .16s ease}
+  .car-nav:hover{background:rgba(8,9,16,.85)}
+  .car-nav.prev{left:10px}.car-nav.next{right:10px}
+  .car-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;gap:6px;justify-content:center}
+  .car-dots span{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);transition:all .22s ease;cursor:pointer}
+  .car-dots span.on{background:#fff;width:18px;border-radius:4px}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(4,5,10,.62);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+    display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-overlay.show{display:flex;animation:overlayIn .2s ease}
+  @keyframes overlayIn{from{opacity:0}to{opacity:1}}
+  .modal{max-width:390px;width:100%;border-radius:22px;padding:28px;text-align:center;animation:modalIn .3s cubic-bezier(.2,.85,.25,1) both}
+  @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:none}}
+  .modal-check{width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;background:rgba(116,214,154,.14);
+    border:1px solid rgba(116,214,154,.35);color:#8FE0AD;animation:pop .4s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  .modal h3{margin:0 0 6px;font-size:18px;font-weight:700}
+  .modal p{margin:0 0 18px;font-size:13.5px;color:var(--muted)}
+  .code-box{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid rgba(139,132,255,.4);
+    background:var(--accentSoft);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+  .code-box .big{font-size:22px;font-weight:600;color:#fff;letter-spacing:1px}
+  .copy-btn{border:none;background:linear-gradient(135deg,#6E62E8,#4A3FC4);color:#fff;border-radius:9px;padding:9px 14px;font-size:13px;
+    font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.32);transition:transform .1s ease}
+  .copy-btn:active{transform:scale(.95)}
+  .modal-close{width:100%;padding:11px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+
+  /* lightbox capturi */
+  .lightbox{position:fixed;inset:0;background:rgba(4,5,10,.88);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    display:none;align-items:center;justify-content:center;z-index:110;padding:24px;cursor:default;overflow:hidden;touch-action:none}
+  .lightbox.show{display:flex;animation:overlayIn .18s ease}
+  .lightbox img{max-width:100%;max-height:92vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+    transform-origin:center center;will-change:transform;user-select:none;-webkit-user-drag:none;cursor:zoom-in;
+    transition:transform .22s cubic-bezier(.2,.7,.2,1)}
+  .lightbox img.zoomed{cursor:grab}
+  .lightbox img.dragging{cursor:grabbing;transition:none}
+  .lb-controls{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:2}
+  .lb-controls button{width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:rgba(18,20,30,.6);
+    color:var(--ink);cursor:pointer;display:grid;place-items:center;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    transition:background .16s ease}
+  .lb-controls button:hover{background:rgba(18,20,30,.9)}
+  .lb-controls button svg{width:18px;height:18px}
+  .lightbox .lb-close{position:absolute;top:16px;right:16px;z-index:2}
+
+  .spin{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (max-width:640px){.form-grid{grid-template-columns:1fr}}
+
+  /* ===== animații funcționale (temă dark/glass) ===== */
+  /* ștergere: colaps fin + estompare, elegant */
+  .removing{ transition:height .38s cubic-bezier(.4,0,.2,1),opacity .3s ease,transform .38s ease,margin .38s ease,padding .38s ease !important;
+    opacity:0 !important; transform:scale(.97) !important; pointer-events:none !important; }
+  /* pulsație subtilă de accent pe cardul schimbat */
+  @keyframes flashGlow{0%{box-shadow:var(--elev-2),inset 0 1px 0 rgba(255,255,255,.07)}
+    30%{box-shadow:var(--elev-3),0 0 0 1px rgba(139,132,255,.4),0 6px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1)}
+    100%{box-shadow:var(--elev-2),inset 0 1px 0 rgba(255,255,255,.07)}}
+  .card.flash{ animation:flashGlow .8s ease }
+  @keyframes badgePulse{0%{transform:scale(1)}42%{transform:scale(1.13)}100%{transform:scale(1)}}
+  .badge.flash{ display:inline-block; animation:badgePulse .5s ease }
+  /* răspunsul apare lin */
+  @keyframes replyIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .reply.flash{ animation:replyIn .34s ease }
+  /* butonul de trimitere/publicare pulsează cât se salvează */
+  @keyframes savePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.14)}}
+  .submit:disabled{ animation:savePulse 1.1s ease-in-out infinite }
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .badge.cat{background:rgba(255,255,255,.06);color:var(--desc);border:1px solid var(--border);font-weight:500}
+
+  /* dropdown-uri de filtrare (custom, în temă) + corecții autofill/selectare */
+  .fdd .dd-btn{min-height:40px;padding:9px 12px;color:var(--muted)}
+  .fdd.open .dd-btn,.fdd .dd-btn:hover{color:var(--ink)}
+  .fdd .dd-menu{left:auto;right:0;min-width:180px;max-height:280px;overflow:auto}
+  input:-webkit-autofill,textarea:-webkit-autofill{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);
+    -webkit-box-shadow:0 0 0 1000px rgba(18,20,30,.92) inset;box-shadow:0 0 0 1000px rgba(18,20,30,.92) inset;
+    transition:background-color 9999s ease-in-out 0s}
+  ::selection{background:rgba(139,132,255,.32);color:#fff}
+  .skip{position:fixed;top:12px;left:12px;z-index:300;background:var(--field);color:var(--ink);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transform:translateY(-220%);transition:transform .16s ease}
+  .skip:focus{transform:translateY(0);outline:2px solid var(--accent);outline-offset:2px}
+
+  .editbox .eb-title{width:100%}
+  .editbox .eb-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .editbox .eb-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);min-width:70px}
+  .editbox .eb-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .mini.on{border-color:rgba(139,132,255,.55);background:var(--accentSoft);color:var(--accentInk)}
+
+
+  .comments{margin-top:11px;display:flex;flex-direction:column;gap:8px;animation:ddIn .18s ease both}
+  .cmt-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
+  .cmt{padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--border)}
+  .cmt-admin{background:rgba(87,214,224,.08);border-color:rgba(87,214,224,.22)}
+  .cmt-h{font-size:11.5px;color:var(--muted);margin-bottom:3px}
+  .cmt-badge{color:#7FE3EA;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+  .cmt-t{font-size:13.5px;color:var(--desc);white-space:pre-wrap;line-height:1.5}
+  .cmt-empty{font-size:12.5px;color:var(--muted);padding:4px 2px}
+  .comments .cmt-input,.comments .cmt-name{width:100%}
+  .cmt-btn.on{border-color:rgba(139,132,255,.55);color:var(--accentInk)}
+  .comments .re-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:2px}
+  .comments .re-actions button{width:auto;padding:8px 14px;font-size:12.5px;font-weight:600;border-radius:9px;cursor:pointer;font-family:inherit;
+    transition:transform .12s ease,box-shadow .15s ease,filter .15s ease}
+  .comments .re-actions .btn-primary:hover{transform:translateY(-1px);filter:brightness(1.05);
+    box-shadow:0 10px 24px rgba(0,0,0,.40),0 1px 0 rgba(255,255,255,.22) inset}
+  .comments .re-actions .btn-primary:active{transform:scale(.97)}
+  .comments .re-actions .btn-ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.22)}
+  .loadmore{width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1px dashed var(--border);
+    background:var(--field);color:var(--muted);font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .loadmore:hover{color:var(--ink);border-color:rgba(139,132,255,.5)}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#createSection">Sari la formular</a>
+<div class="cursor-inner" aria-hidden="true"></div>
+<div class="cursor-outer" aria-hidden="true"></div>
+<div class="scrollprog" id="scrollProgress"></div>
+<div class="navscrim" id="navScrim" aria-hidden="true"></div>
+<canvas id="bgwave" class="bgwave" aria-hidden="true"></canvas>
+<canvas id="bg" class="bgfx" aria-hidden="true"></canvas>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand" id="pageTitle">WFM Extended</h1>
+    <button class="icon-btn reload-fab" id="reloadBtn" title="Reîncarcă" aria-label="Reîncarcă lista">
+      <svg id="reloadIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+    </button>
+  </header>
+
+  <nav class="nav" id="nav" aria-label="Secțiuni">
+    <div class="nav-inner" id="navInner">
+      <span class="nav-ind" id="navInd"></span>
+    </div>
+    <div class="nav-admin" id="navAdmin" style="display:none">
+      <div class="admin-chip" id="adminChip"><span class="adot"></span><span id="adminChipName"></span></div>
+      <div class="count" id="countWrap"><span id="openCount">0</span><small>deschise</small></div>
+    </div>
+  </nav>
+
+
+  <div id="banner" class="banner err" role="status" aria-live="polite" style="display:none"></div>
+
+  <div id="ticketsView">
+  <div class="stack" id="stack">
+    <section class="panel glass" id="createSection">
+      <h2>Trimite un tichet</h2>
+      <div class="form-grid">
+        <div class="fld-wrap">
+          <label class="fld">Numele tău</label>
+          <input id="reporter" placeholder="ex. Andrei Popa" maxlength="120">
+        </div>
+        <div class="fld-wrap">
+          <label class="fld">Titlu</label>
+          <input id="title" placeholder="ex. Câmpul dată nu se completează" maxlength="200">
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Descriere</label>
+          <textarea id="desc" rows="4" maxlength="4000" placeholder="Pași de reproducere, ce te așteptai să se întâmple..."></textarea>
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Capturi de ecran <span class="hint">· opțional, max 5 · poți lipi direct cu Ctrl+V</span></label>
+          <div class="dropzone" id="dropzone">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Trage imaginile aici sau <b>alege fișiere</b></span>
+            <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+          </div>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Prioritate</label>
+          <div class="prio" id="prio"></div>
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Categorie <span class="hint">· opțional</span></label>
+          <div class="prio" id="cat"></div>
+        </div>
+        <div class="full">
+          <button class="submit" id="submitBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span id="submitLabel">Trimite tichetul</span>
+          </button>
+          <p id="formErr" role="alert" style="display:none;margin:10px 0 0;font-size:13px;color:#F2ADA8"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="listSection">
+      <div class="toolbar">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="search" placeholder="Caută după cod, titlu, nume...">
+        </div>
+        <div class="filters" id="filters"></div>
+        <button class="icon-btn" id="exportBtn" title="Export CSV" aria-label="Export CSV" style="display:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <div class="dd fdd" id="ddPriority"></div>
+        <div class="dd fdd" id="ddCategory"></div>
+      </div>
+      <div id="listArea"></div>
+    </section>
+  </div>
+  </div>
+
+  <div id="newsView" style="display:none">
+    <section class="panel glass" id="newsCompose" style="display:none">
+      <h2>Publică un anunț</h2>
+      <div class="form-grid">
+        <div class="fld-wrap full">
+          <label class="fld">Titlu</label>
+          <input id="newsTitle" placeholder="ex. Update major: import automat activat" maxlength="200">
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Tip</label>
+          <div class="prio" id="newsType"></div>
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Conținut</label>
+          <textarea id="newsBody" rows="5" placeholder="Descrie update-ul, fix-ul sau anunțul..."></textarea>
+        </div>
+        <div class="fld-wrap full">
+          <label class="fld">Capturi de ecran <span class="hint">· opțional, max 5 · poți lipi cu Ctrl+V</span></label>
+          <div class="dropzone" id="newsDrop">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Trage imaginile aici sau <b>alege fișiere</b></span>
+            <input type="file" id="newsFile" accept="image/*" multiple style="display:none">
+          </div>
+          <div class="thumbs" id="newsThumbs"></div>
+        </div>
+        <div class="full">
+          <button class="submit" id="newsPublish">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+            <span id="newsPublishLabel">Publică anunțul</span>
+          </button>
+        </div>
+      </div>
+    </section>
+    <div id="newsListArea" style="margin-top:24px"></div>
+  </div>
+</div>
+
+<div class="adminbar glass" id="adminBar">
+  <label for="pinInput">Codul tău de admin</label>
+  <input type="password" id="pinInput" placeholder="••••" autocomplete="off">
+  <div class="ab-row">
+    <button class="btn-ghost" id="pinCancel">Renunță</button>
+    <button class="btn-primary" id="pinSubmit">Intră</button>
+  </div>
+</div>
+
+<div class="fab-wrap" id="fabWrap">
+  <span class="fab-label glass" id="fabLabel">Admin</span>
+  <button class="fab" id="fab" title="Autentificare admin" aria-label="Autentificare admin">
+    <svg class="ico-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <svg class="ico-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3h5a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-5"/><line x1="16" y1="12" x2="3" y2="12"/><polyline points="8 7 3 12 8 17"/></svg>
+  </button>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal glass">
+    <div class="modal-check">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h3>Tichet creat</h3>
+    <p>Notează codul tichetului tău. Îl poți folosi ca referință.</p>
+    <div class="code-box">
+      <span class="big mono" id="modalCode">TIS-00</span>
+      <button class="copy-btn" id="copyBtn">Copiază</button>
+    </div>
+    <button class="modal-close btn-ghost" id="modalClose">Închide</button>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="icon-btn lb-close" id="lbClose" title="Închide">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <img id="lbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Captură mărită">
+  <div class="lb-controls">
+    <button id="lbOut" title="Micșorează" aria-label="Micșorează"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button id="lbReset" title="Resetează" aria-label="Resetează"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-7 3.3"/><polyline points="3 3 3 8 8 8"/></svg></button>
+    <button id="lbIn" title="Mărește" aria-label="Mărește"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+  </div>
+</div>
+
+<script>
+  var PRIORITIES = {
+    scazuta:{label:'Scăzută',bar:'#9AA3AF'}, medie:{label:'Medie',bar:'#5A90F0'},
+    ridicata:{label:'Ridicată',bar:'#E0A94A'}, critica:{label:'Critică',bar:'#E85D54'}
+  };
+  var STATUSES = {
+    deschis:{label:'Deschis',fg:'#F0B866',bg:'rgba(240,184,102,.14)'},
+    in_lucru:{label:'În lucru',fg:'#7FB0F5',bg:'rgba(127,176,245,.14)'},
+    rezolvat:{label:'Rezolvat',fg:'#74D69A',bg:'rgba(116,214,154,.14)'}
+  };
+  var NEWS_TYPES = {
+    update:{label:'Update major', fg:'#B9B4FF', bg:'rgba(139,132,255,.16)', bar:'#8B84FF'},
+    fix:{label:'Fix', fg:'#8FE0AD', bg:'rgba(116,214,154,.14)', bar:'#74D69A'},
+    anunt:{label:'Anunț', fg:'#7FB0F5', bg:'rgba(127,176,245,.14)', bar:'#5A90F0'}
+  };
+  var CATEGORIES = ['General','Import','Interfață','Date','Raportare','Altul'];
+  var MAX_FILES=5;
+
+  var state = { tickets:[], priority:'medie', filter:'toate', query:'', loading:true,
+                isAdmin:false, pin:'', adminName:'', pendingDelete:null, replyOpen:null, menu:null,
+                files:[], newsFiles:[], imgCache:{}, imgLoading:{},
+                page:'tichete', news:[], newsLoaded:false, newsLoading:false, newsType:'anunt', pendingDeleteNews:null,
+                archived:[], archivedLoading:false, pendingPurge:null, flashId:null,
+                category:'', fPriority:'toate', fCategory:'toate', editOpen:null, editingNews:null,
+                commentsOpen:null, cmtName:'', shown:30, _sig:'', _nsig:'' };
+
+  try {
+    var sp=sessionStorage.getItem('tis_pin'), sn=sessionStorage.getItem('tis_admin');
+    if (sp && sn) { state.pin=sp; state.adminName=sn; state.isAdmin=true; }
+  } catch(e){}
+  var REDUCE=false; try{ REDUCE=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+
+  function gasReady(){ return (typeof google!=='undefined') && google.script && google.script.run; }
+  function gs(fn){ var args=Array.prototype.slice.call(arguments,1);
+    return new Promise(function(res,rej){
+      if(!gasReady()) return rej(new Error('Deschide aplicația prin linkul publicat (…/exec).'));
+      var r=google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+      r[fn].apply(r,args);
+    }); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function fmtDate(ts){ if(!ts) return '';
+    try{ return new Date(ts).toLocaleString('ro-RO',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+
+  function showBanner(msg, ok){
+    var b=document.getElementById('banner');
+    if(!msg){ b.style.display='none'; return; }
+    b.className='banner '+(ok?'ok':'err'); b.style.display='flex';
+    var icon = ok
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+    b.innerHTML=icon+esc(msg);
+  }
+
+  function renderAdminUI(){
+    var wrap=document.getElementById('fabWrap'), fab=document.getElementById('fab'), lbl=document.getElementById('fabLabel');
+    wrap.classList.toggle('admin', state.isAdmin);
+    lbl.textContent = state.isAdmin ? (state.adminName+' · LOG OUT') : 'Admin';
+    fab.title = state.isAdmin ? 'LOG OUT' : 'Autentificare admin';
+    fab.setAttribute('aria-label', fab.title);
+    var na=document.getElementById('navAdmin'); if(na) na.style.display = state.isAdmin ? 'flex' : 'none';
+    document.getElementById('adminChipName').textContent = state.adminName;
+    document.getElementById('stack').classList.toggle('admin', state.isAdmin);
+    var nc=document.getElementById('newsCompose'); if(nc) nc.style.display = state.isAdmin ? 'block' : 'none';
+    var ex=document.getElementById('exportBtn'); if(ex) ex.style.display = state.isAdmin ? 'grid' : 'none';
+    if(!state.isAdmin && state.filter==='arhivate'){ state.filter='toate'; }
+    renderFilters();
+    if(state.page==='news') renderNews(false);
+  }
+
+  function renderPrio(){
+    var el=document.getElementById('prio'); el.innerHTML='';
+    Object.keys(PRIORITIES).forEach(function(k){ var p=PRIORITIES[k];
+      var b=document.createElement('button'); if(state.priority===k) b.className='on';
+      b.innerHTML='<span class="dot" style="background:'+p.bar+'"></span>'+p.label;
+      b.onclick=function(){ state.priority=k; renderPrio(); }; el.appendChild(b); });
+  }
+  function renderCat(){
+    var el=document.getElementById('cat'); if(!el) return; el.innerHTML='';
+    CATEGORIES.forEach(function(c){
+      var b=document.createElement('button'); if(state.category===c) b.className='on';
+      b.textContent=c; b.onclick=function(){ state.category=(state.category===c?'':c); renderCat(); }; el.appendChild(b);
+    });
+  }
+
+  // dropdown de filtrare custom, identic ca stil cu meniurile din carduri
+  function buildFilterDropdown(hostId, options, getCur, setCur, headLabel){
+    var host=document.getElementById(hostId); if(!host) return;
+    var st={open:false};
+    function curOpt(){ var c=getCur(); for(var i=0;i<options.length;i++){ if(options[i][0]===c) return options[i]; } return options[0]; }
+    function render(){
+      var c=curOpt();
+      var menu = st.open ? ('<div class="dd-menu glass"><div class="dd-label">'+esc(headLabel)+'</div>'
+        + options.map(function(o){
+            return '<button class="dd-item'+(o[0]===getCur()?' sel':'')+'" data-val="'+esc(o[0])+'">'
+              + (o[2]?'<span class="dd-ind" style="background:'+o[2]+'"></span>':'')
+              + esc(o[1]) + '</button>';
+          }).join('')
+        + '</div>') : '';
+      host.className='dd fdd'+(st.open?' open':'');
+      host.innerHTML='<button class="dd-btn" type="button" aria-haspopup="listbox" aria-expanded="'+(st.open?'true':'false')+'" aria-label="'+esc(headLabel)+': '+esc(c[1])+'">'
+        + (c[2]?'<span class="dd-ind" style="background:'+c[2]+'"></span>':'')
+        + '<span>'+esc(c[1])+'</span>'+chevSVG+'</button>'+menu;
+      host.querySelector('.dd-btn').onclick=function(e){ e.stopPropagation(); st.open=!st.open; render(); };
+      Array.prototype.forEach.call(host.querySelectorAll('[data-val]'),function(b){
+        b.onclick=function(e){ e.stopPropagation(); setCur(b.getAttribute('data-val')); st.open=false; render(); state.shown=30; renderList(true); };
+      });
+    }
+    host._closeDD=function(){ if(st.open){ st.open=false; render(); } };
+    render();
+  }
+  function renderFilterSelects(){
+    var dp=document.getElementById('ddPriority');
+    if(dp && !dp._built){ dp._built=1;
+      var pOpts=[['toate','Prioritate: toate',null]].concat(Object.keys(PRIORITIES).map(function(k){ return [k,PRIORITIES[k].label,PRIORITIES[k].bar]; }));
+      buildFilterDropdown('ddPriority', pOpts, function(){return state.fPriority;}, function(v){state.fPriority=v;}, 'Prioritate');
+    }
+    var dc=document.getElementById('ddCategory');
+    if(dc && !dc._built){ dc._built=1;
+      var cOpts=[['toate','Categorie: toate',null]].concat(CATEGORIES.map(function(c){ return [c,c,null]; }));
+      buildFilterDropdown('ddCategory', cOpts, function(){return state.fCategory;}, function(v){state.fCategory=v;}, 'Categorie');
+    }
+  }
+
+  function renderFilters(){
+    var el=document.getElementById('filters'); el.innerHTML='';
+    var opts=[['toate','Toate']]; Object.keys(STATUSES).forEach(function(k){ opts.push([k,STATUSES[k].label]); });
+    if(state.isAdmin) opts.push(['arhivate','Arhivate']);
+    opts.forEach(function(o){ var b=document.createElement('button'); if(state.filter===o[0]) b.className='on';
+      b.textContent=o[1]; b.onclick=function(){ applyFilter(o[0]); }; el.appendChild(b); });
+  }
+
+  // ---- capturi: formular ----
+  function compressImage(file){
+    return new Promise(function(res,rej){
+      var reader=new FileReader();
+      reader.onerror=function(){ rej(new Error('Nu am putut citi imaginea.')); };
+      reader.onload=function(){
+        var img=new Image();
+        img.onerror=function(){ rej(new Error('Fișier imagine invalid.')); };
+        img.onload=function(){
+          var maxW=1600, w=img.width, h=img.height;
+          if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+          var c=document.createElement('canvas'); c.width=w; c.height=h;
+          var ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+          res({ dataUrl:c.toDataURL('image/jpeg',.85), name:(file.name||'captura').replace(/\.[^.]+$/,'')+'.jpg' });
+        };
+        img.src=reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function fileArr(target){ return target==='news'?state.newsFiles:state.files; }
+  function addFiles(target, fileList){
+    var files=Array.prototype.slice.call(fileList||[]).filter(function(f){ return /^image\//.test(f.type); });
+    if(!files.length) return;
+    var arr=fileArr(target);
+    var room=MAX_FILES-arr.length;
+    if(room<=0){ showBanner('Poți atașa maximum '+MAX_FILES+' capturi.'); return; }
+    if(files.length>room){ showBanner('Am păstrat doar primele '+room+' imagini (max '+MAX_FILES+').'); files=files.slice(0,room); }
+    files.forEach(function(f){
+      compressImage(f).then(function(r){ fileArr(target).push(r); renderThumbs(target); })
+        .catch(function(e){ showBanner(e.message||'Imagine invalidă.'); });
+    });
+  }
+  function renderThumbs(target){
+    var el=document.getElementById(target==='news'?'newsThumbs':'thumbs'); if(!el) return; el.innerHTML='';
+    fileArr(target).forEach(function(f,i){
+      var d=document.createElement('div'); d.className='thumb';
+      d.innerHTML='<img src="'+f.dataUrl+'" alt=""><button class="rm" title="Elimină">'
+        +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+      d.querySelector('.rm').onclick=function(){ fileArr(target).splice(i,1); renderThumbs(target); };
+      el.appendChild(d);
+    });
+  }
+  function wireDropzone(target, dzId, fiId){
+    var dz=document.getElementById(dzId), fi=document.getElementById(fiId); if(!dz||!fi) return;
+    dz.onclick=function(){ fi.click(); };
+    fi.onchange=function(){ addFiles(target, fi.files); fi.value=''; };
+    dz.ondragover=function(e){ e.preventDefault(); dz.classList.add('over'); };
+    dz.ondragleave=function(){ dz.classList.remove('over'); };
+    dz.ondrop=function(e){ e.preventDefault(); dz.classList.remove('over'); addFiles(target, e.dataTransfer.files); };
+  }
+  wireDropzone('ticket','dropzone','fileInput');
+  wireDropzone('news','newsDrop','newsFile');
+  document.addEventListener('paste', function(e){
+    var target = (state.page==='news' && state.isAdmin) ? 'news' : 'ticket';
+    if(target==='ticket' && (state.page!=='tichete' || state.replyOpen)) return;
+    var items=e.clipboardData && e.clipboardData.items; if(!items) return;
+    var imgs=[]; for(var i=0;i<items.length;i++){ if(items[i].type.indexOf('image')===0){ var f=items[i].getAsFile(); if(f) imgs.push(f); } }
+    if(imgs.length){ e.preventDefault(); addFiles(target, imgs); }
+  });
+
+  // ---- capturi: card ----
+  function shotsBlock(t){
+    if(!t.attachments||!t.attachments.length) return '';
+    var h='<div class="shots">';
+    t.attachments.forEach(function(a){
+      h+='<button class="shot" data-shot="'+esc(a.id)+'" title="'+esc(a.name)+'" aria-label="Deschide captura '+esc(a.name)+'"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-img="'+esc(a.id)+'" alt="Captură: '+esc(a.name)+'">'
+        +'<span class="ph"><svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></span></button>';
+    });
+    return h+'</div>';
+  }
+  function loadImage(id){
+    if(state.imgCache[id]) return Promise.resolve(state.imgCache[id]);
+    if(state.imgLoading[id]) return state.imgLoading[id];
+    var p=gs('getAttachment', id).then(function(r){ var url='data:'+r.mime+';base64,'+r.data; state.imgCache[id]=url; delete state.imgLoading[id]; return url; })
+      .catch(function(e){ delete state.imgLoading[id]; throw e; });
+    state.imgLoading[id]=p; return p;
+  }
+  function hydrateImages(area){
+    Array.prototype.forEach.call(area.querySelectorAll('img[data-img]'),function(img){
+      var id=img.getAttribute('data-img');
+      loadImage(id).then(function(url){ img.src=url; img.classList.add('ready'); }).catch(function(){});
+    });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-shot]'),function(btn){
+      btn.onclick=function(ev){ ev.stopPropagation(); openLightbox(btn.getAttribute('data-shot')); };
+    });
+  }
+  var LB={scale:1,tx:0,ty:0,drag:false,sx:0,sy:0,otx:0,oty:0,pointers:{},pdist:0,pscale:1};
+  function lbApply(){
+    var img=document.getElementById('lbImg');
+    img.style.transform='translate('+LB.tx+'px,'+LB.ty+'px) scale('+LB.scale+')';
+    img.classList.toggle('zoomed', LB.scale>1.01);
+  }
+  function lbReset(){ LB.scale=1; LB.tx=0; LB.ty=0; lbApply(); }
+  function lbZoomAt(ns, clientX, clientY){
+    ns=Math.max(1, Math.min(6, ns));
+    var img=document.getElementById('lbImg'), r=img.getBoundingClientRect();
+    var cx=r.left+r.width/2, cy=r.top+r.height/2;
+    var ox=(clientX==null?cx:clientX)-cx, oy=(clientY==null?cy:clientY)-cy;
+    LB.tx = ox - ns*(ox - LB.tx)/LB.scale;
+    LB.ty = oy - ns*(oy - LB.ty)/LB.scale;
+    LB.scale = ns;
+    if(LB.scale<=1.001){ LB.scale=1; LB.tx=0; LB.ty=0; }
+    lbApply();
+  }
+  function openLightbox(id){
+    var lb=document.getElementById('lightbox'), img=document.getElementById('lbImg');
+    lbReset();
+    img.src=state.imgCache[id]||''; lb.classList.add('show');
+    if(!state.imgCache[id]) loadImage(id).then(function(url){ img.src=url; });
+  }
+  function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); lbReset(); }
+
+  (function(){
+    var lb=document.getElementById('lightbox'), img=document.getElementById('lbImg');
+    // fundalul închide; imaginea și controalele nu
+    lb.addEventListener('click', function(e){ if(e.target===lb) closeLightbox(); });
+    document.getElementById('lbClose').onclick=function(e){ e.stopPropagation(); closeLightbox(); };
+    document.getElementById('lbIn').onclick=function(e){ e.stopPropagation(); lbZoomAt(LB.scale+0.5); };
+    document.getElementById('lbOut').onclick=function(e){ e.stopPropagation(); lbZoomAt(LB.scale-0.5); };
+    document.getElementById('lbReset').onclick=function(e){ e.stopPropagation(); lbReset(); };
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && lb.classList.contains('show')) closeLightbox(); });
+
+    img.addEventListener('click', function(e){ e.stopPropagation(); });
+    img.addEventListener('dblclick', function(e){ e.stopPropagation();
+      if(LB.scale>1) lbReset(); else lbZoomAt(2.5, e.clientX, e.clientY); });
+    img.addEventListener('wheel', function(e){ e.preventDefault(); e.stopPropagation();
+      lbZoomAt(LB.scale * (e.deltaY<0?1.15:0.87), e.clientX, e.clientY); }, {passive:false});
+
+    // pan + pinch cu pointer events
+    img.addEventListener('pointerdown', function(e){ e.stopPropagation();
+      img.setPointerCapture(e.pointerId); LB.pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+      var ids=Object.keys(LB.pointers);
+      if(ids.length===2){
+        var a=LB.pointers[ids[0]], b=LB.pointers[ids[1]];
+        LB.pdist=Math.hypot(a.x-b.x,a.y-b.y); LB.pscale=LB.scale;
+      } else if(LB.scale>1){ LB.drag=true; LB.sx=e.clientX; LB.sy=e.clientY; LB.otx=LB.tx; LB.oty=LB.ty; img.classList.add('dragging'); }
+    });
+    img.addEventListener('pointermove', function(e){
+      if(!LB.pointers[e.pointerId]) return;
+      LB.pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+      var ids=Object.keys(LB.pointers);
+      if(ids.length===2){
+        var a=LB.pointers[ids[0]], b=LB.pointers[ids[1]];
+        var d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(LB.pdist>0) lbZoomAt(LB.pscale*(d/LB.pdist),(a.x+b.x)/2,(a.y+b.y)/2);
+      } else if(LB.drag){ LB.tx=LB.otx+(e.clientX-LB.sx); LB.ty=LB.oty+(e.clientY-LB.sy); lbApply(); }
+    });
+    function up(e){ delete LB.pointers[e.pointerId]; if(Object.keys(LB.pointers).length<2){ LB.drag=false; img.classList.remove('dragging'); } }
+    img.addEventListener('pointerup', up);
+    img.addEventListener('pointercancel', up);
+  })();
+
+  function visibleTickets(){
+    var q=state.query.trim().toLowerCase();
+    return state.tickets.filter(function(t){
+      if(state.filter==='toate' && t.status==='rezolvat') return false;
+      if(state.filter!=='toate' && state.filter!=='arhivate' && t.status!==state.filter) return false;
+      if(state.fPriority!=='toate' && t.priority!==state.fPriority) return false;
+      if(state.fCategory!=='toate' && (t.category||'')!==state.fCategory) return false;
+      if(q){ return (String(t.id).toLowerCase().indexOf(q)>=0)||(String(t.title).toLowerCase().indexOf(q)>=0)
+        ||(String(t.reporter).toLowerCase().indexOf(q)>=0)||(String(t.desc).toLowerCase().indexOf(q)>=0); }
+      return true;
+    });
+  }
+
+  function commentsToggle(t){
+    var n=(t.comments||[]).length;
+    return '<button class="mini cmt-btn'+(state.commentsOpen===t.id?' on':'')+'" data-comments="'+esc(t.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Comentarii'+(n?(' ('+n+')'):'')+'</button>';
+  }
+  function commentsBlock(t){
+    if(state.commentsOpen!==t.id) return '';
+    var cs=(t.comments||[]);
+    var thread = cs.length ? cs.map(function(c){
+      return '<div class="cmt'+(c.admin?' cmt-admin':'')+'"><div class="cmt-h">'+esc(c.author)+(c.admin?' <span class="cmt-badge">admin</span>':'')+' · '+fmtDate(c.at)+'</div><div class="cmt-t">'+esc(c.text)+'</div></div>';
+    }).join('') : '<div class="cmt-empty">Niciun comentariu încă. Scrie primul.</div>';
+    var nameField = state.isAdmin ? '' : '<input class="cmt-name" placeholder="Numele tău" maxlength="120" value="'+esc(state.cmtName||'')+'">';
+    return '<div class="comments" data-cid="'+esc(t.id)+'">'
+      +'<div class="cmt-list">'+thread+'</div>'
+      + nameField
+      +'<textarea class="cmt-input" rows="2" placeholder="Scrie un comentariu..."></textarea>'
+      +'<div class="re-actions"><button class="btn-ghost" data-cmtcancel="1">Închide</button><button class="btn-primary" data-cmtsend="'+esc(t.id)+'">Trimite</button></div>'
+      +'</div>';
+  }
+  function sendComment(id, text, name){
+    if(!text){ showBanner('Scrie un comentariu.'); return; }
+    if(!state.isAdmin && !name){ showBanner('Completează numele.'); return; }
+    if(!gasReady()){ showBanner('Deschide aplicația prin linkul publicat (…/exec).'); return; }
+    if(!state.isAdmin) state.cmtName=name;
+    var t=findTicket(id);
+    if(t){ t.comments=(t.comments||[]).concat([{author: state.isAdmin?state.adminName:name, admin:state.isAdmin, text:text, at:Date.now()}]); }
+    state.flashId=id; renderList(false);
+    gs('addComment', id, text, state.isAdmin?'':name, state.isAdmin?state.pin:'')
+      .then(function(list){ state.tickets=list; state.flashId=null; renderList(false); })
+      .catch(function(e){ showBanner((e&&e.message)||'Comentariul nu s-a putut trimite.'); load(); });
+  }
+  function replyBlock(t){
+    if(!t.reply) return '';
+    var fl=(state.flashId===t.id)?' flash':'';
+    var by=t.replyBy?(' · '+esc(t.replyBy)):'';
+    return '<div class="reply'+fl+'"><div class="rhead"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>Răspuns'+by+'</div><div class="rtext">'+esc(t.reply)+'</div></div>';
+  }
+
+  var chevSVG='<svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  function ddMenu(kind,t,map,cur,colorKey){
+    var h='<div class="dd-menu glass"><div class="dd-label">'+(kind==='status'?'Status':'Prioritate')+'</div>';
+    Object.keys(map).forEach(function(k){ var m=map[k];
+      h+='<button class="dd-item'+(cur===k?' sel':'')+'" data-ddset="'+kind+'|'+esc(t.id)+'|'+k+'"><span class="dd-ind" style="background:'+m[colorKey]+'"></span>'+m.label+'</button>'; });
+    return h+'</div>';
+  }
+  function dd(kind,t,map,cur,colorKey){
+    var m=map[cur]||map[Object.keys(map)[0]];
+    var open=state.menu&&state.menu.id===t.id&&state.menu.kind===kind;
+    return '<div class="dd'+(open?' open':'')+'"><button class="dd-btn" aria-haspopup="listbox" aria-expanded="'+(open?'true':'false')+'" aria-label="'+(kind==='status'?'Status':'Prioritate')+': '+m.label+', schimbă" data-dd="'+kind+'|'+esc(t.id)+'"><span class="dd-ind" style="background:'+m[colorKey]+'"></span><span>'+m.label+'</span>'+chevSVG+'</button>'+(open?ddMenu(kind,t,map,cur,colorKey):'')+'</div>';
+  }
+
+  function adminControls(t){
+    if(!state.isAdmin) return '';
+    if(state.pendingDelete===t.id){
+      return '<div class="confirm"><span>Arhivezi acest tichet? Îl poți restaura din „Arhivate".</span><button class="btn-danger" data-del="'+esc(t.id)+'">Arhivează</button><button class="btn-ghost" data-cancel="1">Anulează</button></div>';
+    }
+    return '<div class="actions">'+dd('status',t,STATUSES,t.status,'fg')+dd('priority',t,PRIORITIES,t.priority,'bar')
+      +'<button class="mini" data-edit="'+esc(t.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editează</button>'
+      +'<button class="mini icon danger" data-trash="'+esc(t.id)+'" title="Șterge tichetul" aria-label="Șterge tichetul"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>';
+  }
+  function replyEditor(t){
+    if(!state.isAdmin||state.replyOpen!==t.id) return '';
+    return '<div class="replyedit"><textarea id="rin-'+esc(t.id)+'" rows="3" placeholder="Scrie răspunsul pentru specialist...">'+esc(t.reply)+'</textarea><div class="re-actions"><button class="btn-ghost" data-cancelreply="1">Anulează</button><button class="btn-primary" data-savereply="'+esc(t.id)+'">Salvează răspuns</button></div></div>';
+  }
+  function editBlock(t){
+    if(!state.isAdmin||state.editOpen!==t.id) return '';
+    var pchips=Object.keys(PRIORITIES).map(function(k){ return '<button type="button" class="mini ep'+(t.priority===k?' on':'')+'" data-ep="'+k+'"><span class="dot" style="background:'+PRIORITIES[k].bar+'"></span>'+PRIORITIES[k].label+'</button>'; }).join('');
+    var cchips=CATEGORIES.map(function(c){ return '<button type="button" class="mini ec'+((t.category||'')===c?' on':'')+'" data-ec="'+esc(c)+'">'+esc(c)+'</button>'; }).join('');
+    return '<div class="replyedit editbox">'
+      +'<input class="eb-title" value="'+esc(t.title)+'" placeholder="Titlu" maxlength="200">'
+      +'<textarea class="eb-desc" rows="3" placeholder="Descriere">'+esc(t.desc)+'</textarea>'
+      +'<div class="eb-row"><span class="eb-lbl">Prioritate</span><div class="eb-chips ep-row">'+pchips+'</div></div>'
+      +'<div class="eb-row"><span class="eb-lbl">Categorie</span><div class="eb-chips ec-row">'+cchips+'</div></div>'
+      +'<div class="re-actions"><button class="btn-ghost" data-canceledit="1">Anulează</button><button class="btn-primary" data-saveedit="'+esc(t.id)+'">Salvează</button></div>'
+      +'</div>';
+  }
+
+  function archivedControls(t){
+    if(state.pendingPurge===t.id){
+      return '<div class="confirm"><span>Ștergi DEFINITIV? Nu se mai poate recupera.</span><button class="btn-danger" data-purge="'+esc(t.id)+'">Șterge definitiv</button><button class="btn-ghost" data-pcancel="1">Anulează</button></div>';
+    }
+    return '<div class="actions">'
+      +'<button class="mini" data-restore="'+esc(t.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-7 3.3"/><polyline points="3 3 3 8 8 8"/></svg>Restaurează</button>'
+      +'<button class="mini icon danger" data-purge0="'+esc(t.id)+'" title="Șterge definitiv" aria-label="Șterge definitiv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
+      +'</div>';
+  }
+  function renderArchived(area, animate){
+    if(state.archivedLoading){ area.innerHTML='<div class="empty glass"><svg class="spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg><p>Se încarcă arhiva...</p></div>'; return; }
+    var q=state.query.trim().toLowerCase();
+    var vis=state.archived.filter(function(t){ if(!q) return true;
+      return (String(t.id).toLowerCase().indexOf(q)>=0)||(String(t.title).toLowerCase().indexOf(q)>=0)||(String(t.reporter).toLowerCase().indexOf(q)>=0)||(String(t.desc).toLowerCase().indexOf(q)>=0); });
+    if(!vis.length){ area.innerHTML='<div class="empty glass"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg><p>Arhiva e goală.</p></div>'; return; }
+    var total=vis.length; var shown=Math.min(state.shown||30, total); var slice=vis.slice(0, shown);
+    var html='<div class="list">';
+    slice.forEach(function(t,i){
+      var st=STATUSES[t.status]||STATUSES.deschis, pr=PRIORITIES[t.priority]||PRIORITIES.medie;
+      var anim=animate?('animation:cardIn .32s ease both;animation-delay:'+(Math.min(i,8)*30)+'ms;'):'';
+      html+='<article class="card glass" data-id="'+esc(t.id)+'" style="border-left-color:'+pr.bar+';opacity:.85;'+anim+'">'
+        +'<div class="row1"><span class="code mono">'+esc(t.id)+'</span><span class="badge" style="color:'+st.fg+';background:'+st.bg+'">'+st.label+'</span><span class="meta">Arhivat'+(t.updatedBy?(' de '+esc(t.updatedBy)):'')+' · '+fmtDate(t.updatedAt||t.created)+'</span></div>'
+        +'<h3>'+esc(t.title)+'</h3>'+(t.desc?'<p class="desc">'+esc(t.desc)+'</p>':'')
+        +shotsBlock(t)+replyBlock(t)
+        +'<div class="row2"><span class="who">Raportat de '+esc(t.reporter)+'</span>'+archivedControls(t)+'</div>'
+        +'</article>';
+    });
+    area.innerHTML=html+'</div>';
+    hydrateImages(area);
+    Array.prototype.forEach.call(area.querySelectorAll('[data-restore]'),function(b){ b.onclick=function(){ restore(b.getAttribute('data-restore')); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-purge0]'),function(b){ b.onclick=function(){ state.pendingPurge=b.getAttribute('data-purge0'); renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-purge]'),function(b){ b.onclick=function(){ purge(b.getAttribute('data-purge')); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-pcancel]'),function(b){ b.onclick=function(){ state.pendingPurge=null; renderList(false); }; });
+  }
+  function renderList(animate){
+    var area=document.getElementById('listArea');
+    if(state.filter==='arhivate'){ renderArchived(area, animate); return; }
+    if(state.loading){ area.innerHTML='<div class="empty glass"><svg class="spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg><p>Se încarcă tichetele...</p></div>'; return; }
+    var vis=visibleTickets();
+    if(vis.length===0){
+      var msg=state.tickets.length===0?'Niciun tichet încă. Primul va fi TIS-01.':'Niciun tichet nu corespunde filtrului.';
+      area.innerHTML='<div class="empty glass"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><p>'+msg+'</p></div>'; return;
+    }
+    var total=vis.length; var shown=Math.min(state.shown||30, total); var slice=vis.slice(0, shown);
+    var html='<div class="list">';
+    slice.forEach(function(t,i){
+      var st=STATUSES[t.status]||STATUSES.deschis, pr=PRIORITIES[t.priority]||PRIORITIES.medie;
+      var raise=(state.menu&&state.menu.id===t.id)?' raise':'';
+      var fl=(state.flashId===t.id)?' flash':'';
+      var anim=animate?('animation:cardIn .32s ease both;animation-delay:'+(Math.min(i,8)*30)+'ms;'):'';
+      html+='<article class="card glass'+raise+fl+'" data-id="'+esc(t.id)+'" style="border-left-color:'+pr.bar+';'+anim+'">'
+        +'<div class="row1"><span class="code mono">'+esc(t.id)+'</span><span class="badge'+fl+'" style="color:'+st.fg+';background:'+st.bg+'">'+st.label+'</span>'+(t.category?'<span class="badge cat">'+esc(t.category)+'</span>':'')+'<span class="meta">'+pr.label+' · '+fmtDate(t.created)+(t.updatedBy?(' · modif. de '+esc(t.updatedBy)):'')+'</span></div>'
+        +'<h3>'+esc(t.title)+'</h3>'+(t.desc?'<p class="desc">'+esc(t.desc)+'</p>':'')
+        +shotsBlock(t)
+        +'<div class="row2"><span class="who">Raportat de '+esc(t.reporter)+'</span><div class="actions">'+commentsToggle(t)+'</div>'+adminControls(t)+'</div>'
+        +editBlock(t)+commentsBlock(t)+'</article>';
+    });
+    area.innerHTML=html+'</div>'+(total>shown?'<button class="loadmore" data-more="1">Încarcă mai multe ('+(total-shown)+' rămase)</button>':'');
+    hydrateImages(area);
+    var lm=area.querySelector('[data-more]'); if(lm) lm.onclick=function(){ state.shown=(state.shown||30)+30; renderList(false); };
+
+    Array.prototype.forEach.call(area.querySelectorAll('[data-dd]'),function(btn){
+      btn.onclick=function(ev){ ev.stopPropagation(); var p=btn.getAttribute('data-dd').split('|'), kind=p[0], id=p[1];
+        state.menu=(state.menu&&state.menu.id===id&&state.menu.kind===kind)?null:{id:id,kind:kind}; renderList(false); };
+    });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-ddset]'),function(btn){
+      btn.onclick=function(ev){ ev.stopPropagation(); var p=btn.getAttribute('data-ddset').split('|');
+        state.menu=null; renderList(false); if(p[0]==='status') changeStatus(p[1],p[2]); else updatePriority(p[1],p[2]); };
+    });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-reply]'),function(btn){
+      btn.onclick=function(){ state.replyOpen=btn.getAttribute('data-reply'); state.pendingDelete=null; state.menu=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-savereply]'),function(btn){
+      btn.onclick=function(){ var id=btn.getAttribute('data-savereply'); var ta=document.getElementById('rin-'+id); saveReply(id, ta?ta.value:''); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-cancelreply]'),function(btn){ btn.onclick=function(){ state.replyOpen=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-trash]'),function(btn){
+      btn.onclick=function(){ state.pendingDelete=btn.getAttribute('data-trash'); state.replyOpen=null; state.menu=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-del]'),function(btn){ btn.onclick=function(){ deleteTicket(btn.getAttribute('data-del')); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-cancel]'),function(btn){ btn.onclick=function(){ state.pendingDelete=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-edit]'),function(btn){ btn.onclick=function(){ state.editOpen=btn.getAttribute('data-edit'); state.replyOpen=null; state.pendingDelete=null; state.menu=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-canceledit]'),function(btn){ btn.onclick=function(){ state.editOpen=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('.editbox [data-ep]'),function(btn){ btn.onclick=function(){ var row=btn.parentNode; Array.prototype.forEach.call(row.children,function(c){ c.classList.remove('on'); }); btn.classList.add('on'); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('.editbox [data-ec]'),function(btn){ btn.onclick=function(){ var on=btn.classList.contains('on'); var row=btn.parentNode; Array.prototype.forEach.call(row.children,function(c){ c.classList.remove('on'); }); if(!on) btn.classList.add('on'); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-comments]'),function(b){ b.onclick=function(){ var id=b.getAttribute('data-comments'); state.commentsOpen=(state.commentsOpen===id?null:id); state.editOpen=null; state.menu=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-cmtcancel]'),function(b){ b.onclick=function(){ state.commentsOpen=null; renderList(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-cmtsend]'),function(b){ b.onclick=function(){ var id=b.getAttribute('data-cmtsend'); var box=b.closest('.comments'); var ta=box.querySelector('.cmt-input'); var ni=box.querySelector('.cmt-name'); sendComment(id, ta?ta.value.trim():'', ni?ni.value.trim():''); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-saveedit]'),function(btn){ btn.onclick=function(){
+      var id=btn.getAttribute('data-saveedit'); var box=btn.closest('.editbox'); var cur=findTicket(id);
+      var ep=box.querySelector('.ep.on'), ec=box.querySelector('.ec.on');
+      saveEdit(id, { title:box.querySelector('.eb-title').value.trim(), desc:box.querySelector('.eb-desc').value.trim(),
+        priority: ep?ep.getAttribute('data-ep'):(cur?cur.priority:'medie'), category: ec?ec.getAttribute('data-ec'):'' });
+    }; });
+  }
+  document.addEventListener('click', function(){
+    if(state.menu){ state.menu=null; renderList(false); }
+    var bar=document.getElementById('adminBar'); if(bar.classList.contains('show')) closeAdminBar();
+    var dp=document.getElementById('ddPriority'); if(dp&&dp._closeDD) dp._closeDD();
+    var dc=document.getElementById('ddCategory'); if(dc&&dc._closeDD) dc._closeDD();
+  });
+
+  function refreshCount(){ document.getElementById('openCount').textContent=state.tickets.filter(function(t){return t.status==='deschis';}).length; }
+  function ticketsSig(list){ return list.map(function(t){ return t.id+':'+t.status+':'+t.priority+':'+(t.updatedAt||0)+':'+((t.comments||[]).length); }).join('|'); }
+  function setTickets(list, animate){
+    state.tickets=Array.isArray(list)?list:[]; state.loading=false; state.pendingDelete=null; state.replyOpen=null; state.menu=null;
+    state._sig=ticketsSig(state.tickets);
+    refreshCount(); renderList(!!animate);
+  }
+
+  function load(){
+    if(!gasReady()){ state.loading=false; showBanner('Deschide aplicația prin linkul publicat (…/exec), nu fișierul direct.'); renderList(false); return; }
+    state.loading=true; renderList(false);
+    document.getElementById('reloadIcon').classList.add('spin');
+    gs('getTickets').then(function(list){ showBanner(''); setTickets(list,true); })
+      .catch(function(){ state.loading=false; showBanner('Nu am putut încărca tichetele. Reîncarcă pagina.'); })
+      .then(function(){ document.getElementById('reloadIcon').classList.remove('spin'); });
+  }
+
+  function submit(){
+    var reporter=document.getElementById('reporter').value.trim(), title=document.getElementById('title').value.trim(), desc=document.getElementById('desc').value.trim();
+    var fe=document.getElementById('formErr');
+    if(!reporter||!title){ if(fe){ fe.textContent='Completează numele și titlul.'; fe.style.display='block'; }
+      (!reporter?document.getElementById('reporter'):document.getElementById('title')).focus(); return; }
+    if(fe){ fe.style.display='none'; }
+    if(!gasReady()){ showBanner('Deschide aplicația prin linkul publicat (…/exec).'); return; }
+    var btn=document.getElementById('submitBtn'), lbl=document.getElementById('submitLabel');
+    btn.disabled=true;
+    var files=state.files.slice(), uploaded=[];
+    var chain=Promise.resolve();
+    files.forEach(function(f,i){
+      chain=chain.then(function(){
+        lbl.textContent='Se încarcă captura '+(i+1)+'/'+files.length+'...';
+        return gs('uploadAttachment', f.dataUrl.split(',')[1], 'image/jpeg', f.name).then(function(r){ uploaded.push(r); });
+      });
+    });
+    chain.then(function(){
+      lbl.textContent='Se salvează...';
+      return gs('addTicket', {reporter:reporter,title:title,desc:desc,priority:state.priority,category:state.category,attachments:uploaded});
+    }).then(function(res){
+      setTickets(res.tickets,true);
+      try{ sessionStorage.setItem('tis_reporter', reporter); }catch(e){}
+      document.getElementById('title').value=''; document.getElementById('desc').value='';
+      state.files=[]; renderThumbs('ticket'); state.category=''; renderCat();
+      showBanner(''); showModal(res.code);
+    }).catch(function(e){
+      showBanner((e&&e.message)||'Salvarea nu a reușit. Încearcă din nou.');
+    }).then(function(){ btn.disabled=false; lbl.textContent='Trimite tichetul'; });
+  }
+
+  function adminOp(fn, args, okMsg, animate){
+    if(!state.isAdmin){ showBanner('Doar adminii pot face această acțiune.'); return; }
+    gs.apply(null,[fn].concat(args).concat([state.pin]))
+      .then(function(list){ setTickets(list,!!animate); showBanner(okMsg||'', !!okMsg); })
+      .catch(function(err){ showBanner((err&&err.message)||'Acțiunea a eșuat.'); logoutAdmin(); load(); });
+  }
+  function findTicket(id){ for(var i=0;i<state.tickets.length;i++){ if(state.tickets[i].id===id) return state.tickets[i]; } return null; }
+  function animateRemove(el, done){
+    if(!el || REDUCE){ done(); return; }
+    try{
+      el.style.overflow='hidden'; el.style.height=el.offsetHeight+'px'; void el.offsetHeight;
+      el.classList.add('removing');
+      el.style.height='0px'; el.style.marginTop='0'; el.style.marginBottom='0'; el.style.paddingTop='0'; el.style.paddingBottom='0';
+    }catch(e){}
+    setTimeout(done, 380);
+  }
+  function changeStatus(id,status){
+    if(!state.isAdmin){ showBanner('Doar adminii pot schimba statusul.'); load(); return; }
+    var t=findTicket(id), prev=t?t.status:null;
+    if(t) t.status=status;
+    state.menu=null; state.flashId=id; refreshCount(); renderList(false);
+    gs('updateStatus',id,status,state.pin)
+      .then(function(list){ state.tickets=list; state.flashId=null; renderList(false); })
+      .catch(function(e){ if(t&&prev!=null) t.status=prev; state.flashId=null; showBanner((e&&e.message)||'Statusul nu s-a putut actualiza.'); logoutAdmin(); load(); });
+  }
+  function updatePriority(id,priority){
+    if(!state.isAdmin){ showBanner('Doar adminii pot schimba prioritatea.'); load(); return; }
+    var t=findTicket(id), prev=t?t.priority:null;
+    if(t) t.priority=priority;
+    state.menu=null; state.flashId=id; renderList(false);
+    gs('updatePriority',id,priority,state.pin)
+      .then(function(list){ state.tickets=list; state.flashId=null; renderList(false); })
+      .catch(function(e){ if(t&&prev!=null) t.priority=prev; state.flashId=null; showBanner((e&&e.message)||'Prioritatea nu s-a putut actualiza.'); logoutAdmin(); load(); });
+  }
+  function saveEdit(id, payload){
+    if(!state.isAdmin){ showBanner('Doar adminii pot edita.'); return; }
+    if(!payload.title){ showBanner('Titlul nu poate fi gol.'); return; }
+    var t=findTicket(id), prev=t?{title:t.title,desc:t.desc,priority:t.priority,category:t.category}:null;
+    if(t){ t.title=payload.title; t.desc=payload.desc; t.priority=payload.priority; t.category=payload.category; }
+    state.editOpen=null; state.flashId=id; renderList(false);
+    gs('editTicket', id, payload, state.pin)
+      .then(function(list){ state.tickets=list; state.flashId=null; renderList(false); showBanner('Tichet actualizat.', true); })
+      .catch(function(e){ if(t&&prev){ t.title=prev.title; t.desc=prev.desc; t.priority=prev.priority; t.category=prev.category; } state.flashId=null; showBanner((e&&e.message)||'Editarea a eșuat.'); logoutAdmin(); load(); });
+  }
+  function saveReply(id,text){
+    if(!state.isAdmin){ showBanner('Doar adminii pot răspunde.'); return; }
+    var t=findTicket(id), prev=t?{r:t.reply,b:t.replyBy}:null;
+    if(t){ t.reply=text; t.replyBy=state.adminName; }
+    state.replyOpen=null; state.flashId=id; renderList(false);
+    gs('replyTicket',id,text,state.pin)
+      .then(function(list){ state.tickets=list; state.flashId=null; renderList(false); showBanner('Răspuns salvat.', true); })
+      .catch(function(e){ if(t&&prev){ t.reply=prev.r; t.replyBy=prev.b; } state.flashId=null; showBanner((e&&e.message)||'Răspunsul nu s-a putut salva.'); logoutAdmin(); load(); });
+  }
+  function applyFilter(f){
+    state.filter=f; state.menu=null; state.shown=30; renderFilters();
+    if(f==='arhivate'){ loadArchived(); } else { renderList(true); }
+  }
+  function loadArchived(){
+    if(!state.isAdmin){ state.filter='toate'; renderFilters(); renderList(true); return; }
+    state.archivedLoading=true; renderList(false);
+    gs('getArchived', state.pin)
+      .then(function(list){ state.archived=list; state.archivedLoading=false; renderList(true); })
+      .catch(function(e){ state.archivedLoading=false; showBanner((e&&e.message)||'Nu am putut încărca arhiva.'); });
+  }
+  function restore(id){
+    gs('restoreTicket', id, state.pin)
+      .then(function(list){ state.archived=list; renderList(true); load(); showBanner('Tichet restaurat.', true); })
+      .catch(function(e){ showBanner((e&&e.message)||'Restaurarea a eșuat.'); });
+  }
+  function purge(id){
+    var el=document.querySelector('#listArea article[data-id="'+id+'"]');
+    animateRemove(el, function(){
+      state.archived=state.archived.filter(function(t){ return t.id!==id; }); state.pendingPurge=null; renderList(false);
+      gs('purgeTicket', id, state.pin)
+        .then(function(list){ state.archived=list; renderList(false); showBanner('Șters definitiv.', true); })
+        .catch(function(e){ showBanner((e&&e.message)||'Ștergerea a eșuat.'); loadArchived(); });
+    });
+  }
+  function exportCsv(){
+    if(!state.isAdmin){ showBanner('Doar adminii pot exporta.'); return; }
+    gs('exportTicketsCsv', state.pin).then(function(csv){
+      try{
+        var blob=new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+        var url=URL.createObjectURL(blob); var a=document.createElement('a');
+        a.href=url; a.download='tichete-'+new Date().toISOString().slice(0,10)+'.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+        showBanner('Export descărcat.', true);
+      }catch(e){ showBanner('Descărcarea nu a pornit. Încearcă din foaia Google.'); }
+    }).catch(function(e){ showBanner((e&&e.message)||'Exportul a eșuat.'); });
+  }
+  document.getElementById('exportBtn').onclick=function(ev){ ev.stopPropagation(); exportCsv(); };
+
+  function deleteTicket(id){
+    if(!state.isAdmin){ showBanner('Doar adminii pot arhiva tichete.'); return; }
+    var el=document.querySelector('#listArea article[data-id="'+id+'"]');
+    animateRemove(el, function(){
+      state.tickets=state.tickets.filter(function(t){ return t.id!==id; });
+      state.pendingDelete=null; renderList(false);
+      gs('deleteTicket',id,state.pin)
+        .then(function(list){ state.tickets=list; renderList(false); showBanner('Tichet arhivat.', true); })
+        .catch(function(e){ showBanner((e&&e.message)||'Ștergerea a eșuat.'); logoutAdmin(); load(); });
+    });
+  }
+
+  // ---- modal cod ----
+  function showModal(code){ document.getElementById('modalCode').textContent=code; document.getElementById('modal').classList.add('show'); }
+  function hideModal(){ document.getElementById('modal').classList.remove('show'); }
+  document.getElementById('modalClose').onclick=hideModal;
+  document.getElementById('modal').onclick=function(e){ if(e.target.id==='modal') hideModal(); };
+  document.getElementById('copyBtn').onclick=function(){
+    var code=document.getElementById('modalCode').textContent, btn=this;
+    function done(){ btn.textContent='Copiat!'; setTimeout(function(){ btn.textContent='Copiază'; },1500); }
+    function fallback(){ var ta=document.createElement('textarea'); ta.value=code; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.focus(); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} document.body.removeChild(ta); }
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(done,fallback); } else fallback(); }catch(e){ fallback(); }
+  };
+
+  document.addEventListener('keydown', function(e){ if(e.key!=='Escape') return;
+    var m=document.getElementById('modal'); if(m.classList.contains('show')){ hideModal(); return; }
+    var dp=document.getElementById('ddPriority'); if(dp&&dp._closeDD) dp._closeDD();
+    var dc=document.getElementById('ddCategory'); if(dc&&dc._closeDD) dc._closeDD();
+    if(state.menu){ state.menu=null; renderList(false); }
+  });
+
+  // ---- admin ----
+  function openAdminBar(){ document.getElementById('adminBar').classList.add('show'); document.getElementById('pinInput').focus(); }
+  function closeAdminBar(){ document.getElementById('adminBar').classList.remove('show'); document.getElementById('pinInput').value=''; }
+  function logoutAdmin(){
+    state.isAdmin=false; state.pin=''; state.adminName=''; state.pendingDelete=null; state.replyOpen=null; state.menu=null;
+    state.pendingPurge=null; if(state.filter==='arhivate') state.filter='toate';
+    try{ sessionStorage.removeItem('tis_pin'); sessionStorage.removeItem('tis_admin'); }catch(e){}
+    renderAdminUI(); renderList(false);
+  }
+  function tryLogin(){
+    var pin=document.getElementById('pinInput').value; if(!pin) return;
+    gs('verifyPin',pin).then(function(name){
+      if(name){ state.isAdmin=true; state.pin=pin; state.adminName=name;
+        try{ sessionStorage.setItem('tis_pin',pin); sessionStorage.setItem('tis_admin',name); }catch(e){}
+        closeAdminBar(); renderAdminUI(); renderList(true); showBanner('Ești autentificat ca '+name+'.',true);
+      } else showBanner('Cod de admin invalid.');
+    }).catch(function(e){ showBanner((e&&e.message)||'Verificarea codului a eșuat.'); });
+  }
+  document.getElementById('fab').onclick=function(ev){ ev.stopPropagation();
+    if(state.isAdmin){ logoutAdmin(); showBanner('Ai ieșit din modul admin.',true); }
+    else { var bar=document.getElementById('adminBar'); if(bar.classList.contains('show')) closeAdminBar(); else openAdminBar(); } };
+  document.getElementById('adminBar').onclick=function(e){ e.stopPropagation(); };
+  document.getElementById('pinSubmit').onclick=tryLogin;
+  document.getElementById('pinCancel').onclick=closeAdminBar;
+  document.getElementById('pinInput').onkeydown=function(e){ if(e.key==='Enter') tryLogin(); };
+  document.getElementById('submitBtn').onclick=submit;
+  document.getElementById('reloadBtn').onclick=function(ev){ ev.stopPropagation(); if(state.page==='news') loadNews(); else load(); };
+  document.getElementById('search').oninput=function(e){ state.query=e.target.value; state.shown=30; renderList(false); };
+
+
+  // ---- tab-uri / pagini ----
+  var NAV_DEFS=[
+    ['tichete','Tichete','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/><line x1="13" y1="5" x2="13" y2="19"/></svg>'],
+    ['news','News','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-7v16L3 13z"/><path d="M17 8a3 3 0 0 1 0 8"/><path d="M6 13v4a2 2 0 0 0 2 2h1"/></svg>']
+  ];
+  function renderTabs(){
+    var inner=document.getElementById('navInner');
+    // construiesc butoanele o singură dată (păstrez indicatorul)
+    if(!inner.querySelector('.nav-item')){
+      NAV_DEFS.forEach(function(d){
+        var b=document.createElement('button'); b.className='nav-item'; b.setAttribute('data-page',d[0]);
+        b.setAttribute('aria-label',d[1]);
+        b.innerHTML=d[2]+'<span>'+d[1]+'</span>';
+        b.onclick=function(){ setPage(d[0]); };
+        inner.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(inner.querySelectorAll('.nav-item'),function(b){
+      b.classList.toggle('on', b.getAttribute('data-page')===state.page);
+    });
+    moveIndicator();
+  }
+  function moveIndicator(){
+    var inner=document.getElementById('navInner'), ind=document.getElementById('navInd');
+    var act=inner.querySelector('.nav-item.on'); if(!act||!ind) return;
+    var vertical = document.body.classList.contains('nav-left') && window.innerWidth>760;
+    if(vertical){
+      ind.style.width=(inner.clientWidth-14)+'px';
+      ind.style.height=act.offsetHeight+'px';
+      ind.style.transform='translateY('+(act.offsetTop-7)+'px)';
+    } else {
+      ind.style.height=(inner.clientHeight-14)+'px';
+      ind.style.width=act.offsetWidth+'px';
+      ind.style.transform='translateX('+(act.offsetLeft-7)+'px)';
+    }
+  }
+
+  // poziția meniului (sus / stânga / jos), salvată local
+  (function initNav(){
+    document.body.classList.add('nav-bottom');   // meniu fix, jos
+    window.addEventListener('resize', moveIndicator);
+    window.addEventListener('load', function(){ setTimeout(moveIndicator,60); });
+    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(function(){ moveIndicator(); }); }
+    setTimeout(moveIndicator, 300);
+  })();
+  function setPage(p){
+    state.page=p; state.menu=null;
+    document.getElementById('ticketsView').style.display = p==='tichete'?'block':'none';
+    document.getElementById('newsView').style.display = p==='news'?'block':'none';
+    renderTabs();
+    if(p==='news'){ if(!state.newsLoaded) loadNews(); else renderNews(true); }
+  }
+
+  // ---- News: listă ----
+  function loadNews(){
+    if(!gasReady()){ showBanner('Deschide aplicația prin linkul publicat (…/exec).'); return; }
+    state.newsLoading=true; renderNews(false);
+    document.getElementById('reloadIcon').classList.add('spin');
+    gs('getNews').then(function(list){ state.news=list; state.newsLoaded=true; state.newsLoading=false; renderNews(true); })
+      .catch(function(){ state.newsLoading=false; showBanner('Nu am putut încărca anunțurile.'); })
+      .then(function(){ document.getElementById('reloadIcon').classList.remove('spin'); });
+  }
+
+  function newsCardActions(a){
+    if(!state.isAdmin) return '';
+    if(state.pendingDeleteNews===a.id){
+      return '<div class="confirm"><span>Ștergi anunțul (inclusiv capturile)?</span>'
+        +'<button class="btn-danger" data-ndel="'+esc(a.id)+'">Șterge</button>'
+        +'<button class="btn-ghost" data-ncancel="1">Anulează</button></div>';
+    }
+    return '<div class="actions"><button class="mini" data-nedit="'+esc(a.id)+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editează</button>'
+      +'<button class="mini icon danger" data-ntrash="'+esc(a.id)+'" title="Șterge anunțul" aria-label="Șterge anunțul">'
+      +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div>';
+  }
+
+  function hexToRgba(hex, a){
+    var h=String(hex).replace('#',''); if(h.length===3){ h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; }
+    var r=parseInt(h.substr(0,2),16), g=parseInt(h.substr(2,2),16), b=parseInt(h.substr(4,2),16);
+    return 'rgba('+r+','+g+','+b+','+a+')';
+  }
+  function renderNewsBody(text){
+    if(!text) return '';
+    var blocks=String(text).split(/\n{2,}/);
+    var html=blocks.map(function(b,idx){
+      var t=esc(b).replace(/\n/g,'<br>');
+      return '<p'+(idx===0?' class="lead"':'')+'>'+t+'</p>';
+    }).join('');
+    return '<div class="news-body">'+html+'</div>';
+  }
+  function carousel(a){
+    var atts=(a.attachments||[]); if(!atts.length) return '';
+    var slides=''; atts.forEach(function(at){
+      slides+='<div class="car-slide"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-img="'+esc(at.id)+'" data-lb="'+esc(at.id)+'" alt="Captură: '+esc(at.name)+'"><span class="ph"><svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></span></div>';
+    });
+    var multi=atts.length>1, nav='', dots='';
+    if(multi){
+      nav='<button class="car-nav prev" data-car="prev" aria-label="Anterior"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
+        +'<button class="car-nav next" data-car="next" aria-label="Următor"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
+      dots='<div class="car-dots">'; atts.forEach(function(_,k){ dots+='<span data-dot="'+k+'"'+(k===0?' class="on"':'')+'></span>'; }); dots+='</div>';
+    }
+    return '<div class="carousel" data-idx="0"><div class="car-track">'+slides+'</div>'+nav+dots+'</div>';
+  }
+  function wireCarousels(area){
+    Array.prototype.forEach.call(area.querySelectorAll('.carousel'),function(car){
+      var track=car.querySelector('.car-track');
+      var slides=car.querySelectorAll('.car-slide').length;
+      var dots=car.querySelectorAll('[data-dot]');
+      function go(i){ if(i<0)i=slides-1; if(i>=slides)i=0; car.setAttribute('data-idx',i);
+        track.style.transform='translateX(-'+(i*100)+'%)';
+        Array.prototype.forEach.call(dots,function(d,k){ d.classList.toggle('on',k===i); });
+      }
+      var prev=car.querySelector('[data-car="prev"]'), next=car.querySelector('[data-car="next"]');
+      if(prev) prev.onclick=function(e){ e.stopPropagation(); go(parseInt(car.getAttribute('data-idx'),10)-1); };
+      if(next) next.onclick=function(e){ e.stopPropagation(); go(parseInt(car.getAttribute('data-idx'),10)+1); };
+      Array.prototype.forEach.call(dots,function(d,k){ d.onclick=function(e){ e.stopPropagation(); go(k); }; });
+      Array.prototype.forEach.call(car.querySelectorAll('img[data-lb]'),function(img){
+        img.onclick=function(e){ e.stopPropagation(); openLightbox(img.getAttribute('data-lb')); };
+      });
+    });
+  }
+
+  function renderNews(animate){
+    var area=document.getElementById('newsListArea');
+    if(state.newsLoading){
+      area.innerHTML='<div class="empty glass"><svg class="spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg><p>Se încarcă anunțurile...</p></div>';
+      return;
+    }
+    if(!state.news.length){
+      area.innerHTML='<div class="empty glass"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-7v16L3 13z"/><path d="M17 8a3 3 0 0 1 0 8"/></svg><p>'+(state.isAdmin?'Niciun anunț încă. Publică primul mai sus.':'Niciun anunț momentan.')+'</p></div>';
+      return;
+    }
+    var html='<div class="list">';
+    state.news.forEach(function(a,i){
+      var ty=NEWS_TYPES[a.type]||NEWS_TYPES.anunt;
+      var anim=animate?('animation:cardIn .4s ease both;animation-delay:'+(Math.min(i,8)*30)+'ms;'):'';
+      var vars='--tc:'+ty.bar+';--tc-glow:'+hexToRgba(ty.bar,.30)+';--tc-tint:'+hexToRgba(ty.bar,.12)+';--tc-border:'+hexToRgba(ty.bar,.38)+';';
+      var foot=newsCardActions(a);
+      html+='<article class="newscard" data-id="'+esc(a.id)+'" style="'+vars+anim+'">'
+        +'<div class="news-head">'
+        +'<span class="news-badge" style="color:'+ty.fg+';background:'+ty.bg+'"><span class="dot" style="background:'+ty.bar+'"></span>'+ty.label+'</span>'
+        +'<h3>'+esc(a.title)+'</h3>'
+        +'<div class="news-meta">de '+esc(a.author)+' · '+fmtDate(a.created)+'</div>'
+        +'</div>'
+        +carousel(a)
+        +renderNewsBody(a.body)
+        +(foot?'<div class="news-foot">'+foot+'</div>':'')
+        +'</article>';
+    });
+    area.innerHTML=html+'</div>';
+    hydrateImages(area);
+    wireCarousels(area);
+    Array.prototype.forEach.call(area.querySelectorAll('[data-ntrash]'),function(btn){
+      btn.onclick=function(){ state.pendingDeleteNews=btn.getAttribute('data-ntrash'); renderNews(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-nedit]'),function(btn){
+      btn.onclick=function(){ startEditNews(btn.getAttribute('data-nedit')); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-ncancel]'),function(btn){
+      btn.onclick=function(){ state.pendingDeleteNews=null; renderNews(false); }; });
+    Array.prototype.forEach.call(area.querySelectorAll('[data-ndel]'),function(btn){
+      btn.onclick=function(){ deleteNews(btn.getAttribute('data-ndel')); }; });
+  }
+
+  function renderNewsType(){
+    var el=document.getElementById('newsType'); el.innerHTML='';
+    Object.keys(NEWS_TYPES).forEach(function(k){ var ty=NEWS_TYPES[k];
+      var b=document.createElement('button'); if(state.newsType===k) b.className='on';
+      b.innerHTML='<span class="dot" style="background:'+ty.bar+'"></span>'+ty.label;
+      b.onclick=function(){ state.newsType=k; renderNewsType(); }; el.appendChild(b); });
+  }
+
+  function startEditNews(id){
+    var a=null; for(var i=0;i<state.news.length;i++){ if(state.news[i].id===id){ a=state.news[i]; break; } }
+    if(!a) return;
+    document.getElementById('newsTitle').value=a.title||'';
+    document.getElementById('newsBody').value=a.body||'';
+    state.newsType=a.type||'anunt'; renderNewsType();
+    state.editingNews=id;
+    document.getElementById('newsPublishLabel').textContent='Salvează modificările';
+    var nc=document.getElementById('newsCompose'); if(nc && nc.scrollIntoView) nc.scrollIntoView({behavior:'smooth', block:'center'});
+    showBanner('Editezi anunțul '+esc(id)+'. Capturile rămân neschimbate.', true);
+  }
+  function cancelEditNews(){
+    state.editingNews=null;
+    document.getElementById('newsTitle').value=''; document.getElementById('newsBody').value='';
+    document.getElementById('newsPublishLabel').textContent='Publică anunțul';
+  }
+  function publishNews(){
+    if(!state.isAdmin){ showBanner('Doar adminii pot publica anunțuri.'); return; }
+    var title=document.getElementById('newsTitle').value.trim();
+    var body=document.getElementById('newsBody').value.trim();
+    if(!title||!body){ showBanner('Completează titlul și conținutul.'); return; }
+    var btn=document.getElementById('newsPublish'), lbl=document.getElementById('newsPublishLabel');
+    if(state.editingNews){
+      btn.disabled=true; lbl.textContent='Se salvează...';
+      gs('editNews', state.editingNews, {title:title,body:body,type:state.newsType}, state.pin)
+        .then(function(list){ state.news=list; cancelEditNews(); renderNews(true); showBanner('Anunț actualizat.', true); })
+        .catch(function(e){ showBanner((e&&e.message)||'Editarea a eșuat.'); if(String((e&&e.message)||'').indexOf('admin')>=0) logoutAdmin(); })
+        .then(function(){ btn.disabled=false; lbl.textContent='Salvează modificările'; });
+      return;
+    }
+    btn.disabled=true;
+    var files=state.newsFiles.slice(), uploaded=[], chain=Promise.resolve();
+    files.forEach(function(f,i){ chain=chain.then(function(){
+      lbl.textContent='Se încarcă captura '+(i+1)+'/'+files.length+'...';
+      return gs('uploadAttachment', f.dataUrl.split(',')[1], 'image/jpeg', f.name).then(function(r){ uploaded.push(r); });
+    }); });
+    chain.then(function(){ lbl.textContent='Se publică...';
+      return gs('addNews', {title:title,body:body,type:state.newsType,attachments:uploaded}, state.pin);
+    }).then(function(list){
+      state.news=list; state.newsLoaded=true;
+      document.getElementById('newsTitle').value=''; document.getElementById('newsBody').value='';
+      state.newsFiles=[]; renderThumbs('news'); renderNews(true);
+      showBanner('Anunț publicat.', true);
+    }).catch(function(e){ showBanner((e&&e.message)||'Publicarea a eșuat.'); if(String((e&&e.message)||'').indexOf('admin')>=0){ logoutAdmin(); } })
+      .then(function(){ btn.disabled=false; lbl.textContent='Publică anunțul'; });
+  }
+
+  function deleteNews(id){
+    if(!state.isAdmin){ showBanner('Doar adminii pot șterge anunțuri.'); return; }
+    var el=document.querySelector('#newsListArea article[data-id="'+id+'"]');
+    animateRemove(el, function(){
+      state.news=state.news.filter(function(a){ return a.id!==id; });
+      state.pendingDeleteNews=null; renderNews(false);
+      gs('deleteNews', id, state.pin)
+        .then(function(list){ state.news=list; renderNews(false); showBanner('Anunț șters.', true); })
+        .catch(function(e){ showBanner((e&&e.message)||'Ștergerea a eșuat.'); logoutAdmin(); loadNews(); });
+    });
+  }
+
+  document.getElementById('newsPublish').onclick=publishNews;
+
+  renderTabs(); renderNewsType();
+
+
+  // ===== linie de progres al derulării =====
+  (function(){
+    var bar=document.getElementById('scrollProgress'); if(!bar) return;
+    function upd(){
+      var d=document.documentElement, b=document.body;
+      var st=(window.pageYOffset||d.scrollTop||b.scrollTop||0);
+      var h=(d.scrollHeight||b.scrollHeight)-window.innerHeight;
+      var pct=h>0?Math.min(100,Math.max(0,(st/h)*100)):0;
+      bar.style.transform='scaleX('+(pct/100)+')';
+    }
+    window.addEventListener('scroll', upd, {passive:true});
+    window.addEventListener('resize', upd);
+    window.addEventListener('load', upd);
+    upd();
+  })();
+
+  // ===== fundal: grilă de puncte animată (val subtil + reacție la mouse) =====
+  (function(){
+    var canvas=document.getElementById('bg'); if(!canvas) return;
+    var ctx=canvas.getContext('2d'); if(!ctx) return;
+    var reduce=false; try{ reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+    var W=0,H=0,DPR=1; var GAP=22;
+    var mouse={x:0.5,y:0.5,tx:0.5,ty:0.5,active:false};
+    function resize(){ DPR=Math.min(window.devicePixelRatio||1,1.5); W=canvas.clientWidth; H=canvas.clientHeight;
+      canvas.width=Math.floor(W*DPR); canvas.height=Math.floor(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0); }
+    function frame(t){
+      var time=(t||0)*0.001;
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle='#07080d'; ctx.fillRect(0,0,W,H);
+      mouse.x+=(mouse.tx-mouse.x)*0.06; mouse.y+=(mouse.ty-mouse.y)*0.06;
+      var mxp=mouse.x*W, myp=mouse.y*H, mAct=mouse.active?1:0;
+      ctx.fillStyle='rgb(150,162,214)';
+      for(var gy=0; gy<=H+GAP; gy+=GAP){
+        for(var gx=0; gx<=W+GAP; gx+=GAP){
+          var wv=Math.sin((gx*0.012+gy*0.010)-time*1.15)+Math.sin((gx*-0.009+gy*0.015)-time*0.75);
+          wv=(wv+2)/4; // 0..1
+          var a=0.04+wv*0.26;
+          if(mAct){
+            var dx=gx-mxp, dy=gy-myp, dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<240){ var m=(1-dist/240); a+=m*0.5; }
+          }
+          if(a<0.05) continue;
+          if(a>0.82) a=0.82;
+          var r=1.3+wv*0.9+(a>0.4?(a-0.4)*2.2:0);
+          ctx.globalAlpha=a;
+          ctx.fillRect(gx-r/2, gy-r/2, r, r);
+        }
+      }
+      ctx.globalAlpha=1;
+      if(!reduce) raf=requestAnimationFrame(frame);
+    }
+    var raf=null;
+    function start(){ if(raf) cancelAnimationFrame(raf); if(reduce){ frame(0); } else { raf=requestAnimationFrame(frame); } }
+    window.addEventListener('resize', function(){ resize(); if(reduce) frame(0); });
+    window.addEventListener('pointermove', function(e){ mouse.tx=e.clientX/window.innerWidth; mouse.ty=e.clientY/window.innerHeight; mouse.active=true; }, {passive:true});
+    window.addEventListener('pointerleave', function(){ mouse.active=false; });
+    document.addEventListener('visibilitychange', function(){ if(document.hidden){ if(raf){cancelAnimationFrame(raf);raf=null;} } else if(!reduce){ start(); } });
+    resize(); start();
+  })();
+
+  // ===== cursor cu inel dublu =====
+  (function(){
+    var inner=document.querySelector('.cursor-inner'), outer=document.querySelector('.cursor-outer');
+    if(!inner||!outer) return;
+    var fine=true; try{ fine=window.matchMedia('(hover:hover) and (pointer:fine)').matches; }catch(e){}
+    if(!fine){ inner.style.display='none'; outer.style.display='none'; return; }
+    var x=window.innerWidth/2,y=window.innerHeight/2,ox=x,oy=y;
+    window.addEventListener('mousemove',function(e){ x=e.clientX; y=e.clientY; inner.style.left=x+'px'; inner.style.top=y+'px'; },{passive:true});
+    var SEL='a,button,.card,.newscard,.dd-btn,.nav-item,.mini,.shot,input,textarea,.copy-btn,.filters button,.prio button';
+    document.addEventListener('mouseover',function(e){ if(e.target.closest && e.target.closest(SEL)) outer.classList.add('big'); });
+    document.addEventListener('mouseout',function(e){ if(e.target.closest && e.target.closest(SEL)) outer.classList.remove('big'); });
+    (function loop(){ ox+=(x-ox)*0.2; oy+=(y-oy)*0.2; outer.style.left=ox+'px'; outer.style.top=oy+'px'; requestAnimationFrame(loop); })();
+  })();
+
+
+  // reîmprospătare automată (near real-time), fără a deranja acțiuni în curs
+  setInterval(function(){
+    if(document.hidden || !gasReady()) return;
+    if(state.page==='tichete'){
+      if(state.menu||state.editOpen||state.commentsOpen||state.pendingDelete||state.pendingPurge||state.filter==='arhivate'||state.loading) return;
+      gs('getTickets').then(function(list){
+        var sig=ticketsSig(list);
+        if(sig!==state._sig){ state._sig=sig; state.tickets=list; refreshCount(); renderList(false); }
+      }).catch(function(){});
+    } else if(state.page==='news' && state.newsLoaded && !state.editingNews){
+      gs('getNews').then(function(list){
+        var sig=list.map(function(a){ return a.id+':'+a.n; }).join('|');
+        if(sig!==state._nsig){ state._nsig=sig; state.news=list; renderNews(false); }
+      }).catch(function(){});
+    }
+  }, 20000);
+
+  try{ var _rn=sessionStorage.getItem('tis_reporter'); if(_rn){ var _re=document.getElementById('reporter'); if(_re) _re.value=_rn; } }catch(e){}
+  renderAdminUI(); renderPrio(); renderCat(); renderFilterSelects(); renderFilters(); load();
+</script>
+</body>
+</html>

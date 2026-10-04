@@ -12,6 +12,18 @@ git add src && git commit -m "Import cod Apps Script existent"
 
 Fara acces la clasp: copiaza manual fisierele din editorul Apps Script in `src/` (`Code.gs`, `Index.html` etc.) plus `appsscript.json` (Project Settings > Show manifest).
 
+Codurile de admin NU se pun in cod. In editorul Apps Script: Project Settings > Script Properties > cheia `ADMINS`, valoare JSON, de ex. `{"cod-lung-1":"Nume 1","cod-lung-2":"Nume 2"}`.
+
+## Rulare locala (fara Apps Script)
+
+```bash
+python3 dev/preview.py                      # http://localhost:8080/ cu google.script.run simulat
+python3 dev/shoot.py docs/audit/<folder>    # screenshot-uri desktop + mobil, public + admin
+```
+
+`dev/mock-gas.js` tine date de test in memorie (cod admin de test: `1234`). Cand adaugi o functie server noua, adaug-o si in mock.
+`dev/shoot.py` are nevoie de `pip install playwright`; foloseste Chromium din `CHROMIUM_PATH` sau `/opt/pw-browsers/chromium`.
+
 ## 1. Audit UI curent
 
 - Screenshot-uri ale fiecarui ecran (desktop + mobil) in `docs/audit/`.

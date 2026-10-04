@@ -8,9 +8,14 @@ Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlSer
 - `docs/audit/` - rezultatele auditului pe UI-ul curent (screenshot-uri, probleme gasite).
 - `docs/design/` - design system-ul ales (`DESIGN.md`) si deciziile de redesign.
 - `docs/workflow.md` - fazele de lucru si comenzile.
+- `dev/` - rulare locala cu `google.script.run` simulat (`preview.py`, `mock-gas.js`) si screenshot-uri (`shoot.py`).
 - `.claude/skills/` - skill-urile folosite in proiect (vezi `SOURCES.md`).
 
 ## Reguli
+
+- Repo-ul e public: niciun cod de admin, ID de spreadsheet sau alt secret in cod. Codurile de admin stau in Script Properties (`ADMINS`).
+- Orice functie server noua sau schimbata se oglindeste in `dev/mock-gas.js`.
+- Verificarea vizuala se face cu `python3 dev/preview.py` + `python3 dev/shoot.py`.
 
 - Logica server (`.gs`) nu se schimba in timpul redesign-ului decat daca UI-ul nou o cere explicit. Redesign-ul inseamna HTML/CSS/JS client.
 - Pastreaza toate apelurile `google.script.run` existente si semnaturile functiilor server.
