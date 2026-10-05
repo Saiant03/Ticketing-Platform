@@ -135,6 +135,16 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.card}"
     padding: "24px"
+  dropdown:
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    height: "38px"
+  dropdown-list:
+    backgroundColor: "{colors.glass-dark}"
+    textColor: "{colors.ink-2}"
+    rounded: "14px"
+    padding: "6px"
   popover:
     backgroundColor: "{colors.glass-dark}"
     textColor: "{colors.ink}"
@@ -237,7 +247,8 @@ Adâncimea vine din spațiu, nu din umbre: trei straturi de stele (95 / 45 / 22 
 
 ### Filtre
 - **Segmentat**: pill de sticlă cu butoane de 32px; activ = mov 28% cu text `ink`; numărul în mono 11px.
-- **Select**: pill de sticlă 38px.
+- **Meniu derulant** (în locul oricărui `<select>`; prioritate, zonă, ordine pe bandă și prioritate, zonă în cutia de admin): butonul e pill de sticlă 38px cu săgeată, conturat mov cât e deschis. Lista e un singur `#ddList` comun, sticlă închisă (`glass-dark`, blur, umbra de plutire), rază 14px, padding 6px, fixată sub buton (deasupra dacă jos sunt sub 200px), cel mult 320px lățime și înălțime, mereu la 16px de marginile ecranului. Opțiuni de 36px: curenta mov 28% cu text `ink`, activa (tastatură sau hover, un singur highlight) `glass-2`, numerele în mono 11px `ink-3`. Model WAI-ARIA buton + listbox: focusul trece pe listă cu `aria-activedescendant`; săgeți, Home/End, Enter/Space, Escape și click în afară (focusul revine pe buton), prima literă (fără diacritice). Alegerea emite `change` pe buton, deci logica de filtrare și `setField` rămân aceleași. Deschidere 160ms opacity + translateY(-6px) scale(.98), fade la reduced-motion; închidere instantanee.
+- Numerele din meniul de prioritate urmează filtrul de status (`scope()`), ca cele din banda de status.
 
 ### Inputs / Fields
 42px, sticlă, contur `ink-3` (3:1), rază 10px; focus contur mov + inel 1px; eroare contur roșu și mesaj sub câmp.
@@ -282,5 +293,6 @@ Pill de sticlă închisă care intră de sus (de jos pe mobil), cu pictogramă p
 - **Don't** scrie din JS la fiecare cadru și nu anima proprietăți care se repictează (`clip-path`, gradiente, atribute SVG, variabile CSS moștenite); mișcarea continuă e doar WAAPI/tranziții pe `transform`/`opacity`.
 - **Don't** suprapune etichete pe hartă; orice etichetă nouă intră în plasarea fără coliziuni.
 - **Don't** pune panouri de instrucțiuni pe ecran; indicațiile stau unde se folosesc (`/` pe căutare, `title` cu N, finalul listei).
+- **Don't** folosi `<select>` nativ; meniurile trec prin componenta de meniu derulant.
 - **Don't** folosi bordură colorată laterală, gradient text sau emoji ca iconuri; pictogramele vin din `Icons.html`.
 - **Don't** deschide modale pentru sarcini care încap în card.

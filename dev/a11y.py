@@ -46,7 +46,7 @@ print("min text contrast (ink/ink-2/ink-3 pe toate fundalurile):", min(round(cr(
 
 JS = """()=>{
   const vis=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'};
-  const unl=[...document.querySelectorAll('input:not([type=file]):not([type=hidden]),textarea,select')].filter(vis).filter(e=>!e.labels.length&&!e.getAttribute('aria-label')).map(e=>e.id);
+  const unl=[...document.querySelectorAll('input:not([type=file]):not([type=hidden]),textarea,select,.dd')].filter(vis).filter(e=>!e.labels.length&&!e.getAttribute('aria-label')&&!e.getAttribute('aria-labelledby')).map(e=>e.id);
   const small=[...document.querySelectorAll('button,a,select,input')].filter(vis).filter(e=>{const r=e.getBoundingClientRect();return r.height<32}).map(e=>(e.className||e.id||e.tagName)+':'+Math.round(e.getBoundingClientRect().height));
   const over=[...document.querySelectorAll('body *')].filter(vis).filter(e=>e.getBoundingClientRect().right>innerWidth+1&&!e.closest('.seg,.jt-wrap,.sr,.list,#stars,#nebula,.skip')).map(e=>(e.className&&e.className.baseVal!==undefined?e.className.baseVal:e.className)||e.tagName).slice(0,6);
   const unnamed=[...document.querySelectorAll('button,[role=button]')].filter(vis).filter(e=>!(e.textContent.trim()||e.getAttribute('aria-label')||e.title)).map(e=>e.id||e.className);

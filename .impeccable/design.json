@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-05T18:00:00Z",
+  "generatedAt": "2026-10-05T20:00:00Z",
   "title": "Design System: WFM Extended",
   "extensions": {
     "colorMeta": {
@@ -329,6 +329,14 @@
       "description": "Filtrul de status: pill de sticlă, activ mov 28%, numere mono.",
       "html": "<div class=\"ds-bg\"><div class=\"ds-seg\"><button aria-pressed=\"true\">Toate <b>14</b></button><button>Active <b>0</b></button><button>Rezolvate <b>14</b></button></div></div>",
       "css": ".ds-bg{background:#06050C;padding:16px}.ds-seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}.ds-seg button{height:32px;padding:0 14px;border:0;border-radius:999px;background:none;color:rgba(244,244,240,.78);font-family:'Space Grotesk',system-ui,sans-serif;font-weight:500;font-size:13px}.ds-seg button[aria-pressed=true]{background:rgba(138,123,255,.28);color:#F4F4F0}.ds-seg b{font:500 11px 'JetBrains Mono',monospace}"
+    },
+    {
+      "name": "Meniu derulant",
+      "kind": "control",
+      "refersTo": "dropdown",
+      "description": "Înlocuiește <select>: buton pill de sticlă (aria-haspopup=listbox) și un singur listbox comun #ddList, sticlă închisă fixată sub buton (deasupra dacă jos nu e loc), în ecran cu margine de 16px. Opțiunea curentă mov 28%, cea activă (tastatură/hover) glass-2, numerele în mono. Săgeți, Home/End, Enter/Space, Escape, prima literă; deschidere 160ms opacity + transform, fade la reduced-motion.",
+      "html": "<div class=\"ds-bg\"><button class=\"ds-dd\" aria-expanded=\"true\">Orice prioritate</button><div class=\"ds-dl\" role=\"listbox\"><div class=\"sel\">Orice prioritate</div><div class=\"on\">Critică<span>2</span></div><div>Ridicată<span>3</span></div><div>Medie<span>6</span></div><div>Scăzută<span>3</span></div></div></div>",
+      "css": ".ds-bg{background:#06050C;padding:24px;font-family:'Space Grotesk',system-ui,sans-serif}.ds-dd{height:38px;min-width:150px;padding:0 34px 0 16px;border-radius:999px;border:1px solid #8A7BFF;box-shadow:0 0 0 1px #8A7BFF;background:rgba(255,255,255,.06);color:#F4F4F0;font:inherit;font-size:13px;text-align:left}.ds-dl{margin-top:6px;width:150px;padding:6px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(10,8,22,.92);box-shadow:0 30px 80px rgba(0,0,0,.35)}.ds-dl div{display:flex;justify-content:space-between;align-items:center;min-height:36px;padding:0 12px;border-radius:10px;font-size:13px;color:rgba(244,244,240,.78)}.ds-dl span{font:400 11px 'JetBrains Mono',monospace;color:rgba(244,244,240,.64)}.ds-dl .sel{background:rgba(138,123,255,.28);color:#F4F4F0}.ds-dl .on{background:rgba(255,255,255,.10);color:#F4F4F0}"
     },
     {
       "name": "Planetă",

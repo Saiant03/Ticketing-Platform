@@ -172,14 +172,10 @@
       const n = k === 'archive' ? (S.archived ? S.archived.length : '') : S.tickets.filter(t => inStatus(t, k)).length;
       return `<button data-status="${k}" aria-pressed="${S.f.status === k}">${l}${n !== '' ? ` <span class="n">${n}</span>` : ''}</button>`;
     }).join('');
-    const pn = {}; S.tickets.filter(t => t.status !== 'rezolvat').forEach(t => { pn[t.priority] = (pn[t.priority] || 0) + 1; });
-    const pf = $('#prioFilter');
-    pf.innerHTML = '<option value="all">Orice prioritate</option>' + Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]} · ${pn[k] || 0}</option>`).join('');
-    pf.value = S.f.prio;
-    const zs = $('#zoneSel');
-    zs.innerHTML = '<option value="">Toate zonele</option>' + RINGS.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
-    zs.value = S.f.zone || '';
-    $('#sortSel').value = S.f.sort;
+    const pn = {}; scope().forEach(t => { pn[t.priority] = (pn[t.priority] || 0) + 1; });
+    ddSet($('#prioFilter'), [['all', 'Orice prioritate']].concat(Object.keys(PRIOS).reverse().map(k => [k, PRIOS[k], pn[k] || 0])), S.f.prio);
+    ddSet($('#zoneSel'), [['', 'Toate zonele']].concat(RINGS.map(r => [r, r])), S.f.zone || '');
+    ddSet($('#sortSel'), SORTS, S.f.sort);
     $('#exportBtn').hidden = !S.isAdmin;
     $('#viewMap').setAttribute('aria-pressed', String(S.view === 'map'));
     $('#viewList').setAttribute('aria-pressed', String(S.view === 'list'));
@@ -352,13 +348,13 @@
     }
     const seg = Object.keys(STATUSES).map(k =>
       `<button data-set-status="${k}" aria-pressed="${t.status === k}">${STATUSES[k]}</button>`).join('');
-    const pOpts = Object.keys(PRIOS).map(k => `<option value="${k}"${t.priority === k ? ' selected' : ''}>${PRIOS[k]}</option>`).join('');
-    const zOpts = `<option value=""${!t.category ? ' selected' : ''}>Fără zonă</option>` +
-      ZONES.map(z => `<option value="${esc(z.key)}"${t.category === z.key ? ' selected' : ''}>${esc(z.key)}</option>`).join('');
+    const po = DD.opts['ad-prio'] = Object.keys(PRIOS).map(k => [k, PRIOS[k]]);
+    const zo = DD.opts['ad-zone'] = [['', 'Fără zonă']].concat(ZONES.map(z => [z.key, z.key]));
+    const pv = t.priority || '', zv = t.category || '';
     return `<div class="admin-box">
       <div class="full"><span class="lbl" id="lbl-st">Status</span><div class="seg" role="group" aria-labelledby="lbl-st">${seg}</div></div>
-      <div><label class="lbl" for="ad-prio">Prioritate</label><select class="select" id="ad-prio">${pOpts}</select></div>
-      <div><label class="lbl" for="ad-zone">Zonă</label><select class="select" id="ad-zone">${zOpts}</select></div>
+      <div><span class="lbl" id="lbl-ad-prio">Prioritate</span><button type="button" class="select dd" id="ad-prio" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbl-ad-prio ad-prio" value="${esc(pv)}">${ddLabel(po, pv)}</button></div>
+      <div><span class="lbl" id="lbl-ad-zone">Zonă</span><button type="button" class="select dd" id="ad-zone" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbl-ad-zone ad-zone" value="${esc(zv)}">${ddLabel(zo, zv)}</button></div>
       <div class="full admin-actions">
         <button class="btn btn-ghost" data-act="edit"${S.editing ? ' disabled' : ''}>${icon('i-edit')}Editează textul</button>
         <button class="btn btn-ghost" data-act="archive-ask">${icon('i-archive')}Arhivează</button>
@@ -1211,6 +1207,7 @@
     if (rg) return toggleRing(rg.dataset.ring);
     const t = e.target.closest('button, [data-shot]');
     if (!t) return;
+    if (t.classList.contains('dd')) return DD.id === t.id ? ddClose(true) : ddOpen(t);
     const ds = t.dataset;
 
     if (t.classList.contains('tab')) return setPage(ds.page);
@@ -1337,6 +1334,7 @@
 
   document.addEventListener('keydown', e => {
     if (!$('#lightbox').hidden) { if (e.key === 'Escape') closeLightbox(); return; }
+    if (e.target.classList && e.target.classList.contains('dd') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); return ddOpen(e.target); }
     if (e.key === 'Enter' && e.target.id === 'search') { const t = S.f.q.trim() && visible()[0]; if (t) openTicket(t.id); return; }
     const ctl = e.target.closest && e.target.closest('.planet, .rz');
     if (ctl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ctl.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
@@ -1369,6 +1367,78 @@
     addFiles(S.draft.files, imgs, () => { const th = $('#nf-thumbs'); if (th) th.innerHTML = thumbsHtml(S.draft.files); });
   });
 
+
+  // ---------- meniu derulant ----------
+  // un singur listbox (#ddList) pentru toate butoanele .dd; DD.opts[id] = [[valoare, text, număr?], …]
+  const SORTS = [['new', 'Cele mai noi'], ['prio', 'Prioritate'], ['upd', 'Modificate recent']];
+  const DD = { opts: {}, id: null, i: 0 };
+  const ddNorm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function ddLabel(opts, val) {
+    const o = opts.find(a => a[0] === val) || opts[0];
+    return esc(o[1]) + (o[2] != null ? ` <span class="n">${esc(o[2])}</span>` : '');
+  }
+  function ddSet(el, opts, val) { DD.opts[el.id] = opts; el.value = val; el.innerHTML = ddLabel(opts, val); }
+  function ddOpen(btn) {
+    const L = $('#ddList'), o = DD.opts[btn.id] || [];
+    DD.id = btn.id; DD.i = Math.max(0, o.findIndex(a => a[0] === btn.value));
+    L.innerHTML = o.map(([v, x, n], i) => `<div role="option" id="ddo-${i}" class="dd-o" aria-selected="${v === btn.value}" data-i="${i}"><span>${esc(x)}</span>${n != null ? `<span class="n">${n}</span>` : ''}</div>`).join('');
+    L.setAttribute('aria-labelledby', btn.getAttribute('aria-labelledby'));
+    btn.setAttribute('aria-expanded', 'true');
+    // poziție: sub buton, sau deasupra dacă dedesubt e prea puțin loc
+    const r = btn.getBoundingClientRect(), w = Math.min(320, innerWidth - 32), below = innerHeight - r.bottom - 22, up = below < 200 && r.top > below;
+    L.style.cssText = `min-width:${r.width}px;max-width:${w}px;left:0;max-height:${Math.min(320, up ? r.top - 22 : below)}px;` + (up ? `bottom:${innerHeight - r.top + 6}px;top:auto;transform-origin:bottom` : `top:${r.bottom + 6}px;transform-origin:top`);
+    L.hidden = false;
+    L.style.left = Math.max(16, Math.min(r.left, innerWidth - 16 - L.offsetWidth)) + 'px';
+    const dy = up ? '6px' : '-6px';
+    L.animate(REDUCED.matches ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: `translateY(${dy}) scale(.98)` }, { opacity: 1, transform: 'none' }], { duration: 160, easing: 'cubic-bezier(.16,1,.3,1)' });
+    L.focus({ preventScroll: true });
+    ddActive(DD.i);
+  }
+  function ddActive(i) {
+    const L = $('#ddList'), os = $$('.dd-o', L);
+    if (!os.length) return;
+    i = DD.i = Math.max(0, Math.min(os.length - 1, i));
+    os.forEach((el, k) => el.classList.toggle('on', k === i));
+    L.setAttribute('aria-activedescendant', 'ddo-' + i);
+    os[i].scrollIntoView({ block: 'nearest' });
+  }
+  function ddClose(focus) {
+    const b = DD.id && document.getElementById(DD.id);
+    $('#ddList').hidden = true;
+    if (b) { b.setAttribute('aria-expanded', 'false'); if (focus) b.focus(); }
+    DD.id = null;
+  }
+  function ddPick(i) {
+    const id = DD.id, b = document.getElementById(id), o = DD.opts[id], v = o[i][0];
+    ddClose(true);
+    if (b && v !== b.value) {
+      ddSet(b, o, v); b.dispatchEvent(new Event('change', { bubbles: true }));
+      const nb = document.getElementById(id);   // renderAll poate recrea butonul (ad-*)
+      if (nb && document.activeElement !== nb) nb.focus();
+    }
+  }
+  (function wireDropdown() {
+    const L = $('#ddList');
+    L.addEventListener('keydown', e => {
+      const k = e.key, n = (DD.opts[DD.id] || []).length;
+      if (k === 'ArrowDown') ddActive(DD.i + 1);
+      else if (k === 'ArrowUp') ddActive(DD.i - 1);
+      else if (k === 'Home') ddActive(0);
+      else if (k === 'End') ddActive(n - 1);
+      else if (k === 'Enter' || k === ' ') ddPick(DD.i);
+      else if (k === 'Escape') ddClose(true);
+      else if (k === 'Tab') ddClose(true);
+      else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        for (let j = 1; j <= n; j++) { const x = (DD.i + j) % n; if (ddNorm(DD.opts[DD.id][x][1])[0] === ddNorm(k)) { ddActive(x); break; } }
+      } else return;
+      e.preventDefault(); e.stopPropagation();
+    });
+    L.addEventListener('click', e => { const o = e.target.closest('.dd-o'); if (o) ddPick(+o.dataset.i); });
+    L.addEventListener('pointermove', e => { const o = e.target.closest('.dd-o'); if (o && +o.dataset.i !== DD.i) ddActive(+o.dataset.i); });
+    document.addEventListener('pointerdown', e => { if (DD.id && !e.target.closest('#ddList, #' + DD.id)) ddClose(true); }, true);
+    window.addEventListener('resize', () => { if (DD.id) ddClose(false); });
+    window.addEventListener('scroll', e => { if (DD.id && e.target !== L) ddClose(false); }, true);
+  })();
 
   // ---------- lightbox ----------
   const LB = { s: 1, x: 0, y: 0, drag: false, sx: 0, sy: 0, ox: 0, oy: 0, ptr: {}, pd: 0, ps: 1, ret: null };

@@ -3,7 +3,7 @@
     python3 dev/shoot.py <folder-iesire> [url]
 
 Captează pe desktop (1440x900) și mobil (390x844), doar dark:
-hartă, hartă cu card, listă, detaliu tichet, formular tichet nou, admin, News, Jurnal.
+hartă, hartă cu card, listă, detaliu tichet, formular tichet nou, admin, meniurile derulante deschise, News, Jurnal.
 Erorile din consolă se scriu în <folder>/console-errors.txt.
 """
 import re, sys, pathlib
@@ -37,10 +37,17 @@ def run(browser, vname, size, scheme, errors):
     shot = lambda name: page.screenshot(path=OUT / f"{vname}-{scheme}-{name}.png")
     mobile = vname == "mobil"
 
+    def menu(sel, name):
+        page.click(sel)
+        settle(page, 300)
+        shot(name)
+        page.keyboard.press("Escape")
+
     page.goto(URL)
     settle(page, 2600)
     # vederea implicită: hartă pe desktop, listă pe mobil
     shot("lista" if mobile else "harta")
+    menu("#prioFilter", "meniu-prioritate")
     page.click("#viewMap" if mobile else "#viewList")
     settle(page, 1000)   # tranziția prin nucleu durează ~0,75 s
     shot("harta" if mobile else "lista")
@@ -57,6 +64,7 @@ def run(browser, vname, size, scheme, errors):
 
     page.click("#viewList")
     settle(page, 1000)
+    menu("#zoneSel", "meniu-zona")
     page.click(".row[data-id='TIS-13']")
     settle(page, 900)
     shot("detaliu")
@@ -81,6 +89,7 @@ def run(browser, vname, size, scheme, errors):
     page.click(".row[data-id='TIS-14']")
     settle(page, 900)
     shot("admin-detaliu")
+    menu("#ad-zone", "admin-meniu-zona")
     page.keyboard.press("Escape")
     settle(page, 700)
     page.click(".tab[data-page='news']")

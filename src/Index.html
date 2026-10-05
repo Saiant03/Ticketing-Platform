@@ -59,15 +59,9 @@
 
     <div class="filters">
       <div class="seg" id="statusSeg" role="group" aria-label="Status"></div>
-      <label class="sel-wrap"><span class="sr">Prioritate</span><select class="select" id="prioFilter"></select></label>
-      <label class="sel-wrap list-only"><span class="sr">Zonă</span><select class="select" id="zoneSel"></select></label>
-      <label class="sel-wrap list-only"><span class="sr">Ordine</span>
-        <select class="select" id="sortSel">
-          <option value="new">Cele mai noi</option>
-          <option value="prio">Prioritate</option>
-          <option value="upd">Modificate recent</option>
-        </select>
-      </label>
+      <span class="sel-wrap"><span class="sr" id="lbl-prio">Prioritate</span><button type="button" class="select dd" id="prioFilter" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbl-prio prioFilter"></button></span>
+      <span class="sel-wrap list-only"><span class="sr" id="lbl-zone">Zonă</span><button type="button" class="select dd" id="zoneSel" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbl-zone zoneSel"></button></span>
+      <span class="sel-wrap list-only"><span class="sr" id="lbl-sort">Ordine</span><button type="button" class="select dd" id="sortSel" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbl-sort sortSel"></button></span>
       <div class="seg" id="viewSeg" role="group" aria-label="Vedere">
         <button id="viewMap" aria-pressed="true">Hartă</button>
         <button id="viewList" aria-pressed="false">Listă</button>
@@ -151,6 +145,8 @@
   </div>
   <img id="lbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
 </div>
+
+<div class="dd-list" id="ddList" role="listbox" tabindex="-1" hidden></div>
 
 <?!= include('App') ?>
 </body>
