@@ -2,7 +2,7 @@
 
     python3 dev/shoot.py <folder-iesire> [url]
 
-Captează pe desktop (1440x900) și mobil (390x844), light și dark:
+Captează pe desktop (1440x900) și mobil (390x844), doar dark:
 listă, detaliu tichet, formular tichet nou, admin, News, Jurnal.
 Erorile din consolă se scriu în <folder>/console-errors.txt.
 """
@@ -49,7 +49,7 @@ def run(browser, vname, size, scheme, errors):
     page.fill("#nf-title", "Importul nu completează data")
     settle(page, 300)
     shot("tichet-nou")
-    if scheme == "light":
+    if scheme == "dark":
         page.click("#nf-submit")
         settle(page, 300)
         shot("tichet-nou-erori")
@@ -59,7 +59,7 @@ def run(browser, vname, size, scheme, errors):
     page.click(".row[data-id='TIS-14']")
     settle(page)
     shot("admin-detaliu")
-    if scheme == "light":
+    if scheme == "dark":
         page.click(".tab[data-page='news']")
         settle(page, 1200)
         page.screenshot(path=OUT / f"{vname}-{scheme}-news.png", full_page=True)
@@ -74,7 +74,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=exe)
     errors = []
     for vname, size in VIEWPORTS.items():
-        for scheme in ("light", "dark"):
+        for scheme in ("dark",):
             run(browser, vname, size, scheme, errors)
     browser.close()
     (OUT / "console-errors.txt").write_text("\n".join(errors) or "(niciuna)\n", encoding="utf-8")

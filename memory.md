@@ -53,7 +53,7 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 - Skill-ul `ponytail` e folosit pentru orice cod (copiat în `.claude/skills/`, fără hook-urile plugin-ului).
 
 - Utilizator principal: specialiști, pe desktop.
-- Temă light + dark după sistem. Panoul și bara sunt mereu dark, holul urmează tema.
+- Doar temă dark (confirmat; tema light scoasă din `Tokens.html`). `dev/shoot.py` și `dev/a11y.py` verifică doar dark.
 - Accentul e mov (`#8A7BFF` / `#6A55E0`); galbenul nu se mai folosește.
 - Interfața trebuie să rămână aerisită: fără contoare, ceas, ambient sau panouri de instrucțiuni.
 - Scope backend: UI + fixuri mici. Deja făcute:

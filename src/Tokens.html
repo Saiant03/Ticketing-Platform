@@ -1,7 +1,7 @@
 <style>
   /* Design tokens WFM Extended, „Panou split-flap”. Singura sursă pentru culori, tipografie, spațiere, mișcare. */
   :root{
-    color-scheme: light;
+    color-scheme: dark;
     --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
     /* lățimi Archivo (axa wdth) */
@@ -25,7 +25,7 @@
     --panel-w: 460px;
     --row-h: 56px;
 
-    /* panoul: mereu întunecat, în ambele teme */
+    /* panoul */
     --b-case: #0B0C0E;
     --b-plate: #1A1C20;
     --b-plate-top: #202328;
@@ -48,52 +48,28 @@
     --st-done: #3DDC84;
     --st-crit: #FF4D3D;
 
-    /* holul, tema light */
-    --bg: #F3F4F6;
-    --surface: #FFFFFF;
-    --surface-2: #E9EBEE;
-    --line: #D9DCE1;
-    --line-strong: #82888F;
-    --ink: #0B0C0E;
-    --ink-2: #393D44;
-    --ink-3: #5B6068;
-    --acc: #6A55E0;
-    --acc-h: #5843CF;
-    --on-acc: #FFFFFF;
-    --focus: #6A55E0;
-    --danger: #B42318;
-    --danger-soft: #FCE9E7;
-    --ok: #12703F;
+    /* holul */
+    --bg: #0E0F11;
+    --surface: #16181B;
+    --surface-2: #1E2024;
+    --line: #2A2D32;
+    --line-strong: #666B73;
+    --ink: #F2F2EE;
+    --ink-2: #C6C8CC;
+    --ink-3: #9A9EA5;
+    --acc: #8A7BFF;
+    --acc-h: #A093FF;
+    --on-acc: #0B0C0E;
+    --focus: #8A7BFF;
+    --danger: #FF6B5E;
+    --danger-soft: #34191A;
+    --ok: #3DDC84;
 
-    --shadow-pop: 0 14px 32px rgba(11,12,14,.18), 0 2px 6px rgba(11,12,14,.10);
-    --scrim: rgba(11,12,14,.5);
+    --shadow-pop: 0 16px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+    --scrim: rgba(0,0,0,.6);
 
     --ease: cubic-bezier(.16,1,.3,1);
     --ease-in: cubic-bezier(.55,0,.8,.2);
     --t-panel: 280ms;
-  }
-
-  @media (prefers-color-scheme: dark){
-    :root{
-      color-scheme: dark;
-      --bg: #0E0F11;
-      --surface: #16181B;
-      --surface-2: #1E2024;
-      --line: #2A2D32;
-      --line-strong: #666B73;
-      --ink: #F2F2EE;
-      --ink-2: #C6C8CC;
-      --ink-3: #9A9EA5;
-      --acc: #8A7BFF;
-      --acc-h: #A093FF;
-      --on-acc: #0B0C0E;
-      --focus: #8A7BFF;
-      --danger: #FF6B5E;
-      --danger-soft: #34191A;
-      --ok: #3DDC84;
-
-      --shadow-pop: 0 16px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
-      --scrim: rgba(0,0,0,.6);
-    }
   }
 </style>

@@ -177,14 +177,14 @@ components:
 
 **Creative North Star: "Panoul de plecări, calm"**
 
-Lista de tichete este un panou split-flap de aeroport: un obiect negru mat pe care fiecare tichet e o „cursă” cu COD, PROBLEMĂ, PRIO și STATUS. Plăcuțele split-flap nu sunt decor, ci eveniment: apar doar unde o valoare se schimbă (statusul, codul la trimitere, data din News, marca) și se rotesc literă cu literă când se schimbă. Bara de sus e din același material ca panoul, deci panoul pare să continue sub navigație. În dreapta, holul (light sau noapte, după sistem) apare doar când ai deschis un tichet sau formularul.
+Lista de tichete este un panou split-flap de aeroport: un obiect negru mat pe care fiecare tichet e o „cursă” cu COD, PROBLEMĂ, PRIO și STATUS. Plăcuțele split-flap nu sunt decor, ci eveniment: apar doar unde o valoare se schimbă (statusul, codul la trimitere, data din News, marca) și se rotesc literă cu literă când se schimbă. Bara de sus e din același material ca panoul, deci panoul pare să continue sub navigație. În dreapta, holul (de noapte) apare doar când ai deschis un tichet sau formularul.
 
 Sistemul refuză tabelul gri de birou, cardurile glass și instrucțiunile care stau pe ecran degeaba. Expresivitatea vine din obiectul-panou și din mișcarea lui: un singur font, două materiale (panou și hol), un accent mov și patru culori de observație. Nimic nu se mișcă fără motiv.
 
 **Key Characteristics:**
-- Panou și bară mereu dark; holul light/dark după sistem.
+- Doar dark: panou, bară și hol (tema light a fost scoasă).
 - Plăcuțe split-flap doar pentru valori scurte care se schimbă: status, cod în momentul de trimitere și în detaliu, dată, marcă.
-- Accent mov: `#8A7BFF` pe suprafețe închise, `#6A55E0` în holul light.
+- Accent mov: `#8A7BFF` pe suprafețe închise, `#8A7BFF` și în hol (tema light nu mai există).
 - Un singur font variabil, Archivo, folosit pe axa de lățime.
 - Mișcare cu sens: rotire la schimbare, View Transitions la rearanjare și la deschiderea panoului; fără animații continue.
 
