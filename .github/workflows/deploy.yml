@@ -39,7 +39,7 @@ jobs:
       - name: clasp push
         if: steps.check.outputs.ready == 'true'
         run: |
-          npm install -g @google/clasp
+          npm install -g @google/clasp@3
           echo "$CLASPRC_JSON" > ~/.clasprc.json
           printf '{"scriptId":"%s","rootDir":"src"}' "$SCRIPT_ID" > .clasp.json
           if [ ! -f src/appsscript.json ]; then

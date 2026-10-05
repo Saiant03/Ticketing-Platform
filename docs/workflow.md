@@ -14,6 +14,8 @@ Fara acces la clasp: copiaza manual fisierele din editorul Apps Script in `src/`
 
 Codurile de admin NU se pun in cod. In editorul Apps Script: Project Settings > Script Properties > cheia `ADMINS`, valoare JSON, de ex. `{"cod-lung-1":"Nume 1","cod-lung-2":"Nume 2"}`.
 
+Deploy automat (GitHub Actions) si link scurt: `docs/deploy.md`.
+
 ## Rulare locala (fara Apps Script)
 
 ```bash

@@ -20,7 +20,7 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 | Planul implementat | `docs/plan-split-flap.md` |
 | Auditul UI-ului original (9/20) | `docs/audit/AUDIT.md`, `docs/audit/current/` |
 | Screenshot-uri ale versiunii curente („Panou calm”) | `.impeccable/review/` |
-| Workflow și deploy | `docs/workflow.md` |
+| Workflow și deploy | `docs/workflow.md`, ghid click cu click `docs/deploy.md` |
 | Skill-uri vendorizate | `.claude/skills/` (`SOURCES.md`) |
 | Agenți pentru delegare | `.claude/agents/` (`runner` Haiku, `executor` Sonnet) |
 | Reguli pentru Claude | `CLAUDE.md` |
@@ -103,8 +103,8 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 ## Următorul pas
 
 1. Utilizatorul copiază `Tokens`, `Styles`, `Index`, `App` și `Icons` în Apps Script și testează „Panou calm” pe `/dev` (tema movă, bara neagră, panoul pe toată lățimea, rândul pe 4 coloane, finalul listei, News). De urmărit: dacă panoul pe toată lățimea în tema light pare prea întunecat și dacă pe mobil selecturile (ordine, prioritate) lasă prea puțin loc pentru status și zone.
-2. **Deploy automat și link frumos** (cerut pentru sesiunea următoare). Decizie: aplicația rămâne pe Apps Script (date în Sheet/Drive-ul firmei, acces prin Google, gratuit); alte hostinguri ar cere API public sau mutarea datelor.
-   - `.github/workflows/deploy.yml`: la push pe `main` care schimbă `src/**` face `clasp push` (ajunge pe `/dev`); la rulare manuală din Actions cu `deploy: true` publică și o versiune nouă pe `/exec`. Manifestul: dacă `src/appsscript.json` lipsește, workflow-ul îl ia din proiectul live cu `clasp pull`, deci nu se ghicesc setările web app-ului.
-   - Lipsesc secretele GitHub `CLASPRC_JSON`, `SCRIPT_ID`, `DEPLOYMENT_ID`. Ghidează utilizatorul click cu click: `clasp login` local pentru `~/.clasprc.json`, Script ID din Project Settings, Deployment ID din Manage deployments, apoi GitHub → Settings → Secrets and variables → Actions.
-   - Pe GitHub, branch-ul implicit trebuie schimbat pe `main` (Settings → General → Default branch); vechiul branch poate fi șters după aceea, doar dacă utilizatorul confirmă.
-   - Link scurt către `/exec` sau o pagină Google Sites care include aplicația.
+2. **Deploy automat și link scurt**: pregătit, așteaptă pașii utilizatorului din `docs/deploy.md` (Apps Script API On, `clasp login --no-localhost` în Cloud Shell, cele 3 secrete, branch implicit `main`, rulare manuală de test, TinyURL către `/exec`).
+   - Workflow-ul folosește `@google/clasp@3` (Node 20); `deploy --deploymentId` e încă valid în v3. Aplicația rămâne pe Apps Script.
+   - De confirmat cu utilizatorul: rularea de test verde și `/dev` actualizat. Dacă firma blochează Cloud Shell/clasp, varianta e `clasp login` local cu Node.js.
+   - Vechiul branch `claude/sleepy-heisenberg-8bihmr` se șterge doar dacă utilizatorul confirmă.
+   - Recomandat link TinyURL; Google Sites e alternativa (aplicația în cadru). Dacă la Sites pagina apare goală, trebuie `setXFrameOptionsMode(ALLOWALL)` în `doGet` (neverificat).
