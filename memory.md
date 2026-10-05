@@ -60,6 +60,16 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - verificări: `flow.py` 34/34 (inclusiv coliziuni de etichete la 1440 și 390, nume de inele la 390, tranziții), `a11y.py` curat (contrast minim 5.59), `perf.py` 14.2 ms/s animat și 0 în repaus, `impeccable detect` doar advisory;
    - `DESIGN.md` și `.impeccable/design.json` rescrise din build.
 
+9. **„Orbită” runda 3** (commit `e50b061`, publicată pe `/exec`), după testul utilizatorului pe `/exec` („se mișcă greu”, „rotirea sacadată”, „primele 2 tichete fără animație”, „zoom la căutare”):
+   - cauze măsurate cu CPU 4x (`dev/trace.py`, CDP tracing): stelele DOM primeau variabile CSS la fiecare cadru, `@property --gx/--gy` recalcula stilul întregului document, `clip-path` necompozitat, harta SVG actualizată la 2Hz; rândurile animate erau doar primele 12 (real: 14 tichete);
+   - acum toată mișcarea continuă e pe compozitor: inelele sunt straturi `.orb` rotite cu WAAPI (`id:'orb'`), planetele (`div.planet` > `.up` contra-rotit, `id:'up'`) stau drepte; stelele sunt 3 imagini (canvas din afara paginii → `background-image`) cu derivă/sclipire WAAPI; paralaxa și camera dintre pagini sunt tranziții CSS pe `.sl`; nebuloasa e `#nebula` mutat cu transform; fără buclă rAF;
+   - etichetele stau mereu lângă planetă (modul „far” cu linii de legătură a fost scos, cu acordul utilizatorului), plasare la 1 s cât harta se rotește;
+   - tranziții mai scurte (hartă→listă 320+420ms, listă→hartă 260+480ms, pagini 280/380ms), toate rândurile animate;
+   - căutarea face zoom (max 1.8×) pe 1–4 rezultate, Enter deschide primul (doar cu text);
+   - cache `localStorage` `tis_cache_t`/`tis_cache_n` pentru randare instant; fontul Google nu mai blochează afișarea;
+   - verificări: `flow.py` 42 OK, `a11y.py` curat, `perf.py` 4.5 ms/s animat / 0.2 repaus; trace CPU 4x: rotație 1% din fir (era 9%), tranziții 16–35% (erau 61–90%).
+   - Notă: o rulare automată a rămas fără runner GitHub (anulată după 15 min, `runner_id: 0`); re-rularea a trecut.
+
 ## Decizii confirmate de utilizator
 
 - Execuția se deleagă mereu la agenți pe model mai slab: `runner` (Haiku) pentru verificări și căutări, `executor` (Sonnet) pentru cod după specificație. Designul, review-ul, commit-ul și push-ul rămân la agentul principal (vezi `CLAUDE.md`).
@@ -93,6 +103,7 @@ python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390
 python3 dev/flow.py                    # 34 de pași funcționali („Orbită”), inclusiv coliziuni de etichete și tranziții
 python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
 python3 dev/perf.py                    # ms/s de task-uri: < 15 cu animația pornită, < 5 în repaus (~100 s)
+python3 dev/trace.py                   # % ocupare a firului principal cu CPU 4x (rotație, tranziții, mouse)
 .claude/skills/impeccable/scripts/impeccable detect --json src/*.html
 ```
 
@@ -115,6 +126,6 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 2 „Orbită” e publicată pe `/exec`. Utilizatorul o testează pe datele reale (14 tichete rezolvate, deci harta în modul cu coduri lângă planete). Așteaptă feedback-ul lui. Note pentru runda următoare:
-- `perf.py` are marjă mică (14.2 din 15 ms/s); orice efect continuu nou trebuie măsurat.
-- În headless, capturile prind tranzițiile terminate; pentru cadre intermediare se opresc animațiile cu `getAnimations()` + `pause()` + `currentTime` (vezi raportul rundei 2).
+Runda 3 e pe `/exec`. Așteaptă feedback-ul utilizatorului pe fluiditate și încărcare (pe calculatorul lui de birou). Note:
+- Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
+- `TaskDuration` din `Performance.getMetrics` e în secunde.
