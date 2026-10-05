@@ -126,6 +126,8 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 3 e pe `/exec`; utilizatorul a confirmat că acum merge fluid. Nu e nimic deschis; următoarea cerere vine de la utilizator. Note:
+Runda 4: meniurile derulante (`<select>` native) arată ca meniurile Windows (alb, selecție albastră) și nu-i plac utilizatorului. Decizie confirmată: **meniu custom în JS** (nu `appearance: base-select`), chiar dacă e mai mult cod, ca să arate la fel în orice browser. Plus bug: numerele din meniul de prioritate („Critică · 0”) numără doar tichetele active (`renderToolbar`, `pn` cu `status !== 'rezolvat'`), chiar când filtrul de status e „Toate”; trebuie să urmeze `scope()`.
+
+Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
 - `TaskDuration` din `Performance.getMetrics` e în secunde.
