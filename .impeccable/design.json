@@ -1,828 +1,414 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-05T12:00:00Z",
+  "generatedAt": "2026-10-05T18:00:00Z",
   "title": "Design System: WFM Extended",
   "extensions": {
     "colorMeta": {
-      "signal-violet": {
+      "space": {
+        "role": "neutral",
+        "displayName": "Spațiu",
+        "tonalRamp": [
+          "#0E0C1D",
+          "#201B41",
+          "#362D6C",
+          "#4C3F97",
+          "#6B5DBC",
+          "#958CCF",
+          "#BDB7E1",
+          "#E1DFF2"
+        ]
+      },
+      "nebula": {
+        "role": "neutral",
+        "displayName": "Nebuloasă",
+        "tonalRamp": [
+          "#0E0920",
+          "#201447",
+          "#352277",
+          "#4A30A6",
+          "#694DCC",
+          "#9480DB",
+          "#BCB0E8",
+          "#E1DBF5"
+        ]
+      },
+      "glass": {
+        "role": "neutral",
+        "displayName": "Sticlă"
+      },
+      "glass-2": {
+        "role": "neutral",
+        "displayName": "Sticlă: hover / curent"
+      },
+      "glass-line": {
+        "role": "neutral",
+        "displayName": "Contur de sticlă"
+      },
+      "glass-dark": {
+        "role": "neutral",
+        "displayName": "Sticlă închisă"
+      },
+      "ring": {
+        "role": "neutral",
+        "displayName": "Inel de orbită"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Cerneală",
+        "tonalRamp": [
+          "#181811",
+          "#353527",
+          "#585841",
+          "#7C7C5B",
+          "#9E9E7B",
+          "#BABAA1",
+          "#D4D4C4",
+          "#ECECE5"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Cerneală secundară"
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Cerneală meta"
+      },
+      "violet": {
         "role": "primary",
-        "displayName": "Mov de semnal",
+        "displayName": "Mov",
         "tonalRamp": [
-          "#0C0031",
-          "#220063",
-          "#3A1196",
-          "#5138B7",
-          "#6B58D9",
-          "#8778FB",
-          "#ADAAFA",
-          "#D6D6FE"
+          "#050029",
+          "#0A005C",
+          "#110099",
+          "#1800D6",
+          "#341AFF",
+          "#6E5CFF",
+          "#A599FF",
+          "#D6D1FF"
         ]
       },
-      "signal-violet-hover": {
+      "violet-hover": {
         "role": "primary",
-        "displayName": "Mov de semnal: hover",
+        "displayName": "Mov: hover",
         "tonalRamp": [
-          "#0D002F",
-          "#24015F",
-          "#3B2184",
-          "#5440A4",
-          "#6F5FC5",
-          "#8B7DE7",
-          "#B0A8FD",
-          "#D8D6FC"
+          "#050029",
+          "#0B005C",
+          "#120099",
+          "#1A00D6",
+          "#351AFF",
+          "#6F5CFF",
+          "#A599FF",
+          "#D7D1FF"
         ]
       },
-      "on-signal": {
+      "on-violet": {
         "role": "neutral",
-        "displayName": "Cerneala de semnal",
+        "displayName": "Text pe mov",
         "tonalRamp": [
-          "#0A0B0D",
-          "#242527",
-          "#414244",
-          "#606164",
-          "#818285",
-          "#A3A5A8",
-          "#C7C9CC",
-          "#EDEEF2"
-        ]
-      },
-      "accent-hall": {
-        "role": "primary",
-        "displayName": "Mov de hol",
-        "tonalRamp": [
-          "#0C0030",
-          "#210162",
-          "#3A049C",
-          "#5134BE",
-          "#6A55E0",
-          "#8679FA",
-          "#ACAAFA",
-          "#D6D7FE"
-        ]
-      },
-      "accent-hall-hover": {
-        "role": "primary",
-        "displayName": "Mov de hol: hover",
-        "tonalRamp": [
-          "#0B0031",
-          "#200163",
-          "#37039E",
-          "#4D34C0",
-          "#6756E3",
-          "#827AFD",
-          "#A9ABFB",
-          "#D5D7FE"
-        ]
-      },
-      "on-accent-hall": {
-        "role": "neutral",
-        "displayName": "Text pe mov de hol",
-        "tonalRamp": [
-          "#0B0B0B",
-          "#252525",
-          "#424242",
-          "#616161",
-          "#828282",
-          "#A5A5A5",
-          "#C9C9C9",
-          "#EEEEEE"
-        ]
-      },
-      "board-case": {
-        "role": "neutral",
-        "displayName": "Panou: case",
-        "tonalRamp": [
-          "#0A0B0D",
-          "#242527",
-          "#414244",
-          "#606164",
-          "#818285",
-          "#A3A5A8",
-          "#C7C9CC",
-          "#EDEEF2"
-        ]
-      },
-      "board-plate": {
-        "role": "neutral",
-        "displayName": "Panou: plate",
-        "tonalRamp": [
-          "#090B0F",
-          "#232529",
-          "#404247",
-          "#5F6166",
-          "#808287",
-          "#A2A5AA",
-          "#C6C9CF",
-          "#ECEEF4"
-        ]
-      },
-      "board-plate-top": {
-        "role": "neutral",
-        "displayName": "Panou: plate top",
-        "tonalRamp": [
-          "#090B10",
-          "#22252A",
-          "#3F4248",
-          "#5E6167",
-          "#7F8289",
-          "#A1A5AC",
-          "#C5C9D0",
-          "#EAEFF6"
-        ]
-      },
-      "board-split": {
-        "role": "neutral",
-        "displayName": "Panou: split",
-        "tonalRamp": [
-          "#0B0B0C",
-          "#252527",
-          "#424244",
-          "#616163",
-          "#828284",
-          "#A5A5A7",
-          "#C9C9CB",
-          "#EEEEF0"
-        ]
-      },
-      "board-ink": {
-        "role": "neutral",
-        "displayName": "Panou: ink",
-        "tonalRamp": [
-          "#0B0B09",
-          "#252522",
-          "#42423F",
-          "#61615E",
-          "#82827F",
-          "#A5A5A1",
-          "#C9C9C5",
-          "#EFEFEB"
-        ]
-      },
-      "board-ink-muted": {
-        "role": "neutral",
-        "displayName": "Panou: ink muted",
-        "tonalRamp": [
-          "#090B10",
-          "#22252B",
-          "#3F4248",
-          "#5E6168",
-          "#7F8289",
-          "#A1A5AC",
-          "#C5C9D1",
-          "#EAEFF6"
-        ]
-      },
-      "board-placeholder": {
-        "role": "neutral",
-        "displayName": "Panou: placeholder",
-        "tonalRamp": [
-          "#080B11",
-          "#21252C",
-          "#3E4249",
-          "#5D6169",
-          "#7E838A",
-          "#A0A5AD",
-          "#C4C9D2",
-          "#E9EFF8"
-        ]
-      },
-      "board-line": {
-        "role": "neutral",
-        "displayName": "Panou: line",
-        "tonalRamp": [
-          "#090B10",
-          "#22252A",
-          "#3F4248",
-          "#5E6167",
-          "#7F8289",
-          "#A1A5AC",
-          "#C5C9D0",
-          "#EBEFF6"
-        ]
-      },
-      "board-field": {
-        "role": "neutral",
-        "displayName": "Panou: field",
-        "tonalRamp": [
-          "#090B0E",
-          "#232528",
-          "#404246",
-          "#5F6165",
-          "#808286",
-          "#A2A5A9",
-          "#C6C9CE",
-          "#ECEFF3"
-        ]
-      },
-      "board-field-line": {
-        "role": "neutral",
-        "displayName": "Panou: field line",
-        "tonalRamp": [
-          "#080B11",
-          "#21252C",
-          "#3E424A",
-          "#5D6269",
-          "#7D838B",
-          "#A0A5AE",
-          "#C4C9D3",
-          "#E9EFF8"
-        ]
-      },
-      "board-selected": {
-        "role": "neutral",
-        "displayName": "Panou: selected",
-        "tonalRamp": [
-          "#090B10",
-          "#22252A",
-          "#3F4248",
-          "#5E6167",
-          "#7F8289",
-          "#A1A5AC",
-          "#C5C9D0",
-          "#EBEFF6"
+          "#121417",
+          "#282C33",
+          "#434956",
+          "#5E6778",
+          "#7E889A",
+          "#A4AAB7",
+          "#C6CAD2",
+          "#E5E7EB"
         ]
       },
       "status-open": {
         "role": "secondary",
-        "displayName": "Observație: deschis",
+        "displayName": "Status: Deschis",
         "tonalRamp": [
-          "#0B0B09",
-          "#252522",
-          "#42423F",
-          "#61615E",
-          "#82827F",
-          "#A5A5A1",
-          "#C9C9C5",
-          "#EFEFEB"
+          "#181811",
+          "#353527",
+          "#585841",
+          "#7C7C5B",
+          "#9E9E7B",
+          "#BABAA1",
+          "#D4D4C4",
+          "#ECECE5"
         ]
       },
       "status-working": {
         "role": "secondary",
-        "displayName": "Observație: în lucru",
+        "displayName": "Status: În lucru",
         "tonalRamp": [
-          "#0C0031",
-          "#220063",
-          "#3A1196",
-          "#5138B7",
-          "#6B58D9",
-          "#8778FB",
-          "#ADAAFA",
-          "#D6D6FE"
+          "#050029",
+          "#0A005C",
+          "#110099",
+          "#1800D6",
+          "#341AFF",
+          "#6E5CFF",
+          "#A599FF",
+          "#D6D1FF"
         ]
       },
       "status-resolved": {
         "role": "secondary",
-        "displayName": "Observație: rezolvat",
-        "tonalRamp": [
-          "#001900",
-          "#003800",
-          "#005900",
-          "#007C2A",
-          "#009F4C",
-          "#0CC46E",
-          "#50EA91",
-          "#7DFFB6"
-        ]
+        "displayName": "Status: Rezolvat"
       },
       "status-critical": {
         "role": "secondary",
-        "displayName": "Observație: critic",
+        "displayName": "Prioritate Critică",
         "tonalRamp": [
-          "#3B0000",
-          "#620000",
-          "#890000",
-          "#B12118",
-          "#D94B3D",
-          "#FF715F",
-          "#FF9682",
-          "#FFBCA7"
+          "#290300",
+          "#5C0800",
+          "#990D00",
+          "#D61200",
+          "#FF2C1A",
+          "#FF695C",
+          "#FFA199",
+          "#FFD5D1"
         ]
       },
-      "hall-ground": {
-        "role": "neutral",
-        "displayName": "Hol light: ground",
+      "ok": {
+        "role": "secondary",
+        "displayName": "Fix (News)",
         "tonalRamp": [
-          "#0B0B0C",
-          "#242526",
-          "#414243",
-          "#606163",
-          "#818284",
-          "#A4A5A7",
-          "#C8C9CB",
-          "#EDEEF0"
+          "#062313",
+          "#0E4E2A",
+          "#178247",
+          "#21B563",
+          "#3DDC84",
+          "#75E6A7",
+          "#A9EFC8",
+          "#D8F8E6"
         ]
       },
-      "hall-surface": {
-        "role": "neutral",
-        "displayName": "Hol light: surface",
+      "danger": {
+        "role": "secondary",
+        "displayName": "Pericol",
         "tonalRamp": [
-          "#0B0B0B",
-          "#252525",
-          "#424242",
-          "#616161",
-          "#828282",
-          "#A5A5A5",
-          "#C9C9C9",
-          "#EEEEEE"
+          "#290300",
+          "#5C0700",
+          "#990C00",
+          "#D61100",
+          "#FF2C1A",
+          "#FF695C",
+          "#FFA199",
+          "#FFD5D1"
         ]
       },
-      "hall-surface-2": {
-        "role": "neutral",
-        "displayName": "Hol light: surface 2",
-        "tonalRamp": [
-          "#0A0B0D",
-          "#242527",
-          "#404244",
-          "#606164",
-          "#818285",
-          "#A3A5A8",
-          "#C7C9CC",
-          "#EDEFF2"
-        ]
-      },
-      "hall-line": {
-        "role": "neutral",
-        "displayName": "Hol light: line",
-        "tonalRamp": [
-          "#090B0E",
-          "#232529",
-          "#404246",
-          "#5F6166",
-          "#808287",
-          "#A2A5AA",
-          "#C6C9CE",
-          "#ECEFF4"
-        ]
-      },
-      "hall-line-strong": {
-        "role": "neutral",
-        "displayName": "Hol light: line strong",
-        "tonalRamp": [
-          "#070C10",
-          "#21262B",
-          "#3D4349",
-          "#5C6268",
-          "#7D838A",
-          "#9FA6AD",
-          "#C3CAD1",
-          "#E9EFF7"
-        ]
-      },
-      "hall-ink": {
-        "role": "neutral",
-        "displayName": "Hol light: ink",
-        "tonalRamp": [
-          "#0A0B0D",
-          "#242527",
-          "#414244",
-          "#606164",
-          "#818285",
-          "#A3A5A8",
-          "#C7C9CC",
-          "#EDEEF2"
-        ]
-      },
-      "hall-ink-2": {
-        "role": "neutral",
-        "displayName": "Hol light: ink 2",
-        "tonalRamp": [
-          "#080B11",
-          "#21252C",
-          "#3E4249",
-          "#5D6169",
-          "#7E838B",
-          "#A0A5AE",
-          "#C4C9D2",
-          "#EAEFF8"
-        ]
-      },
-      "hall-ink-3": {
-        "role": "neutral",
-        "displayName": "Hol light: ink 3",
-        "tonalRamp": [
-          "#080B11",
-          "#21252C",
-          "#3E424A",
-          "#5D626A",
-          "#7D838B",
-          "#A0A5AE",
-          "#C4C9D3",
-          "#E9EFF8"
-        ]
-      },
-      "hall-danger": {
-        "role": "neutral",
-        "displayName": "Hol light: danger",
-        "tonalRamp": [
-          "#3B0000",
-          "#620000",
-          "#890000",
-          "#B12217",
-          "#D94B3C",
-          "#FF715F",
-          "#FF9682",
-          "#FFBCA6"
-        ]
-      },
-      "hall-danger-soft": {
-        "role": "neutral",
-        "displayName": "Hol light: danger soft",
-        "tonalRamp": [
-          "#130807",
-          "#2F2120",
-          "#4D3E3C",
-          "#6D5D5B",
-          "#8F7E7C",
-          "#B2A09E",
-          "#D7C4C2",
-          "#FCE9E7"
-        ]
-      },
-      "hall-ok": {
-        "role": "neutral",
-        "displayName": "Hol light: ok",
-        "tonalRamp": [
-          "#001500",
-          "#003305",
-          "#005223",
-          "#187342",
-          "#429662",
-          "#67BA84",
-          "#8BDFA7",
-          "#B0FFCC"
-        ]
-      },
-      "night-ground": {
-        "role": "neutral",
-        "displayName": "Hol dark: ground",
-        "tonalRamp": [
-          "#0A0B0D",
-          "#242527",
-          "#414244",
-          "#606164",
-          "#818285",
-          "#A3A5A8",
-          "#C8C9CC",
-          "#EDEEF1"
-        ]
-      },
-      "night-surface": {
-        "role": "neutral",
-        "displayName": "Hol dark: surface",
-        "tonalRamp": [
-          "#090B0E",
-          "#232528",
-          "#404246",
-          "#5F6165",
-          "#808286",
-          "#A2A5A9",
-          "#C6C9CE",
-          "#ECEFF3"
-        ]
-      },
-      "night-surface-2": {
-        "role": "neutral",
-        "displayName": "Hol dark: surface 2",
-        "tonalRamp": [
-          "#090B0F",
-          "#232529",
-          "#404246",
-          "#5F6166",
-          "#808287",
-          "#A2A5AA",
-          "#C6C9CF",
-          "#ECEEF4"
-        ]
-      },
-      "night-line": {
-        "role": "neutral",
-        "displayName": "Hol dark: line",
-        "tonalRamp": [
-          "#090B0F",
-          "#22252A",
-          "#3F4247",
-          "#5E6167",
-          "#7F8288",
-          "#A1A5AB",
-          "#C5C9D0",
-          "#EBEFF5"
-        ]
-      },
-      "night-line-strong": {
-        "role": "neutral",
-        "displayName": "Hol dark: line strong",
-        "tonalRamp": [
-          "#080B11",
-          "#21252C",
-          "#3E424A",
-          "#5D6269",
-          "#7D838B",
-          "#A0A5AE",
-          "#C4C9D2",
-          "#E9EFF8"
-        ]
-      },
-      "night-ink": {
-        "role": "neutral",
-        "displayName": "Hol dark: ink",
-        "tonalRamp": [
-          "#0B0B09",
-          "#252522",
-          "#42423F",
-          "#61615E",
-          "#82827F",
-          "#A5A5A1",
-          "#C9C9C5",
-          "#EFEFEB"
-        ]
-      },
-      "night-ink-2": {
-        "role": "neutral",
-        "displayName": "Hol dark: ink 2",
-        "tonalRamp": [
-          "#0A0B0E",
-          "#242528",
-          "#404245",
-          "#5F6165",
-          "#808286",
-          "#A3A5A9",
-          "#C7C9CD",
-          "#ECEEF3"
-        ]
-      },
-      "night-ink-3": {
-        "role": "neutral",
-        "displayName": "Hol dark: ink 3",
-        "tonalRamp": [
-          "#090B10",
-          "#22252B",
-          "#3F4248",
-          "#5E6168",
-          "#7F8289",
-          "#A1A5AC",
-          "#C5C9D1",
-          "#EAEFF6"
-        ]
-      },
-      "night-danger": {
-        "role": "neutral",
-        "displayName": "Hol dark: danger",
-        "tonalRamp": [
-          "#3B0000",
-          "#620000",
-          "#890000",
-          "#B1201E",
-          "#D94B41",
-          "#FF7063",
-          "#FF9686",
-          "#FFBCAA"
-        ]
+      "danger-soft": {
+        "role": "secondary",
+        "displayName": "Pericol: fond"
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Titlurile de pagină News și Jurnal; se lățește la scroll."
+        "purpose": "Titlurile de pagină News și Jurnal."
       },
-      "sign": {
-        "displayName": "Semnalistică",
-        "purpose": "Titlul formularului, marca, indicatoarele."
+      "card-title": {
+        "displayName": "Titlu în card",
+        "purpose": "Titlul tichetului în cardul de detaliu."
       },
-      "plate": {
-        "displayName": "Plăcuță",
-        "purpose": "Status, dată, marcă și codul din detaliu pe plăcuțe split-flap."
+      "news-title": {
+        "displayName": "Titlu de anunț",
+        "purpose": "Titlul anunțului din News (mai mare la cel mai nou)."
       },
-      "ticket-title": {
-        "displayName": "Titlu de tichet",
-        "purpose": "Titlul din rândul de pe panou."
+      "news-date": {
+        "displayName": "Data din News",
+        "purpose": "Ziua în coloana de dată a cronologiei."
       },
-      "panel-title": {
-        "displayName": "Titlu în detaliu",
-        "purpose": "Titlul tichetului în panoul de detaliu."
+      "row-title": {
+        "displayName": "Titlu de rând",
+        "purpose": "Titlul din rândul de listă."
       },
       "body": {
         "displayName": "Corp",
         "purpose": "Text curent, comentarii, câmpuri."
       },
-      "label": {
-        "displayName": "Etichetă",
-        "purpose": "Etichetele câmpurilor."
+      "reading": {
+        "displayName": "Lectură",
+        "purpose": "Descrieri și corpul anunțurilor, max 66ch."
       },
-      "column-head": {
-        "displayName": "Antet de coloană",
-        "purpose": "Antetul de coloane al panoului."
+      "code": {
+        "displayName": "Cod",
+        "purpose": "Codurile TIS, mono."
+      },
+      "map-label": {
+        "displayName": "Etichetă de hartă",
+        "purpose": "Numele inelelor pe arc, legenda."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Titluri de secțiune în card, luna din News."
       }
     },
     "shadows": [
       {
-        "name": "pop",
-        "value": "0 14px 32px rgba(11,12,14,.18), 0 2px 6px rgba(11,12,14,.10)",
-        "purpose": "Popover-ul de admin și toast-urile (light)."
-      },
-      {
-        "name": "pop-dark",
-        "value": "0 16px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35)",
-        "purpose": "Același rol în tema dark."
+        "name": "float",
+        "value": "0 30px 80px rgba(0,0,0,.35)",
+        "purpose": "Cardul de detaliu, popover-ul de admin, toast-urile."
       }
     ],
     "motion": [
       {
         "name": "ease",
         "value": "cubic-bezier(.16,1,.3,1)",
-        "purpose": "Ease-out exponențial: panoul de detaliu, rearanjarea rândurilor, marker-ul, toast-ul."
+        "purpose": "Ease-out exponențial: card, ieșirea listei din nucleu, deschiderea hărții, intrarea paginii."
       },
       {
         "name": "ease-in",
-        "value": "cubic-bezier(.55,0,.8,.2)",
-        "purpose": "Căderea jumătății de sus a plăcuței și ieșirea paginii."
+        "value": "cubic-bezier(.7,0,.84,0)",
+        "purpose": "Intrarea camerei în nucleu (Hartă → Listă) și strângerea listei."
       },
       {
-        "name": "flap-step",
-        "value": "45ms",
-        "purpose": "Pasul dintre caracterele aleatoare ale unei plăcuțe; 2–6 pași pe caracter, +28ms pe index."
+        "name": "micro",
+        "value": "160ms",
+        "purpose": "Hover, focus, fade-ul de la reduced-motion."
       },
       {
-        "name": "flap-fall",
-        "value": "80ms",
-        "purpose": "Rotirea rotateX(-90deg) a jumătății de sus."
+        "name": "card",
+        "value": "420ms",
+        "purpose": "Cardul de detaliu care glisează din dreapta."
       },
       {
-        "name": "panel",
-        "value": "280ms",
-        "purpose": "Intrarea panoului de detaliu (View Transition) și foaia de pe mobil."
+        "name": "view",
+        "value": "460ms in / 560ms out (Hartă → Listă); 380ms / 700ms (Listă → Hartă)",
+        "purpose": "Tranziția prin nucleul WFM."
       },
       {
         "name": "page",
-        "value": "200ms out / 360ms in",
-        "purpose": "Slide orizontal la schimbarea paginii."
+        "value": "420ms out / 560ms in, 90px lateral; stele 70px pe stratul apropiat",
+        "purpose": "Camera care se mută între Tichete, News, Jurnal."
+      },
+      {
+        "name": "orbit",
+        "value": "~6 min / tură (inelul interior)",
+        "purpose": "Rotația lentă a planetelor; se oprește la hover, 60 s inactivitate, tab ascuns, reduced-motion."
       }
     ],
     "breakpoints": [
       {
-        "name": "wide",
-        "value": "1280px"
-      },
-      {
-        "name": "medium",
-        "value": "1080px"
+        "name": "compact",
+        "value": "1100px"
       },
       {
         "name": "single-column",
         "value": "900px"
       },
       {
-        "name": "phone",
-        "value": "560px"
+        "name": "news-grid",
+        "value": "561px"
       },
       {
-        "name": "narrow-admin",
-        "value": "420px"
+        "name": "phone",
+        "value": "560px"
       }
     ]
   },
   "components": [
     {
-      "name": "Buton primar (hol)",
+      "name": "Buton primar",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Acțiunea principală din hol: mov cu text alb (light), săgeată care alunecă la hover.",
-      "html": "<button class=\"ds-btn-primary\">Trimite tichetul <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" class=\"ds-ar\"><path d=\"M4 12h15M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button>",
-      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:0;border-radius:2px;background:#6A55E0;color:#fff;font:700 14px/1 Archivo,system-ui,sans-serif;font-stretch:108%;box-shadow:inset 0 -2px 0 rgba(11,12,14,.22);cursor:pointer;transition:background-color .15s,transform .12s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#5843CF}.ds-btn-primary:hover .ds-ar{transform:translateX(3px)}.ds-ar{transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #6A55E0;outline-offset:2px}"
+      "description": "Acțiunea principală: pill mov cu text aproape negru; săgeata alunecă 3px la hover.",
+      "html": "<button class=\"ds-btn\">Trimite tichetul <span class=\"ds-ar\">→</span></button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 18px;border:0;border-radius:999px;background:#8A7BFF;color:#0B0C0E;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:500;font-size:13px;cursor:pointer;transition:background-color .16s,transform .16s cubic-bezier(.16,1,.3,1)}.ds-btn:hover{background:#A093FF}.ds-btn:hover .ds-ar{transform:translateX(3px)}.ds-ar{transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-btn:active{transform:scale(.97)}"
     },
     {
-      "name": "Buton de semnal (bara neagră)",
+      "name": "Buton ghost",
       "kind": "button",
-      "refersTo": "button-sign",
-      "description": "Mov cu text negru, pe bara de sus: Tichet nou.",
-      "html": "<div class=\"ds-bar-bg\"><button class=\"ds-btn-sign\">+ Tichet nou</button></div>",
-      "css": ".ds-bar-bg{background:#0B0C0E;padding:10px 16px}.ds-btn-sign{height:38px;padding:0 16px;border:0;border-radius:2px;background:#8A7BFF;color:#0B0C0E;font:700 14px/1 Archivo,system-ui,sans-serif;font-stretch:115%;cursor:pointer}.ds-btn-sign:hover{background:#A093FF}.ds-btn-sign:active{transform:scale(.97)}.ds-btn-sign:focus-visible{outline:2px solid #8A7BFF;outline-offset:3px}"
+      "refersTo": "button-ghost",
+      "description": "Acțiuni secundare: contur ink-3, hover sticlă.",
+      "html": "<div class=\"ds-bg\"><button class=\"ds-gh\">Renunță</button></div>",
+      "css": ".ds-bg{background:#06050C;padding:16px}.ds-gh{height:38px;padding:0 18px;border:1px solid rgba(244,244,240,.64);border-radius:999px;background:none;color:#F4F4F0;font-family:'Space Grotesk',system-ui,sans-serif;font-weight:500;font-size:13px;cursor:pointer}.ds-gh:hover{background:rgba(255,255,255,.10)}"
     },
     {
-      "name": "Buton quiet (hol)",
-      "kind": "button",
-      "refersTo": "button-quiet",
-      "description": "Acțiuni secundare: transparent, contur care se întărește la hover.",
-      "html": "<button class=\"ds-btn-quiet\">Renunță</button>",
-      "css": ".ds-btn-quiet{height:38px;padding:0 16px;border:1px solid #82888F;border-radius:2px;background:transparent;color:#0B0C0E;font:700 14px/1 Archivo,system-ui,sans-serif;cursor:pointer}.ds-btn-quiet:hover{border-color:#0B0C0E;background:#fff}.ds-btn-quiet:focus-visible{outline:2px solid #0B0C0E;outline-offset:2px}"
+      "name": "Status segmentat",
+      "kind": "control",
+      "refersTo": "segmented",
+      "description": "Filtrul de status: pill de sticlă, activ mov 28%, numere mono.",
+      "html": "<div class=\"ds-bg\"><div class=\"ds-seg\"><button aria-pressed=\"true\">Toate <b>14</b></button><button>Active <b>0</b></button><button>Rezolvate <b>14</b></button></div></div>",
+      "css": ".ds-bg{background:#06050C;padding:16px}.ds-seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}.ds-seg button{height:32px;padding:0 14px;border:0;border-radius:999px;background:none;color:rgba(244,244,240,.78);font-family:'Space Grotesk',system-ui,sans-serif;font-weight:500;font-size:13px}.ds-seg button[aria-pressed=true]{background:rgba(138,123,255,.28);color:#F4F4F0}.ds-seg b{font:500 11px 'JetBrains Mono',monospace}"
     },
     {
-      "name": "Câmp (hol)",
-      "kind": "input",
-      "refersTo": "input-hall",
-      "description": "Câmp de formular în hol, focus cu contur mov.",
-      "html": "<label class=\"ds-lbl\">Ce nu merge?<input class=\"ds-input\" placeholder=\"ex. Câmpul dată nu se completează la import\"></label>",
-      "css": ".ds-lbl{display:block;font:700 13px/1.4 Archivo,system-ui,sans-serif;color:#0B0C0E}.ds-input{display:block;margin-top:6px;width:100%;height:40px;padding:0 12px;border:1px solid #82888F;border-radius:2px;background:#fff;color:#0B0C0E;font:400 14px Archivo,system-ui,sans-serif}.ds-input::placeholder{color:#5B6068}.ds-input:hover{border-color:#5B6068}.ds-input:focus{outline:none;border-color:#6A55E0;box-shadow:0 0 0 1px #6A55E0}"
+      "name": "Planetă",
+      "kind": "data",
+      "refersTo": "planet",
+      "description": "Tichetul pe hartă: rază după prioritate, alb = deschis, mov cu strălucire = în lucru, contur = rezolvat, halou roșu = critică; codul mono lângă ea.",
+      "html": "<svg class=\"ds-map\" viewBox=\"0 0 320 120\"><circle cx=\"50\" cy=\"55\" r=\"9\" fill=\"#F4F4F0\"/><text x=\"50\" y=\"84\">TIS-12</text><circle cx=\"140\" cy=\"55\" r=\"13\" fill=\"#8A7BFF\" style=\"filter:drop-shadow(0 0 6px #8A7BFF)\"/><text x=\"140\" y=\"88\">TIS-13</text><circle cx=\"230\" cy=\"55\" r=\"9\" fill=\"#06050C\" stroke=\"rgba(244,244,240,.45)\" stroke-width=\"1.5\"/><text x=\"230\" y=\"84\">TIS-09</text><circle cx=\"290\" cy=\"55\" r=\"28\" fill=\"none\" stroke=\"#FF4D3D\" stroke-opacity=\".35\"/><circle cx=\"290\" cy=\"55\" r=\"18\" fill=\"#F4F4F0\"/></svg>",
+      "css": ".ds-map{width:320px;background:#06050C}.ds-map text{font:500 11px 'JetBrains Mono',monospace;fill:rgba(244,244,240,.64);text-anchor:middle;letter-spacing:.04em}"
     },
     {
-      "name": "Căutare (panou)",
-      "kind": "input",
-      "refersTo": "input-board",
-      "description": "Câmp pe panoul negru, focus și caret mov.",
-      "html": "<div class=\"ds-board\"><input class=\"ds-input-board\" placeholder=\"Caută după cod, titlu, nume\"></div>",
-      "css": ".ds-board{background:#0B0C0E;padding:16px}.ds-input-board{width:100%;height:40px;padding:0 12px;border:1px solid #5E636B;border-radius:2px;background:#15171A;color:#F4F4F0;caret-color:#8A7BFF;font:400 14px Archivo,system-ui,sans-serif}.ds-input-board::placeholder{color:#8F949C}.ds-input-board:focus{outline:none;border-color:#8A7BFF;box-shadow:0 0 0 1px #8A7BFF}"
-    },
-    {
-      "name": "Tab-uri (bara neagră)",
-      "kind": "nav",
-      "description": "Navigația principală; tab-ul curent are o bară movă de 3px jos.",
-      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-on\" href=\"#\">Tichete</a><a class=\"ds-tab\" href=\"#\">News</a><a class=\"ds-tab\" href=\"#\">Jurnal</a></nav>",
-      "css": ".ds-tabs{display:flex;height:60px;background:#0B0C0E}.ds-tab{display:flex;align-items:center;position:relative;padding:0 16px;color:#A4A8AF;font:700 15px Archivo,system-ui,sans-serif;font-stretch:115%;text-decoration:none}.ds-tab:hover{color:#F4F4F0}.ds-tab::after{content:'';position:absolute;left:16px;right:16px;bottom:12px;height:3px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-tab:hover::after{transform:none}.ds-on{color:#F4F4F0}.ds-on::after{transform:none;background:#8A7BFF;bottom:0}.ds-tab:focus-visible{outline:2px solid #8A7BFF;outline-offset:-4px}"
-    },
-    {
-      "name": "Chip de zonă (panou)",
-      "kind": "chip",
-      "refersTo": "zone-chip-active",
-      "description": "Filtru pe zona din WFM Extended: text cu pictogramă și număr, fără contur; activ cu subliniere movă.",
-      "html": "<div class=\"ds-board\"><button class=\"ds-zchip\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M3 14h4.5v7H3zm6.75-5h4.5v12h-4.5zM16.5 3H21v18h-4.5z\"/></svg>Raportare <b>1</b></button> <button class=\"ds-zchip ds-on\" aria-pressed=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M10.5 3h3v8h3.5L12 16.5 7 11h3.5zM3 14h3v4h12v-4h3v7H3z\"/></svg>Import <b>1</b></button></div>",
-      "css": ".ds-board{background:#0B0C0E;padding:16px}.ds-zchip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:0;border-radius:2px;background:transparent;color:#A4A8AF;font:600 13px Archivo,system-ui,sans-serif;cursor:pointer}.ds-zchip b{font-size:12px;color:#A4A8AF}.ds-zchip svg{transition:transform .45s cubic-bezier(.16,1,.3,1)}.ds-zchip:hover{color:#F4F4F0;background:#15171A}.ds-zchip:hover svg{transform:rotateY(180deg)}.ds-zchip.ds-on{color:#F4F4F0;box-shadow:inset 0 -2px 0 #8A7BFF}.ds-zchip.ds-on b{color:#F4F4F0}.ds-zchip:focus-visible{outline:2px solid #8A7BFF;outline-offset:2px}"
-    },
-    {
-      "name": "Plăcuțe split-flap",
-      "kind": "custom",
-      "refersTo": "flap-plate",
-      "description": "Semnătura: cod și status pe plăcuțe, cu linie de despicare și observație colorată.",
-      "html": "<div class=\"ds-board\"><span class=\"ds-flap\"><i>T</i><i>I</i><i>S</i><i>-</i><i>1</i><i>4</i></span> <span class=\"ds-flap ds-work\"><i>Î</i><i>N</i><i> </i><i>L</i><i>U</i><i>C</i><i>R</i><i>U</i></span></div>",
-      "css": ".ds-board{background:#0B0C0E;padding:16px;display:flex;gap:16px}.ds-flap{display:inline-flex;gap:2px;color:#F4F4F0;font:700 14px/22px Archivo,system-ui,sans-serif;font-stretch:75%;font-variant-numeric:tabular-nums}.ds-flap i{position:relative;width:14px;height:22px;text-align:center;font-style:normal;white-space:pre;border-radius:2px;background:linear-gradient(#202328 50%,#1A1C20 50%)}.ds-flap i::before{content:'';position:absolute;left:0;right:0;top:calc(50% - .5px);height:1px;background:#050506}.ds-work{color:#8A7BFF}"
-    },
-    {
-      "name": "Rând de tichet (panou)",
-      "kind": "custom",
+      "name": "Rând de listă",
+      "kind": "data",
       "refersTo": "ticket-row",
-      "description": "O „cursă” pe panou: cod, problemă cu meta, prioritate, status; marker mov la hover și selecție.",
-      "html": "<div class=\"ds-row\"><span class=\"ds-code\">TIS-13</span><span class=\"ds-t\">Raportul săptămânal afișează totaluri duble<small>Raportare · Ioana Marin · acum 14 ore</small></span><span class=\"ds-pr\"><i class=\"on\"></i><i class=\"on\"></i><i class=\"on\"></i><i></i></span><span class=\"ds-st\">ÎN LUCRU</span></div>",
-      "css": ".ds-row{position:relative;display:grid;grid-template-columns:84px 1fr 72px 128px;gap:12px;align-items:center;min-height:56px;padding:6px 24px;background:#0B0C0E;color:#F4F4F0;font:400 14px Archivo,system-ui,sans-serif;border-bottom:1px solid #23262B;cursor:pointer}.ds-row::before{content:'';position:absolute;left:0;top:50%;width:4px;height:26px;margin-top:-13px;background:#8A7BFF;transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.16,1,.3,1)}.ds-row:hover{background:#15171A}.ds-row:hover::before{transform:none}.ds-code{font-weight:700;font-stretch:75%;font-size:14px;letter-spacing:.03em}.ds-t{font-size:15px;font-weight:500;font-stretch:85%;min-width:0}.ds-t small{display:block;font-size:12px;color:#A4A8AF}.ds-pr{display:inline-flex;align-items:flex-end;gap:2px;height:13px}.ds-pr i{display:block;width:3px;background:#5E636B}.ds-pr i:nth-child(1){height:4px}.ds-pr i:nth-child(2){height:7px}.ds-pr i:nth-child(3){height:10px}.ds-pr i:nth-child(4){height:13px}.ds-pr i.on{background:#F4F4F0}.ds-st{color:#8A7BFF;font-weight:700;font-stretch:75%;letter-spacing:.08em}"
+      "description": "Rând de sticlă: cod mono, titlu + meta, prioritate în puncte, status ca chip.",
+      "html": "<div class=\"ds-bg\"><button class=\"ds-row\"><span class=\"c\">TIS-13</span><span class=\"t\"><b>Raportul săptămânal afișează totaluri duble</b><small>Raportare · Ioana Marin · acum 14 ore</small></span><span class=\"st\">În lucru</span></button></div>",
+      "css": ".ds-bg{background:#06050C;padding:16px}.ds-row{display:grid;grid-template-columns:84px 1fr auto;gap:16px;align-items:center;width:100%;min-height:64px;padding:10px 20px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.06);color:#F4F4F0;text-align:left;font-family:'Space Grotesk',system-ui,sans-serif}.ds-row .c{font:500 13px 'JetBrains Mono',monospace;letter-spacing:.04em}.ds-row b{display:block;font-weight:500;font-size:15px}.ds-row small{font-size:12px;color:rgba(244,244,240,.64)}.ds-row .st{padding:5px 12px;border:1px solid rgba(255,255,255,.12);border-radius:999px;font-size:12px}"
+    },
+    {
+      "name": "Card de sticlă",
+      "kind": "container",
+      "refersTo": "glass-card",
+      "description": "Detaliul tichetului: sticlă cu blur 18px, rază 20px, umbră 0 30px 80px.",
+      "html": "<div class=\"ds-bg\"><div class=\"ds-card\"><span class=\"c\">TIS-14</span><h3>Câmpul dată nu se completează automat la import</h3></div></div>",
+      "css": ".ds-bg{background:radial-gradient(400px 300px at 30% 40%,rgba(42,27,94,.6),transparent),#06050C;padding:24px}.ds-card{max-width:400px;padding:28px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(18px);box-shadow:0 30px 80px rgba(0,0,0,.35);color:#F4F4F0;font-family:'Space Grotesk',system-ui,sans-serif}.ds-card .c{font:500 12px 'JetBrains Mono',monospace;color:#A093FF;letter-spacing:.06em}.ds-card h3{margin:12px 0 0;font-size:26px;font-weight:500;line-height:1.18}"
+    },
+    {
+      "name": "Anunț în cronologie",
+      "kind": "data",
+      "refersTo": "news-card",
+      "description": "News: data mare în stânga, punct-planetă pe linia orbitei (culoarea tipului), card de sticlă; cel mai nou are inel și strălucire de nebuloasă.",
+      "html": "<div class=\"ds-bg\"><div class=\"ds-n\"><time>04<small>OCT</small></time><i></i><div class=\"card\"><span class=\"ty\">UPDATE</span><h4>Import automat activat pentru toate echipele</h4><p>Începând de azi, turele se importă automat la ora 06:00.</p></div></div></div>",
+      "css": ".ds-bg{background:#06050C;padding:24px}.ds-n{display:grid;grid-template-columns:76px 28px 1fr;color:#F4F4F0;font-family:'Space Grotesk',system-ui,sans-serif}.ds-n time{padding:14px 12px 0 0;text-align:right;font-weight:600;font-size:28px;line-height:1}.ds-n small{display:block;margin-top:6px;font:400 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(244,244,240,.64)}.ds-n i{width:11px;height:11px;margin:22px auto 0;border-radius:50%;background:#8A7BFF;box-shadow:0 0 0 5px #06050C,0 0 0 6px rgba(138,123,255,.6),0 0 10px #8A7BFF}.ds-n .card{padding:24px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:radial-gradient(420px 220px at 100% 0,rgba(42,27,94,.7),transparent 70%),rgba(255,255,255,.10)}.ds-n .ty{padding:2px 10px;border:1px solid #8A7BFF;border-radius:999px;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.06em}.ds-n h4{margin:12px 0;font-size:26px;font-weight:600;line-height:1.2}.ds-n p{margin:0;font-size:17px}"
     }
   ],
   "narrative": {
-    "northStar": "Panoul de plecări, calm",
-    "overview": "Lista de tichete este un panou split-flap de aeroport: un obiect negru mat pe care fiecare tichet e o „cursă” cu COD, PROBLEMĂ, PRIO și STATUS. Plăcuțele split-flap nu sunt decor, ci eveniment: apar doar unde o valoare se schimbă (statusul, codul la trimitere, data din News, marca) și se rotesc literă cu literă când se schimbă. Bara de sus e din același material ca panoul, deci panoul pare să continue sub navigație. În dreapta, holul (light sau noapte, după sistem) apare doar când ai deschis un tichet sau formularul.\n\nSistemul refuză tabelul gri de birou, cardurile glass și instrucțiunile care stau pe ecran degeaba. Expresivitatea vine din obiectul-panou și din mișcarea lui: un singur font, două materiale (panou și hol), un accent mov și patru culori de observație. Nimic nu se mișcă fără motiv.",
+    "northStar": "Orbită",
+    "overview": "Tichetele sunt o hartă stelară. În centru stă nucleul „WFM”, în jurul lui cinci inele concentrice, câte unul pe zonă (din interior: Import, Interfață, Date, Raportare, Altele). Fiecare tichet e o planetă pe inelul zonei lui: mărimea spune prioritatea, culoarea spune statusul. Toată aplicația (Tichete, News, Jurnal) stă în același spațiu: un fundal negru-violet cu stele pe trei straturi de adâncime și o strălucire de nebuloasă care urmărește nucleul. Navigarea între pagini mută camera lateral prin acest spațiu.\n\nSistemul refuză tabelul gri de birou și ecranele de instrucțiuni. Expresivitatea vine din hartă, din adâncimea fundalului și din tranziții care au o direcție în spațiu (în nucleu, din nucleu, lateral). Mișcarea de fundal e lentă și se oprește singură.",
     "keyCharacteristics": [
-      "Panou și bară mereu dark; holul light/dark după sistem.",
-      "Plăcuțe split-flap doar pentru valori scurte care se schimbă: status, cod în momentul de trimitere și în detaliu, dată, marcă.",
-      "Accent mov: `#8A7BFF` pe suprafețe închise, `#6A55E0` în holul light.",
-      "Un singur font variabil, Archivo, folosit pe axa de lățime.",
-      "Mișcare cu sens: rotire la schimbare, View Transitions la rearanjare și la deschiderea panoului; fără animații continue."
+      "Doar dark. Un singur fundal, `space` cu nebuloasa, pentru toate paginile.",
+      "Accent unic mov `#8A7BFF`: acțiunea primară, selecția, statusul „În lucru”, focusul.",
+      "Două fonturi: Space Grotesk pentru UI și titluri, JetBrains Mono pentru coduri, etichete de hartă și meta.",
+      "Suprafețele sunt sticlă (`glass` cu blur 18px), nu cutii opace.",
+      "Mișcare cu sens spațial; fundalul se oprește în tab ascuns, după 60 s fără activitate și la reduced-motion."
     ],
     "rules": [
       {
-        "name": "The Two Materials Rule",
-        "body": "Orice element stă fie pe panou, fie în hol. Bara, plăcuțele, rândurile, jurnalul, banda de cod din detaliu și toast-ul sunt material de panou; restul e hol.",
-        "section": "colors"
-      },
-      {
         "name": "The One Accent Rule",
-        "body": "Un singur accent, mov. Nu există al doilea semnal (galbenul a fost scos). Movul marchează acțiunea primară, selecția și starea „În lucru”, nimic decorativ.",
-        "section": "colors"
-      },
-      {
-        "name": "The Observation Rule",
-        "body": "Culorile de status apar doar pe fond de panou. În hol, statusul se scrie în text sau stă pe o bandă de panou (ex. tipul anunțului din News).",
+        "body": "Un singur accent, mov. Fără al doilea semnal colorat; roșul și verdele sunt observații, nu accente.",
         "section": "colors"
       },
       {
         "name": "The No Zone Color Rule",
-        "body": "Zonele nu au culori. Se recunosc după pictogramă și nume.",
+        "body": "Zonele nu au culori. Se recunosc după inel (poziție) și nume.",
         "section": "colors"
       },
       {
-        "name": "The Plate Rule",
-        "body": "Plăcuțele sunt rezervate valorilor care se schimbă și merită urmărite: status, codul în detaliu și la trimitere, data din News, marca. Codul din listă, titlurile și numele se citesc ca text normal.",
+        "name": "The Glass Rule",
+        "body": "Sticla e pentru ce plutește peste spațiu (card, rânduri, câmpuri, News). Fără umbre colorate și fără glass decorativ fără conținut.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Rule",
+        "body": "Mono doar pentru coduri, etichete de hartă, meta și date. Textul de citit e Space Grotesk.",
         "section": "typography"
       },
       {
-        "name": "The Uppercase Rule",
-        "body": "Majuscule doar pe plăcuțe, în antetul de coloane și pe eticheta de tip din News. Zona, prioritatea și titlurile de secțiune sunt scrise normal.",
-        "section": "typography"
-      },
-      {
-        "name": "The Tabular Rule",
-        "body": "`font-variant-numeric: tabular-nums` pe tot documentul.",
-        "section": "typography"
-      },
-      {
-        "name": "The Still Room Rule",
-        "body": "Nu există lumini ambientale, reflexe sau animații în buclă. Totul se mișcă doar ca răspuns la o acțiune sau la o schimbare de date (repaus măsurat: 0.1 ms/s).",
+        "name": "The Depth Rule",
+        "body": "Ce e mai aproape se mișcă mai mult: deriva, paralaxa după mouse (max 12px) și camera dintre pagini se înmulțesc cu factorul stratului.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** pune pe plăcuțe doar statusuri, date și coduri în momentele în care contează.",
-      "**Do** rotește numai ce s-a schimbat; o schimbare de filtru se rezolvă prin View Transition, nu prin rotire.",
-      "**Do** păstrează panoul și bara întunecate în ambele teme și lasă holul să urmeze sistemul.",
-      "**Do** folosește `--acc` în componente și lasă suprafața să decidă nuanța de mov.",
-      "**Do** verifică textul nou la 4.5:1 și conturul controalelor la 3:1, pe panou și în hol, în ambele teme.",
+      "**Do** ține toate paginile în același spațiu (fundal, stele, nebuloasă) și dă tranzițiilor o direcție spațială.",
+      "**Do** folosește mov doar pentru acțiune, selecție, „În lucru” și focus.",
+      "**Do** verifică textul nou la 4.5:1 și conturul controalelor la 3:1 pe spațiu, sticlă și nebuloasă.",
+      "**Do** oprește orice mișcare continuă prin bucla unică; animațiile one-shot doar ca răspuns la o acțiune.",
       "**Do** confirmă inline acțiunile distructive, cu codul tichetului în text."
     ],
     "donts": [
-      "**Don't** reintroduce galbenul sau un al doilea accent.",
-      "**Don't** folosi culorile de status în hol pe fond deschis; pune-le pe o bandă de panou.",
-      "**Don't** da culori zonelor.",
-      "**Don't** pune contoare, ceas, lumini ambientale sau animații în buclă pe ecran; nu adaugă panouri de instrucțiuni.",
-      "**Don't** folosi gradient text, glass decorativ sau bordură colorată laterală pe rânduri; marker-ul de rând e o bară scurtă.",
-      "**Don't** pune kicker sau eyebrow deasupra titlurilor.",
-      "**Don't** folosi emoji sau glife ca iconuri; pictogramele vin din `Icons.html`.",
-      "**Don't** introduce al doilea font sau monospace.",
-      "**Don't** deschide modale pentru sarcini care încap în panoul de detaliu."
+      "**Don't** introduce un al doilea accent sau culori de zonă.",
+      "**Don't** adăuga animații CSS infinite sau fundaluri care se redesenează la fiecare cadru.",
+      "**Don't** suprapune etichete pe hartă; orice etichetă nouă intră în plasarea fără coliziuni.",
+      "**Don't** pune panouri de instrucțiuni pe ecran; indicațiile stau unde se folosesc (`/` pe căutare, `title` cu N, finalul listei).",
+      "**Don't** folosi bordură colorată laterală, gradient text sau emoji ca iconuri; pictogramele vin din `Icons.html`.",
+      "**Don't** deschide modale pentru sarcini care încap în card."
     ]
   }
 }

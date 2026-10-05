@@ -4,16 +4,46 @@ from browser import launch
 from playwright.sync_api import sync_playwright
 errs = []
 def ok(c, m): print(("OK  " if c else "FAIL"), m)
+# etichete fără coliziuni: cutiile codului (și titlului, în modul far) nu se suprapun între ele și nu acoperă corpul altei planete
+COLL = """()=>{
+  const far = document.querySelector('#sys').classList.contains('far'), L = [], bad = [];
+  document.querySelectorAll('#planets .lbl:not(.dim):not(.flying)').forEach(l => {
+    const id = l.previousElementSibling.dataset.id;
+    l.querySelectorAll(far ? '.code,.ttl' : '.code').forEach(e => { const r = e.getBoundingClientRect(); L.push({ id, l: r.left, t: r.top, r: r.right, b: r.bottom }); });
+  });
+  for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+    const a = L[i], b = L[j];
+    if (a.id !== b.id && a.l < b.r - 1 && b.l < a.r - 1 && a.t < b.b - 1 && b.t < a.b - 1) bad.push('lbl ' + a.id + ' x ' + b.id);
+  }
+  const P = [...document.querySelectorAll('.planet .body')].map(e => { const r = e.getBoundingClientRect(); return { id: e.parentNode.dataset.id, x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, rad: r.width / 2 }; });
+  L.forEach(a => P.forEach(p => {
+    if (p.id === a.id) return;
+    const dx = p.x - Math.max(a.l, Math.min(p.x, a.r)), dy = p.y - Math.max(a.t, Math.min(p.y, a.b));
+    if (Math.hypot(dx, dy) < p.rad - 1) bad.push('lbl ' + a.id + ' on body ' + p.id);
+  }));
+  return { far, n: L.length, bad };
+}"""
+# numele inelelor: cutiile celor 5 nu se intersectează
+RZ = """()=>{
+  const R = [...document.querySelectorAll('.rz text')].map(e => e.getBoundingClientRect()), bad = [];
+  for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) {
+    const a = R[i], b = R[j];
+    if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) bad.push(i + '/' + j);
+  }
+  return bad;
+}"""
 with sync_playwright() as p:
     b = launch(p)
     pg = b.new_page(viewport={'width': 1440, 'height': 900}, ignore_https_errors=True)
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.goto("http://localhost:8080/"); pg.wait_for_timeout(1200)
-    W = 400
+    W = 400; V = 1300   # V: așteptare după orice comutare de vedere (tranziția prin nucleu)
+    ok(pg.get_attribute("[data-status='all']", "aria-pressed") == "true", "default filter is Toate")
     # --- Hartă ---
-    ok(pg.locator(".planet").count() == 6, "map: 6 planets")
+    ok(pg.locator(".planet").count() == 7, "map: 7 planets (Toate, includes resolved)")
+    r = pg.evaluate(COLL); ok(r['far'] and r['n'] >= 14 and not r['bad'], f"labels 1440 far (Toate): {r['n']} boxes, collisions: {r['bad'] or 'none'}")
     pg.click(".rz[data-ring='Interfață']"); pg.wait_for_timeout(W)
-    ok(pg.locator(".planet:not(.dim)").count() == 2 and pg.locator(".planet.dim").count() == 4, "map: ring name click filters Interfață -> 2 lit")
+    ok(pg.locator(".planet:not(.dim)").count() == 2 and pg.locator(".planet.dim").count() == 5, "map: ring name click filters Interfață -> 2 lit, 5 dim")
     pg.click(".rz[data-ring='Interfață']"); pg.wait_for_timeout(W)
     ok(pg.locator(".planet.dim").count() == 0, "map: second click clears the zone filter")
     pg.click(".planet[data-id='TIS-13']"); pg.wait_for_timeout(700)
@@ -21,13 +51,13 @@ with sync_playwright() as p:
     pg.keyboard.press("Escape"); pg.wait_for_timeout(700)
     ok(not pg.is_visible("#panel"), "map: Escape closes the card")
     # --- Listă (fluxurile de până acum) ---
-    pg.click("#viewList"); pg.wait_for_timeout(W)
-    ok(pg.locator(".row").count() == 6, "6 active rows")
+    pg.click("#viewList"); pg.wait_for_timeout(V)
+    ok(pg.is_visible("#list") and not pg.is_visible("#map") and pg.locator(".row").count() == 7, "map -> list transition: #list visible, #map hidden, 7 rows")
+    pg.click("[data-status='active']"); pg.wait_for_timeout(W)
+    ok(pg.locator(".row").count() == 6, "Active -> 6 rows")
     pg.select_option("#zoneSel", "Interfață"); pg.wait_for_timeout(W)
     ok(pg.locator(".row").count() == 2, "zone filter Interfață -> 2")
     pg.select_option("#zoneSel", ""); pg.wait_for_timeout(W)
-    pg.click("[data-status='all']"); pg.wait_for_timeout(W); ok(pg.locator(".row").count() == 7, "Toate -> 7 (includes resolved)")
-    pg.click("[data-status='active']"); pg.wait_for_timeout(W)
     pg.keyboard.press("/"); pg.keyboard.type("safari"); pg.wait_for_timeout(100)
     ok(pg.locator(".row").count() == 1, "search safari -> 1")
     pg.keyboard.press("Escape"); pg.keyboard.press("Escape")
@@ -68,6 +98,7 @@ with sync_playwright() as p:
     pg.click("[data-status='active']"); pg.wait_for_timeout(W)
     ok(pg.locator(".row[data-id='TIS-12']").count() == 1, "restored back to active")
     pg.click(".tab[data-page='news']"); pg.wait_for_timeout(900)
+    ok(pg.is_visible("#page-news") and not pg.is_visible("#page-tichete") and pg.locator(".page.leaving").count() == 0, "page transition: #page-news visible, #page-tichete hidden, no .page.leaving")
     pg.click("#newsNewBtn"); pg.wait_for_timeout(200); pg.fill("#nw-title", "Test anunt"); pg.fill("#nw-body", "Corp"); pg.click("[data-ntype='fix']"); pg.click("#nw-submit"); pg.wait_for_timeout(800)
     ok(pg.locator(".news-item").count() == 3, "news published")
     pg.click(".tab[data-page='jurnal']"); pg.wait_for_timeout(900)
@@ -76,5 +107,16 @@ with sync_playwright() as p:
     ok("Admin Test" in pg.inner_text("#adminPop"), "admin popover shows the admin name")
     pg.click("#logoutBtn"); pg.wait_for_timeout(300)
     ok(not pg.is_visible(".tab[data-page='jurnal']"), "logout hides jurnal")
+    pg.wait_for_timeout(900)
+    pg.click("#viewMap"); pg.wait_for_timeout(V)
+    ok(pg.is_visible("#map") and pg.locator(".planet").count() > 0, "list -> map transition: #map visible, planets present")
+    # --- mobil 390x844, pe hartă ---
+    pm = b.new_page(viewport={'width': 390, 'height': 844}, ignore_https_errors=True)
+    pm.on("pageerror", lambda e: errs.append(str(e)))
+    pm.goto("http://localhost:8080/"); pm.wait_for_timeout(1200)
+    if pm.get_attribute("#viewMap", "aria-pressed") != "true": pm.click("#viewMap"); pm.wait_for_timeout(V)
+    pm.wait_for_timeout(800)
+    r = pm.evaluate(COLL); ok(not r['far'] and r['n'] == 7 and not r['bad'], f"labels 390 near: {r['n']} boxes, collisions: {r['bad'] or 'none'}")
+    bad = pm.evaluate(RZ); ok(not bad, f"ring names 390: no overlapping boxes {bad or ''}")
     b.close()
 print("page errors:", errs or "none")

@@ -59,7 +59,7 @@ with sync_playwright() as p:
         pg.goto("http://localhost:8080/"); pg.wait_for_timeout(900)
         pg.evaluate("sessionStorage.setItem('tis_pin','1234');sessionStorage.setItem('tis_admin','Admin Test')"); pg.reload(); pg.wait_for_timeout(1500)
         for view in ('viewMap', 'viewList'):
-            pg.click('#' + view); pg.wait_for_timeout(500)
+            pg.click('#' + view); pg.wait_for_timeout(1400)   # tranziția Hartă/Listă ~1 s
             r0 = pg.evaluate(JS)
             if view == 'viewMap': pg.click(".planet[data-id='TIS-14']")
             else: pg.click(".row[data-id='TIS-14']")

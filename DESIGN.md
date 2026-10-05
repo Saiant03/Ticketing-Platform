@@ -1,106 +1,86 @@
 ---
 name: WFM Extended
-description: Tichete și News pentru WFM Extended, afișate ca un panou de plecări split-flap calm, cu accent mov.
+description: Tichete și News pentru WFM Extended, afișate ca o hartă stelară („Orbită”) cu planete pe inele de zonă, pe un singur fundal de spațiu, doar dark, cu accent mov.
 colors:
-  signal-violet: "#8A7BFF"
-  signal-violet-hover: "#A093FF"
-  on-signal: "#0B0C0E"
-  accent-hall: "#6A55E0"
-  accent-hall-hover: "#5843CF"
-  on-accent-hall: "#FFFFFF"
-  board-case: "#0B0C0E"
-  board-plate: "#1A1C20"
-  board-plate-top: "#202328"
-  board-split: "#050506"
-  board-ink: "#F4F4F0"
-  board-ink-muted: "#A4A8AF"
-  board-placeholder: "#8F949C"
-  board-line: "#23262B"
-  board-field: "#15171A"
-  board-field-line: "#5E636B"
-  board-selected: "#24272C"
+  space: "#06050C"
+  nebula: "#2A1B5E"
+  glass: "rgba(255,255,255,.06)"
+  glass-2: "rgba(255,255,255,.10)"
+  glass-line: "rgba(255,255,255,.12)"
+  glass-dark: "rgba(10,8,22,.92)"
+  ring: "rgba(255,255,255,.10)"
+  ink: "#F4F4F0"
+  ink-2: "rgba(244,244,240,.78)"
+  ink-3: "rgba(244,244,240,.64)"
+  violet: "#8A7BFF"
+  violet-hover: "#A093FF"
+  on-violet: "#0B0C0E"
   status-open: "#F4F4F0"
   status-working: "#8A7BFF"
-  status-resolved: "#3DDC84"
+  status-resolved: "rgba(244,244,240,.45)"
   status-critical: "#FF4D3D"
-  hall-ground: "#F3F4F6"
-  hall-surface: "#FFFFFF"
-  hall-surface-2: "#E9EBEE"
-  hall-line: "#D9DCE1"
-  hall-line-strong: "#82888F"
-  hall-ink: "#0B0C0E"
-  hall-ink-2: "#393D44"
-  hall-ink-3: "#5B6068"
-  hall-danger: "#B42318"
-  hall-danger-soft: "#FCE9E7"
-  hall-ok: "#12703F"
-  night-ground: "#0E0F11"
-  night-surface: "#16181B"
-  night-surface-2: "#1E2024"
-  night-line: "#2A2D32"
-  night-line-strong: "#666B73"
-  night-ink: "#F2F2EE"
-  night-ink-2: "#C6C8CC"
-  night-ink-3: "#9A9EA5"
-  night-danger: "#FF6B5E"
+  ok: "#3DDC84"
+  danger: "#FF6B5E"
+  danger-soft: "rgba(255,107,94,.12)"
 typography:
   display:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "clamp(2.25rem, 4vw, 3rem)"
-    fontWeight: 800
-    lineHeight: 0.88
-    letterSpacing: "-0.03em"
-    fontVariation: "'wdth' 125"
-  sign:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "1.875rem"
-    fontWeight: 800
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
+    fontSize: "2.75rem"
+    fontWeight: 600
+    lineHeight: 1.05
+    letterSpacing: "-0.02em"
+  card-title:
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
+    fontSize: "1.625rem"
+    fontWeight: 500
+    lineHeight: 1.18
+    letterSpacing: "-0.01em"
+  news-title:
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
+    fontSize: "1.375rem"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.01em"
+  news-date:
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 600
     lineHeight: 1
-    letterSpacing: "-0.015em"
-    fontVariation: "'wdth' 125"
-  plate:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "14px"
-    fontWeight: 700
-    lineHeight: 1
-    fontVariation: "'wdth' 75"
-  ticket-title:
-    fontFamily: "Archivo, system-ui, sans-serif"
+  row-title:
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 500
     lineHeight: 1.3
-    fontVariation: "'wdth' 85"
-  panel-title:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "1.75rem"
-    fontWeight: 600
-    lineHeight: 1.12
-    letterSpacing: "-0.01em"
-    fontVariation: "'wdth' 85"
   body:
-    fontFamily: "Archivo, system-ui, sans-serif"
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.45
-  label:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "0.8125rem"
-    fontWeight: 700
-  ticket-code:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "14px"
-    fontWeight: 700
-    letterSpacing: "0.03em"
-    fontVariation: "'wdth' 75"
-  column-head:
-    fontFamily: "Archivo, system-ui, sans-serif"
+  reading:
+    fontFamily: "Space Grotesk, system-ui, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.65
+  code:
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontSize: "13px"
+    fontWeight: 500
+    letterSpacing: "0.04em"
+  map-label:
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
     fontSize: "11px"
-    fontWeight: 700
+    fontWeight: 400
+    letterSpacing: "0.2em"
+  meta:
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontSize: "11px"
+    fontWeight: 400
     letterSpacing: "0.1em"
 rounded:
-  control: "2px"
-  plate-lg: "3px"
-  plate-xl: "4px"
+  card: "20px"
+  row: "14px"
+  field: "10px"
+  pill: "999px"
 spacing:
   "1": "4px"
   "2": "8px"
@@ -111,222 +91,195 @@ spacing:
   "7": "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.accent-hall}"
-    textColor: "{colors.on-accent-hall}"
-    rounded: "{rounded.control}"
+    backgroundColor: "{colors.violet}"
+    textColor: "{colors.on-violet}"
+    rounded: "{rounded.pill}"
     height: "38px"
-    padding: "0 16px"
-  button-sign:
-    backgroundColor: "{colors.signal-violet}"
-    textColor: "{colors.on-signal}"
-    rounded: "{rounded.control}"
-    height: "38px"
-    padding: "0 16px"
-  button-quiet:
+    padding: "0 18px"
+  button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.hall-ink}"
-    rounded: "{rounded.control}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
     height: "38px"
-    padding: "0 16px"
-  button-board:
-    backgroundColor: "transparent"
-    textColor: "{colors.board-ink}"
-    rounded: "{rounded.control}"
-    height: "38px"
-  input-hall:
-    backgroundColor: "{colors.hall-surface}"
-    textColor: "{colors.hall-ink}"
-    rounded: "{rounded.control}"
+    padding: "0 18px"
+  button-circle:
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    width: "40px"
     height: "40px"
-    padding: "0 12px"
-  input-board:
-    backgroundColor: "{colors.board-field}"
-    textColor: "{colors.board-ink}"
-    rounded: "{rounded.control}"
-    height: "40px"
-    padding: "0 38px"
-  flap-plate:
-    backgroundColor: "{colors.board-plate}"
-    textColor: "{colors.board-ink}"
-    typography: "{typography.plate}"
-    width: "14px"
-    height: "22px"
-  zone-chip-active:
-    backgroundColor: "transparent"
-    textColor: "{colors.board-ink}"
-    rounded: "{rounded.control}"
-    height: "34px"
-    padding: "0 10px"
+  segmented:
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    height: "32px"
+  input:
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
+    height: "42px"
+    padding: "0 14px"
+  glass-card:
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    width: "400px"
   ticket-row:
-    backgroundColor: "{colors.board-case}"
-    textColor: "{colors.board-ink}"
-    height: "56px"
-    padding: "6px 24px"
-  ticket-row-selected:
-    backgroundColor: "{colors.board-selected}"
-  top-bar:
-    backgroundColor: "{colors.board-case}"
-    textColor: "{colors.board-ink}"
-    height: "60px"
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.row}"
+    height: "64px"
+    padding: "10px 20px"
+  news-card:
+    backgroundColor: "{colors.glass}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "24px"
+  popover:
+    backgroundColor: "{colors.glass-dark}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    width: "290px"
 ---
-
 
 # Design System: WFM Extended
 
 ## Overview
 
-**Creative North Star: "Panoul de plecări, calm"**
+**Creative North Star: "Orbită"**
 
-Lista de tichete este un panou split-flap de aeroport: un obiect negru mat pe care fiecare tichet e o „cursă” cu COD, PROBLEMĂ, PRIO și STATUS. Plăcuțele split-flap nu sunt decor, ci eveniment: apar doar unde o valoare se schimbă (statusul, codul la trimitere, data din News, marca) și se rotesc literă cu literă când se schimbă. Bara de sus e din același material ca panoul, deci panoul pare să continue sub navigație. În dreapta, holul (de noapte) apare doar când ai deschis un tichet sau formularul.
+Tichetele sunt o hartă stelară. În centru stă nucleul „WFM”, în jurul lui cinci inele concentrice, câte unul pe zonă (din interior: Import, Interfață, Date, Raportare, Altele). Fiecare tichet e o planetă pe inelul zonei lui: mărimea spune prioritatea, culoarea spune statusul. Toată aplicația (Tichete, News, Jurnal) stă în același spațiu: un fundal negru-violet cu stele pe trei straturi de adâncime și o strălucire de nebuloasă care urmărește nucleul. Navigarea între pagini mută camera lateral prin acest spațiu.
 
-Sistemul refuză tabelul gri de birou, cardurile glass și instrucțiunile care stau pe ecran degeaba. Expresivitatea vine din obiectul-panou și din mișcarea lui: un singur font, două materiale (panou și hol), un accent mov și patru culori de observație. Nimic nu se mișcă fără motiv.
+Sistemul refuză tabelul gri de birou și ecranele de instrucțiuni. Expresivitatea vine din hartă, din adâncimea fundalului și din tranziții care au o direcție în spațiu (în nucleu, din nucleu, lateral). Mișcarea de fundal e lentă și se oprește singură.
 
 **Key Characteristics:**
-- Doar dark: panou, bară și hol (tema light a fost scoasă).
-- Plăcuțe split-flap doar pentru valori scurte care se schimbă: status, cod în momentul de trimitere și în detaliu, dată, marcă.
-- Accent mov: `#8A7BFF` pe suprafețe închise, `#8A7BFF` și în hol (tema light nu mai există).
-- Un singur font variabil, Archivo, folosit pe axa de lățime.
-- Mișcare cu sens: rotire la schimbare, View Transitions la rearanjare și la deschiderea panoului; fără animații continue.
+- Doar dark. Un singur fundal, `space` cu nebuloasa, pentru toate paginile.
+- Accent unic mov `#8A7BFF`: acțiunea primară, selecția, statusul „În lucru”, focusul.
+- Două fonturi: Space Grotesk pentru UI și titluri, JetBrains Mono pentru coduri, etichete de hartă și meta.
+- Suprafețele sunt sticlă (`glass` cu blur 18px), nu cutii opace.
+- Mișcare cu sens spațial; fundalul se oprește în tab ascuns, după 60 s fără activitate și la reduced-motion.
 
 ## Colors
 
-Două materiale și un accent. Panoul (board-*) e identic în ambele teme; holul (hall-* în light, night-* în dark) urmează `prefers-color-scheme`.
+Un spațiu, o sticlă, un accent, patru culori de observație.
 
 ### Primary
-- **Mov de semnal** (signal-violet `#8A7BFF`, hover `#A093FF`, text pe el on-signal negru, 5.9:1): pe bară și panou. Butonul „Tichet nou”, sublinierea tab-ului curent, statusul segmentat activ, sublinierea zonei active, marker-ul rândului, focus, caret, plăcuța de pictogramă din toast.
-- **Mov de hol** (accent-hall `#6A55E0`, hover `#5843CF`, text alb, 5.3:1): în holul light. Butonul primar, selecțiile din formular (zonă, prioritate, status admin), focus-ul câmpurilor, eticheta ADMIN. În tema dark holul folosește tot `#8A7BFF` cu text negru (`--acc` se schimbă pe temă).
-- Implementare: `--sig*` pentru suprafețele închise, `--acc*` pentru hol; `.bar,.board,.p-strip,.done-board,.jt,.lightbox` redefinesc `--acc` ca `--sig`, deci componentele folosesc doar `--acc`.
+- **Mov** (violet `#8A7BFF`, hover `#A093FF`, text pe el `on-violet` aproape negru): butonul „Tichet nou”, pill-ul activ (mov 28%), punctul tab-ului curent, planeta „În lucru” (plină, cu strălucire), inelele de selecție ale planetei, linia de legătură a etichetei selectate, focusul (contur 2px), punctul de tip Update din News.
 
 ### Secondary
-- **Observații de status** (status-open, status-working, status-resolved, status-critical): doar pe panou sau pe plăcuțe. Deschis = alb, În lucru = mov, Rezolvat = verde, prioritate Critică = roșu.
+- **Observații de status**: Deschis = alb plin (`status-open`), În lucru = mov plin cu strălucire, Rezolvat = planetă goală cu contur `status-resolved`, prioritatea Critică = halou roșu `status-critical` care respiră încet. Verde `ok` doar pentru tipul Fix din News.
 
 ### Neutral
-- **Carcasa panoului** (board-case), **plăcuța** (board-plate, cu jumătatea de sus board-plate-top) și **linia de despicare** (board-split): materialul panoului și al barei.
-- **Cerneala panoului** (board-ink) și **cerneala secundară** (board-ink-muted); board-field-line conturează controalele de pe panou la 3:1.
-- **Holul light** (hall-ground, hall-surface, hall-ink*) și **holul de noapte** (night-*): fond, suprafețe, cerneală. hall-line-strong / night-line-strong conturează câmpurile la minim 3:1.
+- **Spațiu** (`space` `#06050C`) cu **nebuloasa** (`nebula` `#2A1B5E`, gradient radial 700×600 la 40% → 26% → transparent, centrat pe nucleu sau sus pe paginile de lectură).
+- **Sticlă**: `glass` (6% alb) pentru carduri, rânduri, câmpuri; `glass-2` (10%) pentru hover și elementul curent; `glass-line` (12%) contur; `glass-dark` pentru popover, toast, lightbox și cardul pe mobil.
+- **Cerneală**: `ink` pentru text principal, `ink-2` (78%) secundar, `ink-3` (64%) meta și etichete de hartă. Toate trec 4.5:1 pe spațiu, sticlă și nebuloasă (minim măsurat 5.59).
 
 ### Named Rules
-**The Two Materials Rule.** Orice element stă fie pe panou, fie în hol. Bara, plăcuțele, rândurile, jurnalul, banda de cod din detaliu și toast-ul sunt material de panou; restul e hol.
-**The One Accent Rule.** Un singur accent, mov. Nu există al doilea semnal (galbenul a fost scos). Movul marchează acțiunea primară, selecția și starea „În lucru”, nimic decorativ.
-**The Observation Rule.** Culorile de status apar doar pe fond de panou. În hol, statusul se scrie în text sau stă pe o bandă de panou (ex. tipul anunțului din News).
-**The No Zone Color Rule.** Zonele nu au culori. Se recunosc după pictogramă și nume.
+**The One Accent Rule.** Un singur accent, mov. Fără al doilea semnal colorat; roșul și verdele sunt observații, nu accente.
+**The No Zone Color Rule.** Zonele nu au culori. Se recunosc după inel (poziție) și nume.
+**The Glass Rule.** Sticla e pentru ce plutește peste spațiu (card, rânduri, câmpuri, News). Fără umbre colorate și fără glass decorativ fără conținut.
 
 ## Typography
 
-**Font:** Archivo variabil (`wdth` 62–125, `wght` 400–800), încărcat din Google Fonts. Fără al doilea font și fără monospace.
+**Fonturi:** Space Grotesk (400–700) și JetBrains Mono (400–500), din Google Fonts.
 
-**Caracter:** aceeași familie face trei voci prin axa de lățime: îngust pe plăcuțe și coduri, normal în text, lat și gros pe titluri.
+**Caracter:** Space Grotesk dă tonul tehnic și cald; mono-ul marchează tot ce e cod, coordonată sau meta (TIS-14, numele inelelor, legenda, data).
 
 ### Hierarchy
-- **Display** (800, `wdth` 125, clamp 2.25–3rem, line-height 0.88): titlurile de pagină News și Jurnal. În browserele cu scroll timeline, titlul se lățește de la 106% la 125% în primii 220px de scroll.
-- **Sign** (800, `wdth` 125, 30px): titlul formularului „Tichet nou”, marca „Extended”.
-- **Panel title** (600, `wdth` 85, 28px): titlul tichetului în panoul de detaliu, `text-wrap: balance`.
-- **Ticket title** (500, `wdth` 85, 15px): titlul din rând, o linie cu ellipsis (două linii pe mobil).
-- **Ticket code** (700, `wdth` 75, 14px, tracking .03em): codul TIS din rând, text normal, nu plăcuțe.
-- **Plate** (700, `wdth` 75, majuscule, cifre tabulare): plăcuțele, în trei mărimi: sm 11.5px, md 14px, xl 72px.
-- **Body** (400, 14px, line-height 1.45); descrierile și News la 15–16px, măsură de maxim 65ch.
-- **Column head** (700, 11px, majuscule, tracking 0.1em): antetul de coloane.
+- **Display** (600, 44px, line-height 1.05, -0.02em): titlurile de pagină News și Jurnal (34px pe mobil).
+- **Card title** (500, 26px, `text-wrap: balance`): titlul tichetului în card.
+- **News title** (600, 22px; 26px pe anunțul cel mai nou).
+- **News date** (600, 28px, ziua pe 2 cifre) cu luna în mono 11px majuscule dedesubt.
+- **Row title** (500, 15px): titlul din rândul de listă.
+- **Body** (400, 14px/1.45); **Reading** (15px/1.65, max 66ch) pentru descrieri și News; primul paragraf din News la 17px în `ink`.
+- **Code** (mono 500, 13px în listă, 11–12px pe hartă și în card).
+- **Map label** (mono 11px, majuscule, 0.2em): numele inelelor, pe arc (`textPath`); pe hartă mică 10px, 0.12em.
+- **Meta** (mono 11px, 0.1em, majuscule): titlurile de secțiune din card, legenda, luna din News.
 
 ### Named Rules
-**The Plate Rule.** Plăcuțele sunt rezervate valorilor care se schimbă și merită urmărite: status, codul în detaliu și la trimitere, data din News, marca. Codul din listă, titlurile și numele se citesc ca text normal.
-**The Uppercase Rule.** Majuscule doar pe plăcuțe, în antetul de coloane și pe eticheta de tip din News. Zona, prioritatea și titlurile de secțiune sunt scrise normal.
-**The Tabular Rule.** `font-variant-numeric: tabular-nums` pe tot documentul.
+**The Mono Rule.** Mono doar pentru coduri, etichete de hartă, meta și date. Textul de citit e Space Grotesk.
 
 ## Layout
 
-- Bară neagră de 60px, full-bleed, cu linie board-line dedesubt.
-- Pagina Tichete: când nu e nimic deschis, panoul ocupă toată lățimea. Când deschizi un tichet sau „Tichet nou”, holul cu panoul de detaliu (460px) apare în dreapta (`:has(.panel.open)`; fără `:has`, layout-ul rămâne pe două coloane). Fiecare derulează independent.
-- Antetul panoului are două rânduri: (1) căutare, status segmentat cu numere, ordine; (2) zonele ca text cu pictogramă și număr, „Resetează filtrele” când e cazul, prioritate (opțiunile arată câte tichete active are fiecare), export pentru admin. Apoi antetul de coloane.
-- Rândul are 56px, pe grila `84px | 1fr | 72px | 128px` (COD, PROBLEMĂ, PRIO, STATUS). Sub titlu: zonă cu pictogramă · raportor · timp · comentarii/capturi.
-- Lista se termină cu un rând discret: „Nu găsești problema? Raportează-o” și scurtăturile N, J/K, / (scurtăturile ascunse sub 900px).
-- ≤1280px: panoul de detaliu are 420px. ≤1080px: 380px, grila devine `76px | 1fr | 72px | 128px`.
-- ≤900px: o singură coloană; panoul de detaliu devine foaie pe tot ecranul cu buton Înapoi; antetul are trei rânduri (căutare; status + ordine; zone + prioritate, cu scroll orizontal pe status și zone); rândul trece pe două linii (cod, bare de prioritate, status sus; titlul jos).
-- ≤560px: butoanele din bară rămân doar cu pictogramă; ≤420px cu admin, marca se ascunde ca să încapă trei tab-uri.
-- News și Jurnal sunt pagini de hol, cu coloană de lectură de 980px (Jurnal 1180px).
+- Bara de sus transparentă, 64px: marca `wfm/extended`, tab-urile (punct mov înaintea celui curent), căutarea ca pill, „Tichet nou”, lacătul de admin (cerc de sticlă 40px, popover sub el).
+- Sub bară, banda de filtre: status segmentat cu numere (Toate e primul și implicit, apoi Active, Deschise, În lucru, Rezolvate, Arhivă pentru admin), prioritate, zonă și ordine (doar în Listă), comutatorul Hartă | Listă, export (admin), numărul de rezultate.
+- Harta ocupă restul ecranului. Cu ≤ 10 tichete vizibile pe desktop lat, etichetele (cod + titlu pe 2 rânduri) stau în afara inelului exterior, legate cu o linie de 1px; altfel stă doar codul lângă planetă, titlul apare la hover/focus/selecție.
+- Etichetele nu se suprapun: plasare greedy pe poziții candidate (8 în jurul planetei, sau deplasări verticale în afara inelului), care evită etichetele deja puse, corpurile planetelor, numele inelelor și marginile scenei; cu histerezis, ca să nu sară în timpul rotației.
+- Pe hartă mică numele inelelor se împrăștie pe arc (interiorul sus, celelalte stânga/dreapta), ca să nu se stiveze.
+- Cardul de detaliu: sticlă fixă în dreapta (400px, sus 88px, jos 24px, scroll intern); harta își mută centrul spre stânga cât e deschis. Pe mobil (≤900px) cardul devine ecran întreg cu buton înapoi.
+- Lista: rânduri de sticlă de 64px pe grila `84px | 1fr | auto | auto` (cod, titlu + meta, prioritate în puncte, status); pe mobil pe două linii.
+- News: coloană de 820px; fiecare anunț pe grila `76px | 28px | 1fr` (data, orbita cu punctul, cardul). Pe mobil o coloană, data trece în linia de autor.
+- Jurnal: tabel într-un card de sticlă, coloană de 1100px.
+- Fără scroll orizontal la 1440, 1280, 900 și 390px.
 - Ritm de spațiere pe 4px (4, 8, 12, 16, 24, 32, 48).
 
 ## Elevation & Depth
 
-Plat. Adâncimea vine din material (panou negru lângă hol) și din plăcuțe (jumătatea de sus mai deschisă, linia de despicare). O singură umbră, pentru ce plutește: popover-ul de admin și toast-urile.
-
-### Shadow Vocabulary
-- **pop** (`0 14px 32px rgba(11,12,14,.18), 0 2px 6px rgba(11,12,14,.10)`; în dark `0 16px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35)`).
+Adâncimea vine din spațiu, nu din umbre: trei straturi de stele (fund: canvas cu 95 de stele, factor de paralaxă 0.25; mijloc: 45 de puncte, 0.55; față: 22 de puncte, 1), nebuloasa și sticla cu blur. O singură umbră, `0 30px 80px rgba(0,0,0,.35)`, pentru ce plutește: cardul, popover-ul, toast-ul.
 
 ### Named Rules
-**The Still Room Rule.** Nu există lumini ambientale, reflexe sau animații în buclă. Totul se mișcă doar ca răspuns la o acțiune sau la o schimbare de date (repaus măsurat: 0.1 ms/s).
+**The Depth Rule.** Ce e mai aproape se mișcă mai mult: deriva, paralaxa după mouse (max 12px) și camera dintre pagini se înmulțesc cu factorul stratului.
 
 ## Shapes
 
-- Controale: colțuri de 2px. Plăcuțele xl au 4px.
-- Sublinierile de selecție (tab curent, zonă activă) sunt bare de 2–3px, nu cutii.
+- Pill (999px) pentru butoane, filtre, căutare, chip-uri.
+- Card și News 20px, rânduri 14px, câmpuri 10px.
+- Planetele sunt cercuri: rază 6 / 9 / 13 / 18 după prioritate (Scăzută → Critică).
 
 ## Components
 
 ### Buttons
-- **Primary** (în hol): `--acc` cu `--on-acc`, 38px, 700, `wdth` 108, umbră interioară jos de 2px. Hover: `--acc-h`. Press: scale 0.97. Butoanele care duc undeva au o săgeată care alunecă 3px la hover.
-- **Sign** (pe bară, „Tichet nou”): mov de semnal cu text negru, 38px.
-- **Board** (pe bară și panou, inclusiv Admin): transparent, contur board-field-line, text board-ink.
-- **Quiet**: transparent, contur hall-line-strong; hover întărește conturul.
-- **Danger quiet / Danger**: text roșu pentru intenție, roșu plin doar în confirmarea inline.
+- **Primary**: mov plin cu text `on-violet`, 38px, pill. Hover `violet-hover`, press scale 0.97; săgeata alunecă 3px la hover.
+- **Ghost**: contur `ink-3`, text `ink`; hover `glass-2`.
+- **Danger ghost / Danger**: text roșu pentru intenție, roșu plin doar în confirmarea inline.
+- **Circle**: sticlă 40px (34px mic), doar pictogramă, cu `aria-label`.
 - Lucru: spinner în buton, text ascuns, buton dezactivat.
 
-### Filtre pe panou
-- **Status segmentat**: segmente cu numărul în ele; activ = mov cu text negru.
-- **Zone**: text cu pictogramă și număr, fără contur; hover = fond board-hover; activ = text board-ink cu subliniere movă de 2px. La hover, pictograma face flip pe axa Y.
-- **Prioritate / Ordine**: selecturi de 150px pe panou.
+### Filtre
+- **Segmentat**: pill de sticlă cu butoane de 32px; activ = mov 28% cu text `ink`; numărul în mono 11px.
+- **Select**: pill de sticlă 38px.
 
 ### Inputs / Fields
-40px. În hol: alb, contur hall-line-strong, focus cu contur `--acc` și inel de 1px. Pe panou: board-field cu contur board-field-line, focus și caret mov. Eroare: contur roșu și mesaj sub câmp care spune ce lipsește și de ce.
+42px, sticlă, contur `ink-3` (3:1), rază 10px; focus contur mov + inel 1px; eroare contur roșu și mesaj sub câmp.
 
-### Navigation
-Tab-uri de 60px pe bara neagră, `wdth` 115, 700, text board-ink-muted. Tab-ul curent e board-ink cu o bară movă de 3px jos; celelalte primesc o subliniere care crește din stânga la hover. Jurnal apare doar pentru admini.
+### Harta (signature)
+- Nucleu „WFM” cu halou mov, care pulsează încet. Inelele sunt cercuri de 1px `ring`; al treilea e punctat și „curge”.
+- Numele inelului e clicabil: filtrează zona (a doua apăsare scoate filtrul); inelul ales se aprinde mov 40%, celelalte se estompează.
+- Planetele se rotesc lent (inelul interior o tură în ~6 min) și se opresc cât mouse-ul e pe hartă sau pe card, cu reluare lină.
+- Hover/focus: planeta crește 1.25×, apare titlul, linia se aprinde. Selecția: două inele mov care pulsează.
+- Filtrele estompează planetele la 12% (nu dispar). Tichetul nou zboară din nucleu pe o curbă (~900ms), apoi un val.
+- Legenda jos-stânga, ticker-ul cu ultimul anunț jos-centru.
 
-### Panoul split-flap (signature)
-- Fiecare plăcuță e un `span` cu jumătatea de sus mai deschisă și linie de despicare. Valoarea finală e mereu în DOM; textul accesibil e un `span.sr` cu forma normală.
-- La schimbare, fiecare caracter trece prin 2–6 caractere aleatoare la ~45ms; jumătatea de sus a caracterului vechi cade cu `rotateX(-90deg)` în 80ms. Întârzierea crește cu indexul caracterului (28ms) și, la intrare, cu al rândului (35ms).
-- Se rotesc: la prima intrare din sesiune, statusurile primelor 20 de rânduri și marca; la auto-refresh și la acțiunile de admin, doar statusurile schimbate; la trimitere, afișajul mare cu codul. O schimbare de filtru nu rotește nimic.
-- Statusul se scrie fără plăcuțe goale de umplutură.
-- Un singur timer pentru toate plăcuțele, oprit când coada e goală. La reduced-motion valoarea apare direct.
+### Card de detaliu
+Cod mono mov, Copiază, titlu, chip-uri (prioritate, status, zonă), raportor cu avatar, cutia de triere pentru admini (status segmentat, prioritate, zonă, editare, arhivare cu confirmare inline), descriere, capturi, comentarii.
 
-### Rândul de tichet
-Fond board-case, linie de 1px între rânduri. Cod ca text îngust, titlu, linia de meta sub titlu, bare de prioritate (cu text doar la Critică, în roșu), status pe plăcuțe. La hover și pe rândul selectat apare un marker mov scurt (4×26px) în stânga; rândul selectat are fond board-selected. Rândul nou intră cu un flash mov închis de 1.6s.
-
-### Panoul de detaliu
-O bandă de panou sus (cod pe plăcuțe, buton de copiere care afișează „COPIAT” pe plăcuțe, status pe plăcuțe), apoi titlul, faptele (zonă, prioritate, raportat, modificat), cutia de triere pentru admini, descrierea, capturile și comentariile. Secțiunile sunt separate de o linie subțire și au titluri normale (Descriere, Comentarii 2).
-
-### Fără ecran gol de ajutor
-Când nu e nimic deschis nu există panou de indicații. Indicațiile stau unde se folosesc: căutarea are tasta `/`, butonul „Tichet nou” are `title` cu N, lista se termină cu „Nu găsești problema? Raportează-o”, iar starea fără rezultate oferă „Raportează-o” cu titlul completat din căutare.
-
-### Momentul de trimitere
-Afișaj de panou cu codul TIS pe plăcuțe de 96px și observația „ÎNREGISTRAT” în verde; rândul nou intră sus pe panou printr-o View Transition.
-
-### News și Jurnal
-News: titlu display, fiecare anunț are o plăcuță de panou cu data (03 OCT); tipul (UPDATE mov, FIX verde, ANUNȚ alb) e o etichetă de panou în linia de autor; primul paragraf e mai mare; capturile se dezvăluie la scroll unde browserul suportă `animation-timeline: view()`. Jurnal: tabel de panou cu ORA și COD pe plăcuțe; codurile de tichet existente deschid tichetul.
+### News
+Cronologie ca o orbită: o linie verticală în gradient (mov → `glass-line`), pe ea câte un punct-planetă colorat după tip (mov = Update, verde = Fix, alb = Anunț). Data mare în stânga. Cel mai nou anunț are un inel static în jurul punctului, card `glass-2` cu strălucire de nebuloasă în colț și titlu mai mare. Primul paragraf e rezumatul, mai mare și în `ink`.
 
 ### Toast
-Bandă neagră de panou care intră de jos: o plăcuță movă cu pictogramă și linie de despicare, apoi mesajul în board-ink. Eroare: plăcuța e roșie.
+Pill de sticlă închisă care intră de sus (de jos pe mobil), cu pictogramă pe cerc mov (roșu la eroare).
 
 ### Mișcare
-- View Transitions: rândurile vizibile primesc nume doar pe durata tranziției, deci filtrarea, sortarea și schimbarea de zonă le rearanjează animat; panoul de detaliu intră din dreapta (280ms, `cubic-bezier(.16,1,.3,1)`); schimbarea paginii face slide orizontal. Căutarea și auto-refresh-ul nu folosesc tranziții.
-- Fără View Transitions sau cu reduced-motion, randarea e directă și tot conținutul e vizibil.
+- **Hartă → Listă**: camera intră în nucleu (harta scale 1 → 7, ease-in, 460ms; inelele și planetele zboară spre margini), apoi lista iese din nucleu (clip-path cerc de la nucleu, 560ms) cu rândurile intrând în cascadă (28ms).
+- **Listă → Hartă**: lista se strânge în nucleu (380ms), apoi harta se deschide din el (scale 0.25 → 1, 700ms).
+- **Între pagini**: camera se mută lateral în ordinea tab-urilor: pagina veche iese 90px în lateral cu fade, cea nouă intră din partea opusă (560ms), stelele alunecă cu 70px pe stratul apropiat (mai puțin pe cele îndepărtate), nebuloasa se mută lin (`@property --gx/--gy`, 700ms). Pe News, anunțurile intră în cascadă.
+- Easing de bază `cubic-bezier(.16,1,.3,1)`; card 420ms, micro 160ms.
+- Tot ce e continuu (stele, rotație, puls, curgerea inelului) rulează într-un singur `requestAnimationFrame` (rar, la 500ms, cât timp doar se rotește) și se oprește în tab ascuns, după 60 s fără activitate și la reduced-motion. Cost măsurat: ~14 ms/s cu animația pornită, 0 ms/s în repaus.
+- Reduced-motion: fără rotație, zbor, zoom, paralaxă; tranzițiile devin fade de 160ms.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** pune pe plăcuțe doar statusuri, date și coduri în momentele în care contează.
-- **Do** rotește numai ce s-a schimbat; o schimbare de filtru se rezolvă prin View Transition, nu prin rotire.
-- **Do** păstrează panoul și bara întunecate în ambele teme și lasă holul să urmeze sistemul.
-- **Do** folosește `--acc` în componente și lasă suprafața să decidă nuanța de mov.
-- **Do** verifică textul nou la 4.5:1 și conturul controalelor la 3:1, pe panou și în hol, în ambele teme.
+- **Do** ține toate paginile în același spațiu (fundal, stele, nebuloasă) și dă tranzițiilor o direcție spațială.
+- **Do** folosește mov doar pentru acțiune, selecție, „În lucru” și focus.
+- **Do** verifică textul nou la 4.5:1 și conturul controalelor la 3:1 pe spațiu, sticlă și nebuloasă.
+- **Do** oprește orice mișcare continuă prin bucla unică; animațiile one-shot doar ca răspuns la o acțiune.
 - **Do** confirmă inline acțiunile distructive, cu codul tichetului în text.
 
 ### Don't:
-- **Don't** reintroduce galbenul sau un al doilea accent.
-- **Don't** folosi culorile de status în hol pe fond deschis; pune-le pe o bandă de panou.
-- **Don't** da culori zonelor.
-- **Don't** pune contoare, ceas, lumini ambientale sau animații în buclă pe ecran; nu adaugă panouri de instrucțiuni.
-- **Don't** folosi gradient text, glass decorativ sau bordură colorată laterală pe rânduri; marker-ul de rând e o bară scurtă.
-- **Don't** pune kicker sau eyebrow deasupra titlurilor.
-- **Don't** folosi emoji sau glife ca iconuri; pictogramele vin din `Icons.html`.
-- **Don't** introduce al doilea font sau monospace.
-- **Don't** deschide modale pentru sarcini care încap în panoul de detaliu.
+- **Don't** introduce un al doilea accent sau culori de zonă.
+- **Don't** adăuga animații CSS infinite sau fundaluri care se redesenează la fiecare cadru.
+- **Don't** suprapune etichete pe hartă; orice etichetă nouă intră în plasarea fără coliziuni.
+- **Don't** pune panouri de instrucțiuni pe ecran; indicațiile stau unde se folosesc (`/` pe căutare, `title` cu N, finalul listei).
+- **Don't** folosi bordură colorată laterală, gradient text sau emoji ca iconuri; pictogramele vin din `Icons.html`.
+- **Don't** deschide modale pentru sarcini care încap în card.

@@ -42,11 +42,11 @@ def run(browser, vname, size, scheme, errors):
     # vederea implicită: hartă pe desktop, listă pe mobil
     shot("lista" if mobile else "harta")
     page.click("#viewMap" if mobile else "#viewList")
-    settle(page, 900)
+    settle(page, 1400)   # tranziția prin nucleu durează ~1 s
     shot("harta" if mobile else "lista")
 
     page.click("#viewMap")
-    settle(page, 700)
+    settle(page, 1400)
     page.click(".planet[data-id='TIS-13']")
     settle(page, 1300)
     shot("harta-detaliu")
@@ -54,7 +54,7 @@ def run(browser, vname, size, scheme, errors):
     settle(page, 700)
 
     page.click("#viewList")
-    settle(page, 500)
+    settle(page, 1400)
     page.click(".row[data-id='TIS-13']")
     settle(page, 900)
     shot("detaliu")
