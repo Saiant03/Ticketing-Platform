@@ -51,6 +51,8 @@ Revenire la o versiune veche: Deploy → Manage deployments → creion → Versi
 
 ## G. Link scurt (recomandat)
 
+Linkul folosit: https://tinyurl.com/wfm-extended
+
 1. Deschide https://tinyurl.com
 2. Lipește Web app URL-ul `/exec` de la D.3.
 3. La „Customize your link” scrie un nume, de ex. `wfm-tichete`.
