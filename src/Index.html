@@ -6,13 +6,14 @@
 <title>WFM Extended</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <?!= include('Tokens') ?>
 <?!= include('Styles') ?>
 </head>
 <body>
 <?!= include('Icons') ?>
-<div id="stars" aria-hidden="true"><canvas></canvas><div class="sl"></div><div class="sl"></div></div>
+<div id="nebula" aria-hidden="true"></div>
+<div id="stars" aria-hidden="true"><div class="sl"><i></i></div><div class="sl"><i></i></div><div class="sl"><i></i></div></div>
 <i class="shoot" aria-hidden="true"></i>
 <a class="skip" href="#main">Sari la conținut</a>
 
@@ -76,26 +77,27 @@
     </div>
 
     <div class="stage" id="stage" data-view="map">
-      <svg id="map" role="group" aria-label="Harta tichetelor, pe zone">
-        <defs>
-          <radialGradient id="core"><stop offset="0" style="stop-color:var(--ink)"/><stop offset=".45" style="stop-color:var(--acc)"/><stop offset="1" style="stop-color:var(--acc);stop-opacity:0"/></radialGradient>
-          <radialGradient id="corehalo"><stop offset="0" style="stop-color:var(--acc);stop-opacity:.35"/><stop offset="1" style="stop-color:var(--acc);stop-opacity:0"/></radialGradient>
-          <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
-        </defs>
-        <g id="sys">
-          <defs><path class="rp"/><path class="rp"/><path class="rp"/><path class="rp"/><path class="rp"/></defs>
-          <g id="rings" aria-hidden="true"><circle class="ring"/><circle class="ring"/><circle class="ring dash"/><circle class="ring"/><circle class="ring"/></g>
-          <g id="core" aria-hidden="true"><circle r="80" fill="url(#corehalo)"/><circle r="38" fill="url(#core)"/><text class="core-t" y="4" text-anchor="middle">WFM</text></g>
-          <g id="rnames">
-            <g class="rz" data-ring="Import" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Import"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">IMPORT</textPath></text></g>
-            <g class="rz" data-ring="Interfață" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Interfață"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">INTERFAȚĂ</textPath></text></g>
-            <g class="rz" data-ring="Date" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Date"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">DATE</textPath></text></g>
-            <g class="rz" data-ring="Raportare" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Raportare"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">RAPORTARE</textPath></text></g>
-            <g class="rz" data-ring="Altele" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Altele"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">ALTELE</textPath></text></g>
-          </g>
-          <g id="planets"></g>
-        </g>
-      </svg>
+      <div id="map" role="group" aria-label="Harta tichetelor, pe zone">
+        <div id="cam">
+          <svg id="mapsvg">
+            <g id="sys">
+              <defs><path class="rp"/><path class="rp"/><path class="rp"/><path class="rp"/><path class="rp"/></defs>
+              <g id="rings" aria-hidden="true"><circle class="ring"/><circle class="ring"/><circle class="ring dash"/><circle class="ring"/><circle class="ring"/></g>
+              <g id="rnames">
+                <g class="rz" data-ring="Import" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Import"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">IMPORT</textPath></text></g>
+                <g class="rz" data-ring="Interfață" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Interfață"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">INTERFAȚĂ</textPath></text></g>
+                <g class="rz" data-ring="Date" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Date"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">DATE</textPath></text></g>
+                <g class="rz" data-ring="Raportare" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Raportare"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">RAPORTARE</textPath></text></g>
+                <g class="rz" data-ring="Altele" role="button" tabindex="0" aria-pressed="false" aria-label="Filtrează zona Altele"><path class="rzh"/><text dy="-7"><textPath startOffset="50%" text-anchor="middle">ALTELE</textPath></text></g>
+              </g>
+            </g>
+          </svg>
+          <div id="orbits">
+            <div class="core" aria-hidden="true"><i class="halo"></i><i class="disc"></i><b>WFM</b></div>
+            <div class="orb" data-ring="0"></div><div class="orb" data-ring="1"></div><div class="orb" data-ring="2"></div><div class="orb" data-ring="3"></div><div class="orb" data-ring="4"></div>
+          </div>
+        </div>
+      </div>
       <div class="list" id="list" role="list" hidden></div>
       <div class="map-msg" id="mapMsg" hidden></div>
       <div class="legend" id="legend">

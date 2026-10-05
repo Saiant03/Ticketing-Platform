@@ -156,7 +156,7 @@
   function resetFilters() {
     S.f = { q: '', status: 'all', prio: 'all', zone: null, sort: S.f.sort };
     $('#search').value = '';
-    S.shown = PAGE; renderToolbar(); renderBoard();
+    S.shown = PAGE; renderToolbar(); renderBoard(); zoomSearch();
   }
   function toggleRing(key) {
     S.f.zone = S.f.zone === key ? null : key; S.shown = PAGE;
@@ -186,37 +186,40 @@
     $('#stage').dataset.view = document.body.dataset.view = S.view;
     $('#search').placeholder = S.view === 'map' ? 'Caută pe hartă…' : 'Caută în listă…';
   }
-  // Hartă ↔ Listă trec prin nucleul hărții: harta zboară spre exterior și lista iese din nucleu (invers la întoarcere)
+  // Hartă ↔ Listă trec prin nucleul hărții: harta se apropie de cameră și lista iese din nucleu (invers la întoarcere); doar transform/opacity
   const VX = { busy: false, tok: 0 };
+  function rowsIn(list) {
+    const rows = $$('.row', list), d = Math.min(24, 300 / rows.length);
+    rows.forEach((r, i) => r.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 80 + i * d, fill: 'backwards', easing: 'cubic-bezier(.2,.7,.2,1)' }));
+  }
   function setView(v) {
     if (S.view === v) return;
     S.view = v;
     try { localStorage.setItem('tis_view', v); } catch (e) {}
-    renderToolbar(); kick(true);
+    renderToolbar();
     const map = $('#map'), list = $('#list');
-    if (S.page !== 'tichete' || !M.ready) { renderBoard(); kick(); return; }
+    if (S.page !== 'tichete' || !M.ready) { renderBoard(); return; }
     const tok = ++VX.tok;
     map.getAnimations().forEach(a => a.cancel()); list.getAnimations().forEach(a => a.cancel());
-    if (VX.busy) { VX.busy = false; renderBoard(); return; }
+    if (v === 'list') unzoom();
+    if (VX.busy) { VX.busy = false; renderBoard(); syncRate(); return; }
     if (REDUCED.matches) { renderBoard(); (v === 'map' ? map : list).animate([{ opacity: 0 }, { opacity: 1 }], 160); return; }
-    const o = M.G.cx + 'px ' + M.G.cy + 'px', ease = 'cubic-bezier(.16,1,.3,1)', end = () => tok === VX.tok;
-    VX.busy = true;
+    const o = coreXY(), ease = 'cubic-bezier(.16,1,.3,1)', end = () => tok === VX.tok, done = () => { VX.busy = false; syncRate(); };
+    VX.busy = true; syncRate();
+    map.style.transformOrigin = list.style.transformOrigin = o;
     if (v === 'list') {
-      map.style.transformOrigin = o;
-      map.animate([{ transform: 'scale(1)', opacity: 1 }, { offset: 0.65, opacity: 1 }, { transform: 'scale(7)', opacity: 0 }], { duration: 460, easing: 'cubic-bezier(.7,0,.84,0)' }).onfinish = () => {
+      map.animate([{ transform: 'scale(1)', opacity: 1 }, { offset: 0.6, opacity: 1 }, { transform: 'scale(5)', opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.7,0,.84,0)' }).onfinish = () => {
         if (!end()) return;
         renderBoard();
-        list.animate([{ clipPath: 'circle(0px at ' + o + ')', opacity: 0.4 }, { clipPath: 'circle(150% at ' + o + ')', opacity: 1 }], { duration: 560, easing: ease });
-        $$('.row', list).slice(0, 12).forEach((r, i) => r.animate([{ opacity: 0, transform: 'translateY(10px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 120 + i * 28, fill: 'backwards', easing: ease }));
-        VX.busy = false;
+        list.animate([{ transform: 'scale(.2)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 420, easing: ease });
+        rowsIn(list); done();
       };
     } else {
-      list.animate([{ clipPath: 'circle(150% at ' + o + ')', opacity: 1 }, { clipPath: 'circle(0px at ' + o + ')', opacity: 0.3 }], { duration: 380, easing: 'cubic-bezier(.7,0,.84,0)' }).onfinish = () => {
+      list.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(.2)', opacity: 0 }], { duration: 260, easing: 'ease-in' }).onfinish = () => {
         if (!end()) return;
         renderBoard();
-        map.style.transformOrigin = o;
-        map.animate([{ transform: 'scale(.25)', opacity: 0 }, { offset: 0.4, opacity: 1 }, { transform: 'scale(1)', opacity: 1 }], { duration: 700, easing: ease });
-        VX.busy = false;
+        map.animate([{ transform: 'scale(.3)', opacity: 0 }, { offset: 0.4, opacity: 1 }, { transform: 'none', opacity: 1 }], { duration: 480, easing: 'ease-out' });
+        done();
       };
     }
   }
@@ -300,6 +303,7 @@
     const open = S.panel !== 'empty';
     $('#panel').classList.toggle('open', open);
     document.body.classList.toggle('card-open', open);
+    camera(); syncRate();
     clearTimeout(S.clr);
     if (!open) S.clr = setTimeout(() => { if (S.panel === 'empty') $('#panelInner').innerHTML = ''; }, 500);
   }
@@ -528,12 +532,17 @@
   }
 
   // ---------- acțiuni server ----------
+  // cache local (aceleași date pentru toți): la pornire harta apare din el, apoi răspunsul serverului o actualizează
+  function cacheGet(k) { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : null; } catch (e) { return null; } }
+  function cacheSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function load(quiet) {
     if (!gasReady()) { S.loading = false; S.loadErr = true; renderAll(); toast('Deschide aplicația prin linkul publicat (…/exec).', 'err'); return; }
     if (!quiet) { S.loading = true; renderBoard(); }
     gs('getTickets').then(list => {
-      S.tickets = list || []; S.loading = false; S.loadErr = false; S.sig = sig(S.tickets);
-      renderAll();
+      list = list || []; cacheSet('tis_cache_t', list);
+      const same = quiet && !S.loading && !S.loadErr && vsig(list) === vsig(S.tickets);
+      S.tickets = list; S.loading = false; S.loadErr = false; S.sig = sig(list);
+      if (!same) renderAll();
     }).catch(() => { S.loading = false; S.loadErr = true; renderBoard(); toast('Nu am putut încărca tichetele.', 'err'); });
   }
   function sig(list) { return list.map(t => [t.id, t.status, t.priority, t.category, t.updatedAt || 0, (t.comments || []).length, t.title].join(':')).join('|'); }
@@ -646,7 +655,7 @@
   // ---------- News ----------
   function loadNews() {
     S.newsLoading = true; renderNews();
-    gs('getNews').then(list => { S.news = list || []; S.newsLoaded = true; S.newsLoading = false; S.newsErr = false; S.nsig = nsig(S.news); renderNews(); })
+    gs('getNews').then(list => { S.news = list || []; cacheSet('tis_cache_n', S.news); S.newsLoaded = true; S.newsLoading = false; S.newsErr = false; S.nsig = nsig(S.news); renderNews(); })
       .catch(() => { S.newsLoading = false; S.newsErr = true; renderNews(); });
   }
   function nsig(list) { return list.map(a => a.id + ':' + a.title + ':' + a.type + ':' + String(a.body).length).join('|'); }
@@ -764,24 +773,24 @@
       if (k === p) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current');
     });
     document.body.dataset.page = p;
-    if (p === 'tichete') { syncCard(); layoutMap(true); if (M.ready) drawGeo(); }
-    else { $('#panel').classList.remove('open'); document.body.classList.remove('card-open'); document.documentElement.style.setProperty('--gx', '50vw'); document.documentElement.style.setProperty('--gy', '32vh'); }
+    if (p === 'tichete') { layoutMap(); syncCard(); }
+    else { $('#panel').classList.remove('open'); document.body.classList.remove('card-open'); unzoom(); nebulaTo(innerWidth / 2, innerHeight * 0.32); }
     if (p === 'news' && !S.newsLoaded) loadNews(); else if (p === 'news') renderNews();
     if (p === 'jurnal') loadJournal();
     if (prev !== p) {
       const dir = ORDER.indexOf(p) > ORDER.indexOf(prev) ? 1 : -1, now = $('#page-' + p), old = $('#page-' + prev), ease = 'cubic-bezier(.16,1,.3,1)';
-      ST.camT = -ORDER.indexOf(p) * 70;
-      if (REDUCED.matches) { ST.cx = ST.camT; now.animate([{ opacity: 0 }, { opacity: 1 }], 160); }
+      ST.cx = -ORDER.indexOf(p) * 70; moveStars();
+      if (REDUCED.matches) now.animate([{ opacity: 0 }, { opacity: 1 }], 160);
       else {
         old.hidden = false; old.classList.add('leaving'); old.inert = true;
-        old.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + -dir * 90 + 'px) scale(.96)' }], { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = () => {
+        old.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + -dir * 90 + 'px) scale(.96)' }], { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = () => {
           old.classList.remove('leaving'); old.inert = false; if (S.page !== prev) old.hidden = true;
         };
-        now.animate([{ opacity: 0, transform: 'translateX(' + dir * 90 + 'px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 560, delay: 60, fill: 'backwards', easing: ease });
-        if (p === 'news') $$('.news-item').slice(0, 6).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 140 + i * 60, fill: 'backwards', easing: ease }));
+        now.animate([{ opacity: 0, transform: 'translateX(' + dir * 90 + 'px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 40, fill: 'backwards', easing: ease });
+        if (p === 'news') $$('.news-item').slice(0, 6).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 100 + i * 50, fill: 'backwards', easing: ease }));
       }
     }
-    kick(true);
+    kick();
   }
   function openTicket(id, focusPanel) {
     if (S.page !== 'tichete') setPage('tichete');
@@ -808,97 +817,101 @@
   }
 
   // ---------- harta „Orbită” ----------
-  // Geometria vine din mărimea scenei: nucleul stă în centrul spațiului liber (în stânga cardului, când e deschis).
-  // Tot ce se mișcă în fundal (stele, orbite, puls, curgerea inelului) merge într-un singur requestAnimationFrame,
-  // care se oprește în tab ascuns, după 60 s fără activitate și la prefers-reduced-motion.
-  const NS = 'http://www.w3.org/2000/svg';
+  // Tot ce se mișcă continuu rulează pe compozitor: animații WAAPI pe transform/opacity (rotația inelelor, deriva stelelor, pulsurile)
+  // și tranziții CSS. JS face doar plasarea etichetelor, steaua căzătoare și verificarea inactivității (un tick de ~1 s).
+  // Animațiile infinite se opresc în tab ascuns și după 60 s fără activitate; la prefers-reduced-motion nu se creează deloc.
   const TAU = Math.PI * 2;
   const PR_R = { scazuta: 6, medie: 9, ridicata: 13, critica: 18 };
   const PHASE = [0.6, 2.1, 3.7, 5.2, 1.4];                                  // faza fiecărui inel, ca planetele să nu se alinieze
-  const SPEED = [0, 1, 2, 3, 4].map(i => TAU / (360 * (1 + i * 0.6)));      // rad/s: inelul interior face o rotație în ~6 min
-  const IDLE_MS = 60000, SLOW_MS = 500, SVG_MS = 500;
+  const DUR = [0, 1, 2, 3, 4].map(i => 360000 * (1 + i * 0.6));             // ms pe tură: inelul interior face o rotație în ~6 min
+  const IDLE_MS = 60000, EASE = 'cubic-bezier(.16,1,.3,1)';
   const M = {
-    p: new Map(), G: { cx: 0, cy: 0, R: 0 }, T: null, rr: [0, 0, 0, 0, 0], rot: [0, 0, 0, 0, 0],
-    nameObs: [], spd: 1, hover: false, hoverCard: false, far: false, free: 0, w: 0, h: 0, reserve: 72, ox: 0, oy: 0, lw: 200, ck: 1, n: 0,
-    act: performance.now(), last: 0, svgT: 0, raf: 0, tm: 0, busy: false, ready: false
+    p: new Map(), g: [], cx: 0, cxo: 0, cy: 0, R: 0, h: 0, free: 0, freeO: 0, reserve: 72, ox: 0, oy: 0,
+    rr: [0, 0, 0, 0, 0], nameObs: [], orb: [], n: 0, tt: false, z: null, ready: false, neb: false,
+    hover: false, hoverCard: false, rate: 1, tgt: 1, rt: 0, paused: false, act: performance.now()
   };
-  const sys = $('#sys'), coreEl = $('#core'), dashEl = $('.ring.dash');
+  const mapEl = $('#map'), cam = $('#cam'), sys = $('#sys'), orbits = $('#orbits'), nebula = $('#nebula');
   const ringEls = $$('#rings .ring'), rz = $$('.rz'), rps = $$('.rp');
   rz.forEach((g, i) => { rps[i].id = 'rp' + i; $('textPath', g).setAttribute('href', '#rp' + i); });
-  const mk = (tag, cls, attrs) => {
-    const e = document.createElementNS(NS, tag);
-    if (cls) e.setAttribute('class', cls);
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    return e;
-  };
+  // animație infinită pe compozitor; dacă bucla e oprită (inactivitate), se creează deja oprită
+  function loop(el, frames, opt) {
+    const a = el.animate(frames, Object.assign({ iterations: Infinity }, opt));
+    if (M.paused) a.pause();
+    return a;
+  }
+  const alt = (el, frames, ms) => loop(el, frames, { duration: ms, direction: 'alternate', easing: 'ease-in-out' });
+  $$('.orb').forEach((el, i) => {
+    M.orb[i] = { el, dur: DUR[i], anim: REDUCED.matches ? null : loop(el, [{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: DUR[i], easing: 'linear', id: 'orb' }) };
+  });
+  if (!REDUCED.matches) alt($('.core'), [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }], 3600);
+  // unghiul curent al inelului i (rad): din animația lui
+  const ang = i => { const o = M.orb[i]; return o.anim ? ((o.anim.currentTime || 0) % o.dur) / o.dur * TAU : 0; };
 
   // --- fundal: stele ---
-  // 3 straturi de adâncime (f mic = departe). Fundul e un canvas desenat o singură dată; stratul mijlociu și cel apropiat sunt
-  // puncte DOM (fiecare stea un strat compozit de câțiva pixeli, nu un strat cât ecranul, care costă mult în compozitorul software).
-  // Deriva, paralaxa după mouse, camera dintre pagini și sclipirea sunt doar transform/opacity (înmulțite cu f), deci bucla nu redesenează nimic.
-  const ST = { sh: $('.shoot'), w: 0, h: 0, px: 0, py: 0, tx: 0, ty: 0, cx: 0, camT: 0, next: performance.now() + 9000,
+  // 3 straturi de adâncime (f mic = departe), fiecare desenat o singură dată pe un canvas din afara paginii și pus ca imagine de fundal
+  // (un canvas din pagină costă la fiecare commit al compozitorului: ~25 ms pe cadru cu CPU 4x). Deriva și sclipirea sunt animații WAAPI pe strat;
+  // paralaxa după mouse și camera dintre pagini sunt o tranziție CSS pe wrapper-ul stratului (înmulțite cu f).
+  const ST = { w: 0, h: 0, px: 0, py: 0, cx: 0, t: 0, sh: $('.shoot'),
     L: [{ n: 95, r: 0.55, a: 0.45, f: 0.25 }, { n: 45, r: 0.85, a: 0.65, f: 0.55 }, { n: 22, r: 1.35, a: 0.95, f: 1 }].map((l, i) => {
-      l.c = $$('#stars > *')[i]; l.dom = i > 0; l.pad = Math.ceil(170 * l.f) + 8;   // surplus: derivă + paralaxă + cameră
-      if (!l.dom) l.x = l.c.getContext('2d');
-      l.s = Array.from({ length: l.n }, () => {
-        const s = { u: Math.random(), v: Math.random(), r: l.r * (0.8 + Math.random() * 0.4), a: l.a * (0.6 + Math.random() * 0.4) };
-        if (l.dom) { s.e = document.createElement('i'); s.e.style.setProperty('--a', s.a.toFixed(2)); s.e.style.width = s.e.style.height = (2 * s.r).toFixed(2) + 'px'; l.c.append(s.e); }
-        return s;
-      });
+      l.w = $$('#stars .sl')[i]; l.c = $('i', l.w); l.x = document.createElement('canvas').getContext('2d'); l.pad = Math.ceil(170 * l.f) + 8;   // surplus: derivă + paralaxă + cameră
+      l.s = Array.from({ length: l.n }, () => ({ u: Math.random(), v: Math.random(), r: l.r * (0.8 + Math.random() * 0.4), a: l.a * (0.6 + Math.random() * 0.4) }));
       return l;
     }) };
   function sizeStars() {
     const d = Math.min(window.devicePixelRatio || 1, 1.5);
     ST.w = window.innerWidth; ST.h = window.innerHeight;
     ST.L.forEach(l => {
-      const w = ST.w + 2 * l.pad, h = ST.h + 2 * l.pad;
-      if (l.dom) { l.s.forEach(s => { s.e.style.left = (s.u * w - l.pad - s.r).toFixed(1) + 'px'; s.e.style.top = (s.v * h - l.pad - s.r).toFixed(1) + 'px'; }); return; }
-      const c = l.c, x = l.x;
-      c.width = Math.round(w * d); c.height = Math.round(h * d);
+      const w = ST.w + 2 * l.pad, h = ST.h + 2 * l.pad, c = l.c, x = l.x, cv = x.canvas;
+      cv.width = Math.round(w * d); cv.height = Math.round(h * d);
       c.style.width = w + 'px'; c.style.height = h + 'px'; c.style.left = c.style.top = -l.pad + 'px';
       x.setTransform(d, 0, 0, d, 0, 0); x.fillStyle = '#fff';
       l.s.forEach(s => { x.globalAlpha = s.a; x.beginPath(); x.arc(s.u * w, s.v * h, s.r, 0, TAU); x.fill(); });
-    });
-    moveStars(performance.now());
-  }
-  // deriva lentă (oscilație, viteză ușor diferită pe strat), paralaxa după mouse (max 12px), camera dintre pagini și sclipirea (opacitatea)
-  function moveStars(t) {
-    const a = t / 1000 / 90 * TAU, still = REDUCED.matches;
-    ST.L.forEach((l, i) => {
-      const w = a * (1 + i * 0.35), x = still ? 0 : (16 * Math.sin(w) + ST.px + ST.cx) * l.f, y = still ? 0 : (6 * Math.cos(w) + ST.py) * l.f;
-      const o = still ? 0.9 : 0.85 + 0.15 * Math.sin(t / (1700 + 600 * i) + i * 2), s = l.c.style;
-      if (l.dom) { s.setProperty('--x', x.toFixed(1) + 'px'); s.setProperty('--y', y.toFixed(1) + 'px'); s.setProperty('--o', o.toFixed(2)); }
-      else { s.transform = still ? 'none' : 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; s.opacity = o.toFixed(2); }
+      cv.toBlob(b => { const u = URL.createObjectURL(b); c.style.backgroundImage = 'url(' + u + ')'; if (l.u) URL.revokeObjectURL(l.u); l.u = u; });
     });
   }
-  // stea căzătoare, rar: pornită din buclă, apoi animată pe compositor, în pași (puține cadre)
-  function shoot(t) {
-    if (t < ST.next) return;
-    ST.next = t + 8000 + Math.random() * 7000;
-    const x = Math.random() * ST.w * 0.7, y = Math.random() * ST.h * 0.35, a = (0.5 + Math.random() * 0.4).toFixed(2), at = (px, py) => 'translate(' + px.toFixed(0) + 'px,' + py.toFixed(0) + 'px) rotate(' + a + 'rad)';
-    ST.sh.animate([{ transform: at(x, y), opacity: 0.8 }, { transform: at(x + Math.cos(a) * 700, y + Math.sin(a) * 700), opacity: 0 }], { duration: 600, easing: 'steps(15)' });
+  ST.L.forEach((l, i) => {
+    if (REDUCED.matches) { l.c.style.opacity = 0.9; return; }
+    const f = l.f, p = (x, y) => 'translate(' + x * f + 'px,' + y * f + 'px)';
+    loop(l.c, [{ transform: p(-16, -6) }, { transform: p(16, 6) }], { duration: 45000 * (1 + i * 0.35), direction: 'alternate', easing: 'ease-in-out' });
+    alt(l.c, [{ opacity: 0.72 }, { opacity: 1 }], 2200 + i * 700);
+  });
+  // paralaxa (max 12px pe stratul apropiat) + camera dintre pagini (70px pe pagină): tranziție CSS pe wrapper
+  function moveStars() {
+    if (!REDUCED.matches) ST.L.forEach(l => { l.w.style.transform = 'translate(' + ((ST.px + ST.cx) * l.f).toFixed(1) + 'px,' + (ST.py * l.f).toFixed(1) + 'px)'; });
+  }
+  // stea căzătoare, rar: WAAPI, programată la 8–15 s, doar cât pagina e vizibilă și activă
+  function shootLater() {
+    setTimeout(() => {
+      shootLater();
+      if (document.hidden || M.paused || REDUCED.matches) return;
+      const x = Math.random() * ST.w * 0.7, y = Math.random() * ST.h * 0.35, a = (0.5 + Math.random() * 0.4).toFixed(2), at = (px, py) => 'translate(' + px.toFixed(0) + 'px,' + py.toFixed(0) + 'px) rotate(' + a + 'rad)';
+      ST.sh.animate([{ transform: at(x, y), opacity: 0.8 }, { transform: at(x + Math.cos(a) * 700, y + Math.sin(a) * 700), opacity: 0 }], { duration: 600, easing: 'steps(15)' });
+    }, 8000 + Math.random() * 7000);
+  }
+  // nebuloasa urmărește nucleul (sau stă sus pe celelalte pagini): tranziție CSS pe transform
+  function nebulaTo(x, y) {
+    const v = 'translate(' + x.toFixed(0) + 'px,' + y.toFixed(0) + 'px)', s = nebula.style;
+    if (M.neb) { s.transform = v; return; }
+    M.neb = true; s.transition = 'none'; s.transform = v; nebula.getBoundingClientRect(); s.transition = '';   // prima poziție, fără alunecare
   }
 
   // --- geometrie ---
-  function layoutMap(instant) {
+  // Un singur R (cel mai mic dintre cardul închis și deschis): la deschiderea cardului se mută doar camera.
+  function layoutMap() {
     const st = $('#stage'), w = st.clientWidth, h = st.clientHeight;
     if (!w || !h || S.page !== 'tichete') return;
-    const mob = MOBILE.matches, free = S.panel !== 'empty' && !mob ? w - 448 : w;   // card 400 + 24 + 24
-    const far = !mob && free >= 800 && M.n <= 10;
-    const side = far ? Math.min(170, free * 0.17) : mob ? 12 : 32, avail = h - (mob ? 90 : M.reserve);
-    const R = Math.max(110, Math.min(avail / 2 - (far ? 62 : 40), free / 2 - side - 20));
-    const r = st.getBoundingClientRect();
-    M.w = w; M.h = h; M.free = free; M.far = far; M.ox = r.left; M.oy = r.top;
-    M.lw = far ? Math.max(120, Math.min(220, free / 2 - R - 36)) : 200;
-    sys.classList.toggle('far', far);
-    const T = { cx: free / 2, cy: avail / 2 + 4, R };
-    if (M.T && Math.abs(T.cx - M.T.cx) + Math.abs(T.cy - M.T.cy) + Math.abs(T.R - M.T.R) < 0.5) return;
-    M.T = T;
-    if (instant || REDUCED.matches || !M.ready) { M.G = { cx: T.cx, cy: T.cy, R: T.R }; M.ready = true; drawGeo(); placeAll(performance.now()); }
-    else kick(true);
+    const mob = MOBILE.matches, fo = mob ? w : w - 448, avail = h - (mob ? 90 : M.reserve), side = mob ? 12 : 32;   // card 400 + 24 + 24
+    const rad = f => Math.max(110, Math.min(avail / 2 - 40, f / 2 - side - 20));
+    const g = [w / 2, fo / 2, avail / 2 + 4, Math.min(rad(w), rad(fo)), w, fo, h], r = st.getBoundingClientRect();
+    M.ox = r.left; M.oy = r.top;
+    if (M.ready && g.every((v, i) => Math.abs(v - M.g[i]) < 0.5)) return;
+    M.g = g; [M.cx, M.cxo, M.cy, M.R, M.free, M.freeO, M.h] = g; M.z = null;
+    mapEl.classList.add('instant');   // la resize totul se recalculează instant
+    drawGeo(); place(); M.ready = true; camera();
+    mapEl.getBoundingClientRect(); mapEl.classList.remove('instant');
   }
   function drawGeo() {
-    const { cx, cy, R } = M.G, rin = Math.max(54, R * 0.27), stp = (R - rin) / 4, tight = stp < 40;
+    const { cx, cy, R } = M, rin = Math.max(54, R * 0.27), stp = (R - rin) / 4, tight = stp < 40;
     sys.setAttribute('transform', 'translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')');
     sys.classList.toggle('tight', tight);
     M.nameObs = [];   // cercuri pe arcul fiecărui nume de inel: etichetele le ocolesc
@@ -912,10 +925,34 @@
       $('.rzh', rz[i]).setAttribute('d', 'M' + (r * Math.cos(a1)).toFixed(1) + ' ' + (r * Math.sin(a1)).toFixed(1) + 'A' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 0 1 ' + (r * Math.cos(a2)).toFixed(1) + ' ' + (r * Math.sin(a2)).toFixed(1));
       for (let n = Math.max(1, Math.round(2 * sp * r / 10)), k = 0; k <= n; k++) { const a = a1 + (a2 - a1) * k / n; M.nameObs.push({ x: (r + 6) * Math.cos(a), y: (r + 6) * Math.sin(a) }); }
     }
-    M.ck = Math.min(38, rin * 0.5) / 38;
-    coreEl.setAttribute('transform', 'scale(' + M.ck.toFixed(3) + ')');
-    const rs = document.documentElement.style;   // strălucirea nebuloasei urmărește nucleul
-    rs.setProperty('--gx', (M.ox + cx).toFixed(0) + 'px'); rs.setProperty('--gy', (M.oy + cy).toFixed(0) + 'px');
+    orbits.style.left = cx.toFixed(1) + 'px'; orbits.style.top = cy.toFixed(1) + 'px';
+    const ck = Math.min(38, rin * 0.5) / 38;
+    orbits.style.setProperty('--ck', ck.toFixed(3));
+    M.nameObs.push({ x: 0, y: 0, r: 38 * ck + 6 });   // nucleul e obstacol ca numele inelelor
+  }
+  // camera: cardul deschis mută centrul (translație), zoomul de la căutare mărește în jurul planetelor găsite; o singură transformare pe #cam
+  function camera() {
+    if (!M.ready) return;
+    const open = S.panel !== 'empty' && !MOBILE.matches, z = M.z, s = z ? z.s : 1;
+    const tx = (open ? M.cxo : M.cx) - s * (z ? z.x : M.cx), ty = M.cy - s * (z ? z.y : M.cy);
+    cam.style.transform = 'translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+    if (S.page === 'tichete') nebulaTo(M.ox + tx + s * M.cx, M.oy + ty + s * M.cy);
+  }
+  const coreXY = () => (S.panel !== 'empty' && !MOBILE.matches ? M.cxo : M.cx).toFixed(0) + 'px ' + M.cy.toFixed(0) + 'px';
+  function unzoom() {   // camera revine instant
+    if (!M.z) return;
+    M.z = null; mapEl.classList.add('instant'); camera(); mapEl.getBoundingClientRect(); mapEl.classList.remove('instant');
+  }
+  // zoom la căutare: 1–4 rezultate pe hartă => camera se apropie de ele (max 1.8x), altfel revine
+  function zoomSearch() {
+    const q = S.f.q.trim(), m = q && S.page === 'tichete' && S.view === 'map' && M.ready ? visible() : [];
+    const pts = m.length <= 4 ? m.map(t => M.p.get(t.id)).filter(Boolean).map(p => { const a = p.aT + ang(p.ring), r = M.rr[p.ring]; return [M.cx + r * Math.cos(a), M.cy + r * Math.sin(a)]; }) : [];
+    if (!pts.length) { if (M.z) { M.z = null; camera(); } return; }
+    const xs = pts.map(u => u[0]), ys = pts.map(u => u[1]);
+    const l = Math.min(...xs) - 60, r = Math.max(...xs) + 60, t = Math.min(...ys) - 60, b = Math.max(...ys) + 60;
+    const wf = S.panel !== 'empty' && !MOBILE.matches ? M.freeO : M.free, hf = M.h - (MOBILE.matches ? 90 : M.reserve);
+    M.z = { s: Math.max(1, Math.min(wf / (r - l), hf / (b - t), 1.8)), x: (l + r) / 2, y: (t + b) / 2 };
+    camera();
   }
 
   // --- planete ---
@@ -938,68 +975,85 @@
     });
     return { lines: out, w: Math.max(...out.map(l => measure.measureText(l).width)) };
   }
-  function newPlanet(t) {
-    const el = mk('g', 'planet fresh', { tabindex: 0, role: 'button', 'data-id': t.id });
-    el.append(mk('circle', 'halo'), mk('circle', 'glow', { filter: 'url(#glow)' }), mk('circle', 'body'), mk('circle', 's1'), mk('circle', 's2'), mk('circle', 'hit'));
-    const lbl = mk('g', 'lbl'), ln = mk('line', null, { x2: 0, y2: 0 }), tx = mk('g', 'tx');
-    const code = mk('text', 'code', { y: 4 }), ttl = mk('text', 'ttl');
-    tx.append(code, ttl); lbl.append(ln, tx);
-    const pl = $('#planets'); pl.append(el, lbl);
-    return { id: t.id, el, lbl, ln, tx, code, ttl, a: 0, aT: 0, ring: 0, rad: 9, x: 0, y: 0, ox: 0, oy: 0, bw: 40, bh: 20, cw: 40, tw: 0, side: 0, cand: 0, dy: 0, ta: 0, bl: 0, bt: 0, br: 0, bb: 0, mode: '', key: '', crit: false, sel: false, dim: false, fly: null, st: '', pr: '' };
+  // planeta: .planet (poziția pe inel, în .orb) > .up (contra-rotație, ca textul să stea drept) > corp, inele, etichetă
+  function newPlanet(t, ri) {
+    const el = document.createElement('div');
+    el.setAttribute('role', 'button'); el.dataset.id = t.id;
+    el.innerHTML = '<div class="up"><i class="halo"></i><i class="body"></i><i class="s1"></i><i class="s2"></i><span class="lbl"><b class="code"></b><span class="ttl"></span></span></div>';
+    const p = { id: t.id, el, up: el.firstChild, lbl: $('.lbl', el), code: $('.code', el), ttl: $('.ttl', el), ring: ri, aT: 0, X: 0, Y: 0, rad: 9, x: 0, y: 0, cw: 40, tw: 0, nl: 1,
+      cand: 0, ta: 0, f: 0, ax: 0, top: 0, bl: 0, bt: 0, br: 0, bb: 0, lk: '', tal: '', key: '', crit: false, sel: false, dim: false, fly: false, fresh: true, st: '', pr: '', upA: null, haloA: null, selA: null };
+    const o = M.orb[ri];
+    if (o.anim) {   // contra-rotația, în fază cu inelul și cu aceeași viteză
+      const a = p.upA = p.up.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(-360deg)' }], { duration: o.dur, iterations: Infinity, easing: 'linear', id: 'up' });
+      a.playbackRate = M.rate; a.currentTime = o.anim.currentTime;
+      if (o.anim.playState === 'paused') a.pause();
+    }
+    return p;
   }
   function styleP(p, t, match) {
     const st = stKey(t.status), k = PR_R[t.priority] ? t.priority : 'medie', rad = PR_R[k], el = p.el;
-    p.ring = ringIdx(t); p.rad = rad; p.dim = !match; p.crit = k === 'critica';
+    p.rad = rad; p.dim = !match; p.crit = k === 'critica';
     p.sel = S.sel === t.id && S.panel === 'ticket';
-    el.setAttribute('class', 'planet st-' + st + ' pr-' + k + (match ? '' : ' dim') + (p.sel ? ' sel' : '') + (p.fresh ? ' fresh' : '') + (p.fly ? ' flying' : ''));
-    p.lbl.setAttribute('class', 'lbl st-' + st + (match ? '' : ' dim') + (p.sel ? ' sel' : '') + (p.fly ? ' flying' : ''));
+    el.className = 'planet st-' + st + ' pr-' + k + (match ? '' : ' dim') + (p.sel ? ' sel' : '') + (p.fresh ? ' fresh' : '') + (p.fly ? ' flying' : '');
     el.setAttribute('aria-label', t.id + ', ' + PRIOS[k] + ', ' + STATUSES[st] + ': ' + t.title);
     el.setAttribute('tabindex', match ? '0' : '-1');
-    const b = el.children;   // halo, glow, body, s1, s2, hit
-    b[0].setAttribute('r', rad + 10); b[1].setAttribute('r', rad + 3); b[3].setAttribute('r', rad + 16); b[4].setAttribute('r', rad + 26); b[5].setAttribute('r', Math.max(rad + 8, 16));
-    b[2].setAttribute('r', rad); b[2].style.r = rad + 'px';
-    p.code.textContent = t.id;
-    const key = t.title + '|' + M.lw;
-    if (p.key !== key) {
-      p.key = key;
-      const w = wrap(t.title, M.lw, 2);
-      p.ttl.replaceChildren(...w.lines.map((l, i) => { const s = mk('tspan', null, { x: 0, y: 22 + 17 * i }); s.textContent = l; return s; }));
-      p.tw = w.w; p.nl = w.lines.length;
+    el.style.setProperty('--r', rad + 'px'); el.style.setProperty('--h', Math.max(rad + 8, 16) + 'px');
+    if (p.key !== t.title) {
+      p.key = t.title;
+      measure.font = '500 11px "JetBrains Mono", ui-monospace, monospace';
+      p.cw = measure.measureText(t.id).width + t.id.length * 0.44;
+      const w = wrap(t.title, 220, 2);
+      p.code.textContent = t.id; p.ttl.textContent = w.lines.join('\n'); p.tw = w.w; p.nl = w.lines.length;
     }
-    p.cw = t.id.length * 6.8 + 6; p.bw = Math.max(t.id.length * 6.8, p.tw) + 8; p.bh = 40 + 17 * (p.nl - 1);
+    // animații mici, doar fără reduced-motion: halou critic care respiră, inelele selecției care pulsează
+    if (!REDUCED.matches) {
+      if (p.crit && !p.haloA) p.haloA = alt($('.halo', el), [{ opacity: 0.2 }, { opacity: 0.45 }], 2600);
+      else if (!p.crit && p.haloA) { p.haloA.cancel(); p.haloA = null; }
+      if (p.sel && !p.selA) p.selA = [[$('.s1', el), 0.55, 0.85], [$('.s2', el), 0.2, 0.45]].map(([e, a, b]) => alt(e, [{ transform: 'scale(1)', opacity: a }, { transform: 'scale(1.12)', opacity: b }], 2000));
+      else if (!p.sel && p.selA) { p.selA.forEach(a => a.cancel()); p.selA = null; }
+    }
   }
+  function setXY(p) {   // poziția în .orb (față de centru), la unghiul de fază; rotația o face .orb
+    const r = M.rr[p.ring];
+    p.X = r * Math.cos(p.aT); p.Y = r * Math.sin(p.aT);
+    p.el.style.left = p.X.toFixed(1) + 'px'; p.el.style.top = p.Y.toFixed(1) + 'px';
+  }
+  function place() { M.p.forEach(setXY); labels(); }
   function syncMap() {
     layoutMap();
+    if (!M.ready) return;
     const f = S.f, vis = visible(), match = new Set(vis.map(t => t.id)), sc = scope();
-    if (M.n !== vis.length) { const was = M.n <= 10; M.n = vis.length; if (was !== M.n <= 10) layoutMap(); }
-    const by = [[], [], [], [], []], seen = new Set();
+    M.n = vis.length; M.tt = !MOBILE.matches && M.n <= 10;   // titlul stă permanent lângă planetă cu ≤ 10 tichete pe ecran lat
+    mapEl.classList.toggle('tt', M.tt);
+    const by = [[], [], [], [], []], seen = new Set(), fresh = [];
     sc.forEach(t => by[ringIdx(t)].push(t));
     by.forEach((arr, ri) => {
       arr.sort((a, b) => (a.created || 0) - (b.created || 0) || a.n - b.n);
       arr.forEach((t, k) => {
-        let p = M.p.get(t.id); const isNew = !p;
-        if (isNew) { p = newPlanet(t); M.p.set(t.id, p); p.fresh = true; }
+        let p = M.p.get(t.id);
+        if (p && p.ring !== ri) { p.el.remove(); M.p.delete(t.id); p = null; }   // a schimbat zona: planeta intră pe alt inel
+        const isNew = !p;
+        if (isNew) { p = newPlanet(t, ri); M.p.set(t.id, p); }
         const changed = !isNew && (p.st !== stKey(t.status) || p.pr !== t.priority);
         p.st = stKey(t.status); p.pr = t.priority;
         p.aT = PHASE[ri] + k / arr.length * TAU;
-        if (isNew || REDUCED.matches) p.a = p.aT;
-        if (isNew && S.flyNew === t.id && !REDUCED.matches) { p.fresh = false; p.fly = { t0: performance.now(), dur: 900 }; }
-        styleP(p, t, match.has(t.id));
-        if (isNew && p.fresh) { p.el.getBoundingClientRect(); p.fresh = false; p.el.classList.remove('fresh'); }
+        if (isNew && S.flyNew === t.id && !REDUCED.matches) { p.fresh = false; p.fly = true; }
+        styleP(p, t, match.has(t.id)); setXY(p);
+        if (isNew) { M.orb[ri].el.append(p.el); if (p.fly) flyIn(p); else fresh.push(p); }
         if (changed) wave(p);
         seen.add(t.id);
       });
     });
+    if (fresh.length) { mapEl.getBoundingClientRect(); fresh.forEach(p => { p.fresh = false; p.el.classList.remove('fresh'); }); }   // apariție lină
     M.p.forEach((p, id) => {
       if (seen.has(id)) return;
-      M.p.delete(id); p.el.classList.add('gone'); p.lbl.classList.add('gone');
-      setTimeout(() => { p.el.remove(); p.lbl.remove(); }, 450);
+      M.p.delete(id); p.el.classList.add('gone');
+      setTimeout(() => p.el.remove(), 450);
     });
     S.flyNew = null;
     rz.forEach((g, i) => { const on = f.zone === RINGS[i]; g.classList.toggle('on', on); g.setAttribute('aria-pressed', String(on)); ringEls[i].setAttribute('class', 'ring' + (i === 2 ? ' dash' : '') + (on ? ' on' : f.zone ? ' faded' : '')); });
     mapMsg(sc);
-    placeAll(performance.now());
-    kick(true);
+    labels(); syncRate();
   }
   function mapMsg(sc) {
     const m = $('#mapMsg'), archive = S.f.status === 'archive';
@@ -1012,36 +1066,30 @@
     }
     m.innerHTML = h; m.hidden = !h;
   }
+  // tichetul nou zboară din nucleu pe o curbă (în cadrul rotitor al inelului), apoi un val
+  function flyIn(p) {
+    const X = p.X, Y = p.Y, tr = (x, y, s) => 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(' + s + ')';
+    p.el.animate([{ transform: tr(-X, -Y, 0.3), opacity: 0 }, { offset: 0.5, transform: tr(-X / 2 - Y * 0.35, -Y / 2 + X * 0.35, 0.8), opacity: 1 }, { transform: 'none', opacity: 1 }],
+      { duration: 900, easing: EASE }).onfinish = () => { p.fly = false; p.el.classList.remove('flying'); wave(p); labels(); };
+  }
   function wave(p) {
     if (REDUCED.matches || !p.el.isConnected) return;
-    const c = mk('circle', 'wave', { r: p.rad });
-    p.el.append(c);
-    c.animate([{ transform: 'scale(1)', opacity: 0.7 }, { transform: 'scale(4.5)', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.16,1,.3,1)' }).onfinish = () => c.remove();
+    const c = document.createElement('i');
+    c.className = 'wave'; c.style.setProperty('--d', p.rad * 2 + 'px'); p.up.append(c);
+    c.animate([{ transform: 'scale(1)', opacity: 0.7 }, { transform: 'scale(4.5)', opacity: 0 }], { duration: 900, easing: EASE }).onfinish = () => c.remove();
   }
   function zoomTo(p) {
     if (REDUCED.matches || !p) return;
-    const m = $('#map');
-    m.style.transformOrigin = (M.G.cx + p.x).toFixed(0) + 'px ' + (M.G.cy + p.y).toFixed(0) + 'px';
-    m.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 700, easing: 'cubic-bezier(.16,1,.3,1)' });
+    const r = p.el.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
+    mapEl.style.transformOrigin = (r.left + r.width / 2 - m.left).toFixed(0) + 'px ' + (r.top + r.height / 2 - m.top).toFixed(0) + 'px';
+    mapEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 700, easing: EASE });
   }
 
-  // poziții: planeta pe inel; eticheta evită celelalte etichete, corpurile planetelor, numele inelelor și marginile scenei
-  function placeAll(now) {
-    const Ro = M.G.R + 22, all = [];
-    M.p.forEach(p => {
-      const r = M.rr[p.ring], a = p.a + M.rot[p.ring];
-      let x = r * Math.cos(a), y = r * Math.sin(a);
-      if (p.fly) {   // zbor din nucleu, pe o curbă
-        const k = Math.min(1, (now - p.fly.t0) / p.fly.dur), e = 1 - Math.pow(1 - k, 3), u = 1 - e;
-        const qx = x / 2 - y * 0.35, qy = y / 2 + x * 0.35;
-        x = 2 * u * e * qx + e * e * x; y = 2 * u * e * qy + e * e * y;
-      }
-      p.x = x; p.y = y;
-      if (M.far) { const d = Math.hypot(x, y) || 1; p.ox = x / d * Ro; p.oy = y / d * Ro; }   // ancora radială de bază
-      all.push(p);
-    });
+  // etichete: planeta evită celelalte etichete, corpurile planetelor, numele inelelor și marginile scenei; plasarea folosește pozițiile curente
+  function labels() {
+    const all = [];
+    M.p.forEach(p => { const r = M.rr[p.ring], a = p.aT + ang(p.ring); p.x = r * Math.cos(a); p.y = r * Math.sin(a); all.push(p); });
     placeLabels(all);
-    all.forEach(applyP);
   }
   // cercul (c.x, c.y, rad) atinge dreptunghiul?
   const hitC = (c, rad, l, t, r, b) => { const dx = c.x - Math.max(l, Math.min(c.x, r)), dy = c.y - Math.max(t, Math.min(c.y, b)); return dx * dx + dy * dy < rad * rad; };
@@ -1052,141 +1100,102 @@
     let c = (r - l) * (b - t) - Math.max(0, Math.min(r, SC.r) - Math.max(l, SC.l)) * Math.max(0, Math.min(b, SC.b) - Math.max(t, SC.t));
     for (let i = 0; i < placed.length; i++) { const q = placed[i]; c += Math.max(0, Math.min(q.br, r) - Math.max(q.bl, l)) * Math.max(0, Math.min(q.bb, b) - Math.max(q.bt, t)); }
     for (let i = 0; i < all.length; i++) if (all[i] !== p && hitC(all[i], all[i].rad + 4, l, t, r, b)) c += 200;
-    for (let i = 0; i < M.nameObs.length; i++) if (hitC(M.nameObs[i], 7, l, t, r, b)) c += 200;
+    for (let i = 0; i < M.nameObs.length; i++) if (hitC(M.nameObs[i], M.nameObs[i].r || 7, l, t, r, b)) c += 200;
     return c;
   }
-  // near: cutia codului pentru candidatul i (ancora la baseline); eticheta se mută cu ancora, titlul rămâne sub cod
-  function candBox(p, i, g) {
-    const c = CAND[i], ax = c[0] * g, ay = c[1] * g + c[2], l = p.x + (c[3] === 0 ? ax - p.cw / 2 : c[3] > 0 ? ax : ax - p.cw);
-    p.ta = c[3]; p.ox = p.x + ax; p.oy = p.y + ay - 4;
-    p.bl = l; p.br = l + p.cw; p.bt = p.y + ay - 11; p.bb = p.bt + 14;
-  }
-  // far: cutia codului + titlul pe 2 rânduri, la ancora de bază deplasată vertical cu dy
-  function farBox(p, by, dy) {
-    p.oy = by + dy; p.bt = p.oy - 12; p.bb = p.bt + p.bh;
-    p.bl = p.ox >= 0 ? p.ox : p.ox - p.bw - 8; p.br = p.bl + p.bw + 8;
+  // candidatul i: ancora față de centrul planetei (ax, top), alinierea start/mijloc/sfârșit (f) și cutia ocupată (cod, plus titlul când e afișat permanent)
+  function candBox(p, i, g, tt) {
+    const c = CAND[i], f = c[3] > 0 ? 0 : c[3] < 0 ? 1 : 0.5, ax = c[0] * g, ay = c[1] * g + c[2], H = tt ? 18 + 17 * p.nl : 14;
+    p.ta = c[3]; p.f = f; p.ax = ax; p.top = c[1] < 0 ? ay + 3 - H : ay - 11;
+    let l = p.x + ax - p.cw * f, r = l + p.cw;
+    if (tt) { const tl = p.x + ax - p.tw * f; l = Math.min(l, tl); r = Math.max(r, tl + p.tw); }
+    p.bl = l - 2; p.br = r + 2; p.bt = p.y + p.top; p.bb = p.bt + H;
   }
   // plasare greedy: primul candidat liber câștigă (cel folosit data trecută întâi, ca etichetele să nu sară); altfel cel mai puțin suprapus
   function placeLabels(all) {
-    const far = M.far, placed = [], quiet = p => p.dim || p.fly;   // etichetele estompate nu blochează pe nimeni
-    SC.l = -M.G.cx + (far ? -8 : 2); SC.r = M.free - M.G.cx + (far ? 8 : -2); SC.t = 14 - M.G.cy; SC.b = M.h - (MOBILE.matches ? 90 : M.reserve) + 8 - M.G.cy;
-    if (far) {
-      const ps = all.filter(p => !quiet(p)).sort((a, b) => a.oy - b.oy);   // de sus în jos, ca liniile de legătură să nu se încrucișeze
-      all.forEach(p => { if (quiet(p)) p.dy = 0; });
-      [1, -1].forEach(sd => ps.forEach(p => {
-        if ((p.ox >= 0 ? 1 : -1) !== sd) return;
-        const by = p.oy; let bestDy = 0, bc = Infinity;
-        for (let k = 0; k < 34 && bc > 0; k++) {
-          const dy = k === 0 ? p.dy : k < 18 ? (k - 1) * 10 : (17 - k) * 10;
-          farBox(p, by, dy);
-          const c = clash(p, placed, all);
-          if (c < bc) { bc = c; bestDy = dy; }
-        }
-        farBox(p, by, bestDy); p.dy = bestDy; placed.push(p);
-      }));
-      return;
-    }
+    const placed = [], wide = !MOBILE.matches, quiet = p => p.dim || p.fly, tt = p => wide && !quiet(p) && (M.tt || p.sel);
+    const open = S.panel !== 'empty' && !MOBILE.matches, ox = open ? M.cxo - M.cx : 0;   // scena vizibilă, în coordonatele centrate pe nucleu
+    SC.l = -ox - M.cx + 2; SC.r = (open ? M.freeO : M.free) - ox - M.cx - 2; SC.t = 14 - M.cy; SC.b = M.h - (MOBILE.matches ? 90 : M.reserve) + 8 - M.cy;
     const rank = p => p.sel ? 0 : quiet(p) ? 2 : 1;
     all.slice().sort((a, b) => rank(a) - rank(b) || b.rad - a.rad).forEach(p => {
-      const g = p.rad + 6; let best = p.cand, bc = Infinity;
+      const g = p.rad + 6, T = tt(p); let best = p.cand, bc = Infinity;
       for (let n = -1; n < 8 && bc > 0; n++) {
         const i = n < 0 ? p.cand : n;
         if (n >= 0 && i === p.cand) continue;
-        candBox(p, i, g);
+        candBox(p, i, g, T);
         const c = clash(p, placed, all);
         if (c < bc) { bc = c; best = i; }
       }
-      candBox(p, best, g); p.cand = best;
+      candBox(p, best, g, T); p.cand = best;
       if (!quiet(p)) placed.push(p);
+      paintLabel(p, T);
     });
   }
-  function applyP(p) {
-    p.el.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ')');
-    p.lbl.setAttribute('transform', 'translate(' + p.ox.toFixed(1) + ' ' + p.oy.toFixed(1) + ')');
-    if (M.far) {
-      const side = p.ox >= 0 ? 1 : -1;
-      if (p.mode !== 'far' || p.side !== side) {
-        p.mode = 'far'; p.side = side;
-        p.lbl.setAttribute('text-anchor', side > 0 ? 'start' : 'end');
-        p.tx.setAttribute('transform', 'translate(' + side * 8 + ' 0)'); p.ttl.removeAttribute('transform');
-      }
-      const qx = p.x - p.ox, qy = p.y - p.oy, k = 1 - (p.rad + 4) / (Math.hypot(qx, qy) || 1);
-      p.ln.setAttribute('x1', (qx * k).toFixed(1)); p.ln.setAttribute('y1', (qy * k).toFixed(1));
-    } else {
-      if (p.mode !== 'near' || p.side !== p.ta) { p.mode = 'near'; p.side = p.ta; p.lbl.setAttribute('text-anchor', p.ta > 0 ? 'start' : p.ta < 0 ? 'end' : 'middle'); p.tx.removeAttribute('transform'); }
-      // titlul (doar la hover/focus/selecție) rămâne în scenă
-      const mid = p.ox + p.ta * p.tw / 2, lo = -M.G.cx + p.tw / 2 + 8, hi = M.free - M.G.cx - p.tw / 2 - 8;
-      p.ttl.setAttribute('transform', 'translate(' + (Math.max(lo, Math.min(hi, mid)) - mid).toFixed(1) + ' 0)');
-    }
+  // eticheta se mută lin (tranziție CSS pe transform) când se schimbă candidatul; titlul de la hover rămâne în scenă
+  function paintLabel(p, tt) {
+    let sh = 0;
+    if (!tt) { const l = p.x + p.ax - p.tw * p.f; sh = Math.max(SC.l + 8 - l, Math.min(0, SC.r - 8 - (l + p.tw))); }
+    const k = [p.ax, p.top, p.f, p.cw, p.tw, sh].map(v => v.toFixed(1)).join();
+    if (k === p.lk) return;
+    p.lk = k;
+    p.lbl.style.transform = 'translate(' + p.ax.toFixed(1) + 'px,' + p.top.toFixed(1) + 'px)';
+    p.code.style.transform = 'translateX(' + (-p.cw * p.f).toFixed(1) + 'px)';
+    p.ttl.style.transform = 'translateX(' + (sh - p.tw * p.f).toFixed(1) + 'px)';
+    const al = p.ta > 0 ? 'left' : p.ta < 0 ? 'right' : 'center';
+    if (al !== p.tal) { p.tal = al; p.ttl.style.textAlign = al; }
   }
 
-  // --- bucla de animație (una singură) ---
-  function breathe(t) {
-    const pulse = 1 + 0.04 * Math.sin(t / 1800), b = 0.5 + 0.5 * Math.sin(t / 1300);
-    coreEl.setAttribute('transform', 'scale(' + (M.ck * pulse).toFixed(3) + ')');
-    dashEl.setAttribute('stroke-dashoffset', (-(t / 1000) * 5 % 18).toFixed(1));
-    M.p.forEach(p => {
-      if (p.crit && !p.dim) p.el.children[0].setAttribute('stroke-opacity', (0.22 + 0.2 * b).toFixed(2));
-      if (p.sel) {
-        p.el.children[3].setAttribute('r', (p.rad + 16 + 3 * b).toFixed(1)); p.el.children[4].setAttribute('r', (p.rad + 26 + 4 * b).toFixed(1));
-        p.el.children[3].setAttribute('stroke-opacity', (0.55 + 0.3 * b).toFixed(2)); p.el.children[4].setAttribute('stroke-opacity', (0.2 + 0.25 * b).toFixed(2));
-      }
-    });
+  // --- mișcare: viteza rotației, oprire la inactivitate ---
+  // viteza: rampă în 6 pași (~300 ms) pe animațiile inelelor și pe contra-rotațiile planetelor
+  function setRate(v) {
+    clearTimeout(M.rt);
+    const from = M.rate; let i = 0;
+    (function step() {
+      i++; M.rate = i < 6 ? from + (v - from) * i / 6 : v;
+      M.orb.forEach(o => o.anim && o.anim.updatePlaybackRate(M.rate));
+      M.p.forEach(p => p.upA && p.upA.updatePlaybackRate(M.rate));
+      if (i < 6) M.rt = setTimeout(step, 50); else if (!v) labels();
+    })();
   }
-  function step(t, dt) {
-    ST.px += (ST.tx - ST.px) * (1 - Math.exp(-dt / 300)); ST.py += (ST.ty - ST.py) * (1 - Math.exp(-dt / 300));
-    ST.cx += (ST.camT - ST.cx) * (1 - Math.exp(-dt / 260));
-    moveStars(t); shoot(t);
-    let busy = Math.abs(ST.tx - ST.px) > 0.15 || Math.abs(ST.ty - ST.py) > 0.15 || Math.abs(ST.camT - ST.cx) > 0.15;
-    const dm = Math.min(t - M.svgT, 500);   // harta se actualizează mai rar decât cadrele, cât timp doar se rotește lent
-    if (S.page === 'tichete' && S.view === 'map' && M.ready && (M.busy || dm >= SVG_MS)) {
-      M.svgT = t;
-      let moved = false;
-      const want = M.hover || M.hoverCard || S.panel !== 'empty' ? 0 : 1;   // ținta: se oprește ca să poți ținti, reia lin
-      if (M.spd !== want) { M.spd += (want - M.spd) * (1 - Math.exp(-dm / 350)); if (Math.abs(M.spd - want) < 0.003) M.spd = want; else busy = true; }
-      if (M.spd > 0) { for (let i = 0; i < 5; i++) M.rot[i] += dm / 1000 * M.spd * SPEED[i]; moved = true; }
-      const G = M.G, T = M.T, k = 1 - Math.exp(-dm / 130);
-      if (T && (Math.abs(T.cx - G.cx) > 0.3 || Math.abs(T.cy - G.cy) > 0.3 || Math.abs(T.R - G.R) > 0.3)) {
-        G.cx += (T.cx - G.cx) * k; G.cy += (T.cy - G.cy) * k; G.R += (T.R - G.R) * k;
-        drawGeo(); moved = busy = true;
-      } else if (T && (G.cx !== T.cx || G.cy !== T.cy || G.R !== T.R)) { M.G = { cx: T.cx, cy: T.cy, R: T.R }; drawGeo(); moved = true; }
-      M.p.forEach(p => {
-        if (p.a !== p.aT) { p.a += (p.aT - p.a) * (1 - Math.exp(-dm / 220)); if (Math.abs(p.aT - p.a) < 0.002) p.a = p.aT; moved = busy = true; }
-        if (p.fly) {
-          moved = busy = true;
-          if (t - p.fly.t0 >= p.fly.dur) { p.fly = null; p.el.classList.remove('flying'); p.lbl.classList.remove('flying'); wave(p); }
-        }
-      });
-      if (moved) placeAll(t);
-      breathe(t);
-    }
-    M.busy = busy;
+  // ținta: rotația se oprește ca să poți ținti (mouse pe hartă sau pe card, card deschis, căutare cu text, tranziție de vedere), altfel 1
+  function syncRate() {
+    const t = M.hover || M.hoverCard || S.panel !== 'empty' || S.f.q.trim() || VX.busy ? 0 : 1;
+    if (t !== M.tgt) { M.tgt = t; setRate(t); }
   }
-  function frame(t) {
-    M.raf = 0;
-    if (document.hidden || REDUCED.matches || (t - M.act > IDLE_MS && !M.busy)) return;
-    const dt = Math.min(t - M.last, 100); M.last = t;
-    step(t, dt);
-    if (M.busy) M.raf = requestAnimationFrame(frame);
-    else M.tm = setTimeout(() => { M.tm = 0; M.raf = requestAnimationFrame(frame); }, SLOW_MS);
+  // oprește / pornește toate animațiile infinite (tab ascuns, 60 s fără activitate)
+  function hold(on) {
+    M.paused = on;
+    document.getAnimations().filter(a => a.effect && a.effect.getTiming().iterations === Infinity).forEach(a => on ? a.pause() : a.play());
   }
-  // activitate: repornește bucla (după 60 s de pauză, în tab ascuns etc.); fast = rulează la fiecare cadru până se așază
-  function kick(fast) {
+  // activitate: repornește animațiile oprite pentru inactivitate, apoi viteza după țintă
+  function kick() {
     M.act = performance.now();
-    if (document.hidden || REDUCED.matches) return;
-    if (fast) { M.busy = true; if (M.tm) { clearTimeout(M.tm); M.tm = 0; } }
-    if (!M.raf && !M.tm) { M.last = performance.now(); M.raf = requestAnimationFrame(frame); }
+    if (M.paused && !document.hidden && !REDUCED.matches) hold(false);
+    syncRate();
   }
   ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => window.addEventListener(ev, () => kick(), { passive: true }));
-  window.addEventListener('pointermove', e => { ST.tx = -(e.clientX / ST.w - 0.5) * 24; ST.ty = -(e.clientY / ST.h - 0.5) * 24; }, { passive: true });  // max 12px pe stratul apropiat
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
-  window.addEventListener('resize', sizeStars);
-  new ResizeObserver(() => { layoutMap(true); if (S.view === 'map' && S.page === 'tichete') syncMap(); }).observe($('#stage'));
-  MOBILE.addEventListener('change', () => { M.T = null; renderBoard(); });
-  $('#map').addEventListener('mouseenter', () => { M.hover = true; });
-  $('#map').addEventListener('mouseleave', () => { M.hover = false; });
-  $('#panel').addEventListener('mouseenter', () => { M.hoverCard = true; });
-  $('#panel').addEventListener('mouseleave', () => { M.hoverCard = false; });
+  window.addEventListener('pointermove', e => {   // paralaxa stelelor: cel mult o dată la 100 ms și doar dacă ținta s-a mișcat > 1px
+    const t = performance.now(); if (t - ST.t < 100) return;
+    const x = -(e.clientX / ST.w - 0.5) * 24, y = -(e.clientY / ST.h - 0.5) * 24;
+    if (Math.abs(x - ST.px) <= 1 && Math.abs(y - ST.py) <= 1) return;
+    ST.t = t; ST.px = x; ST.py = y; moveStars();
+  }, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) hold(true); else kick(); });
+  window.addEventListener('resize', () => { clearTimeout(ST.rs); ST.rs = setTimeout(sizeStars, 150); });
+  new ResizeObserver(() => { layoutMap(); if (S.view === 'map' && S.page === 'tichete') syncMap(); }).observe($('#stage'));
+  MOBILE.addEventListener('change', () => renderBoard());
+  mapEl.addEventListener('mouseenter', () => { M.hover = true; syncRate(); });
+  mapEl.addEventListener('mouseleave', () => { M.hover = false; syncRate(); });
+  $('#panel').addEventListener('mouseenter', () => { M.hoverCard = true; syncRate(); });
+  $('#panel').addEventListener('mouseleave', () => { M.hoverCard = false; syncRate(); });
+  // tick de ~1 s: inactivitatea, resincronizarea contra-rotațiilor și plasarea etichetelor cât se rotește harta
+  setInterval(() => {
+    if (!M.paused && !REDUCED.matches && performance.now() - M.act > IDLE_MS) hold(true);
+    if (M.paused || M.rate <= 0 || S.page !== 'tichete' || S.view !== 'map' || !M.ready) return;
+    M.p.forEach(p => { const o = M.orb[p.ring].anim; if (p.upA && o && Math.abs(p.upA.currentTime - o.currentTime) > 30) p.upA.currentTime = o.currentTime; });
+    labels();
+  }, 1000);
+  shootLater();
 
   function renderAll() { renderAdmin(); renderToolbar(); renderBoard(); renderPanel(); if (S.page === 'news') renderNews(); if (S.page === 'jurnal') renderJournal(); }
 
@@ -1321,13 +1330,14 @@
   });
 
   document.addEventListener('input', e => {
-    if (e.target.id === 'search') { S.f.q = e.target.value; S.shown = PAGE; renderBoard(); }
+    if (e.target.id === 'search') { S.f.q = e.target.value; S.shown = PAGE; renderBoard(); syncRate(); clearTimeout(S.zt); S.zt = setTimeout(zoomSearch, 250); }
     if (e.target.id === 'cm-text' && S.sel) S.cmtDraft[S.sel] = e.target.value;
     if (e.target.id === 'cm-name') S.cmtName = e.target.value;
   });
 
   document.addEventListener('keydown', e => {
     if (!$('#lightbox').hidden) { if (e.key === 'Escape') closeLightbox(); return; }
+    if (e.key === 'Enter' && e.target.id === 'search') { const t = S.f.q.trim() && visible()[0]; if (t) openTicket(t.id); return; }
     const ctl = e.target.closest && e.target.closest('.planet, .rz');
     if (ctl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ctl.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.tagName === 'TEXTAREA') {
@@ -1336,7 +1346,7 @@
     if (e.key === 'Escape') {
       if (!$('#adminPop').hidden) { openPop(false); $('#adminBtn').focus(); return; }
       if (S.confirm) { S.confirm = null; renderPanel(); return; }
-      if (e.target.id === 'search' && S.f.q) { e.target.value = ''; S.f.q = ''; renderBoard(); return; }
+      if (e.target.id === 'search' && S.f.q) { e.target.value = ''; S.f.q = ''; clearTimeout(S.zt); renderBoard(); zoomSearch(); return; }
       if (S.panel !== 'empty' && S.page === 'tichete') { closePanel(); return; }
       return;
     }
@@ -1408,6 +1418,7 @@
     if (document.hidden || !gasReady()) return;
     if (S.page === 'tichete' && !S.loading && !S.submitting) {
       gs('getTickets').then(list => {
+        cacheSet('tis_cache_t', list || []);
         const s = sig(list || []); if (s === S.sig) return;
         S.tickets = list; S.sig = s;
         renderToolbar(); renderBoard();
@@ -1415,15 +1426,20 @@
         if (S.panel === 'ticket' && !S.editing && !inPanel) renderPanel();
       }).catch(() => {});
     } else if (S.page === 'news' && S.newsLoaded && !S.compose) {
-      gs('getNews').then(list => { const s = nsig(list || []); if (s !== S.nsig) { S.news = list; S.nsig = s; renderNews(); } }).catch(() => {});
+      gs('getNews').then(list => { cacheSet('tis_cache_n', list || []); const s = nsig(list || []); if (s !== S.nsig) { S.news = list; S.nsig = s; renderNews(); } }).catch(() => {});
     }
   }, 20000);
 
   // ---------- start ----------
   document.body.dataset.page = S.page;
+  const ct = cacheGet('tis_cache_t'), cn = cacheGet('tis_cache_n');
+  if (ct) { S.tickets = ct; S.loading = false; S.sig = sig(ct); }
+  if (cn) { S.news = cn; S.nsig = nsig(cn); }
   sizeStars();
-  renderAll();
-  load();
+  renderAll(); renderTicker();
+  load(!!ct);
   loadNews();   // ticker-ul de sub hartă
+  // fonturile vin după prima afișare: re-măsoară titlurile etichetelor
+  document.fonts.addEventListener('loadingdone', () => { M.p.forEach(p => { p.key = ''; }); if (S.view === 'map' && S.page === 'tichete') syncMap(); });
 })();
 </script>

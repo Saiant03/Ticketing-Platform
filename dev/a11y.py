@@ -48,7 +48,7 @@ JS = """()=>{
   const vis=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'};
   const unl=[...document.querySelectorAll('input:not([type=file]):not([type=hidden]),textarea,select')].filter(vis).filter(e=>!e.labels.length&&!e.getAttribute('aria-label')).map(e=>e.id);
   const small=[...document.querySelectorAll('button,a,select,input')].filter(vis).filter(e=>{const r=e.getBoundingClientRect();return r.height<32}).map(e=>(e.className||e.id||e.tagName)+':'+Math.round(e.getBoundingClientRect().height));
-  const over=[...document.querySelectorAll('body *')].filter(vis).filter(e=>e.getBoundingClientRect().right>innerWidth+1&&!e.closest('.seg,.jt-wrap,.sr,.list,#stars,.skip')).map(e=>(e.className&&e.className.baseVal!==undefined?e.className.baseVal:e.className)||e.tagName).slice(0,6);
+  const over=[...document.querySelectorAll('body *')].filter(vis).filter(e=>e.getBoundingClientRect().right>innerWidth+1&&!e.closest('.seg,.jt-wrap,.sr,.list,#stars,#nebula,.skip')).map(e=>(e.className&&e.className.baseVal!==undefined?e.className.baseVal:e.className)||e.tagName).slice(0,6);
   const unnamed=[...document.querySelectorAll('button,[role=button]')].filter(vis).filter(e=>!(e.textContent.trim()||e.getAttribute('aria-label')||e.title)).map(e=>e.id||e.className);
   return {unlabeled:unl, unnamed, under32:small.slice(0,12), hscroll:document.documentElement.scrollWidth>innerWidth, overflow:over}
 }"""
@@ -59,9 +59,9 @@ with sync_playwright() as p:
         pg.goto("http://localhost:8080/"); pg.wait_for_timeout(900)
         pg.evaluate("sessionStorage.setItem('tis_pin','1234');sessionStorage.setItem('tis_admin','Admin Test')"); pg.reload(); pg.wait_for_timeout(1500)
         for view in ('viewMap', 'viewList'):
-            pg.click('#' + view); pg.wait_for_timeout(1400)   # tranziția Hartă/Listă ~1 s
+            pg.click('#' + view); pg.wait_for_timeout(1000)   # tranziția Hartă/Listă ~0,75 s
             r0 = pg.evaluate(JS)
-            if view == 'viewMap': pg.click(".planet[data-id='TIS-14']")
+            if view == 'viewMap': pg.mouse.move(w / 2, 450); pg.wait_for_timeout(450); pg.click(".planet[data-id='TIS-14']")   # mouse pe hartă: rotația se oprește, ținta nu mai e în mișcare
             else: pg.click(".row[data-id='TIS-14']")
             pg.wait_for_timeout(900)
             r = pg.evaluate(JS)

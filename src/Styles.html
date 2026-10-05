@@ -1,12 +1,8 @@
 <style>
   *,*::before,*::after{box-sizing:border-box}
-  @property --gx{syntax:'<length-percentage>';inherits:true;initial-value:50vw}
-  @property --gy{syntax:'<length-percentage>';inherits:true;initial-value:45vh}
-  html{height:100%;background:var(--space-0);overflow-x:clip;transition:--gx .7s cubic-bezier(.16,1,.3,1),--gy .7s cubic-bezier(.16,1,.3,1)}
+  html{height:100%;background:var(--space-0);overflow-x:clip}
   body{margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;color:var(--ink);
-    font:400 var(--fs-md)/1.45 var(--font);-webkit-font-smoothing:antialiased;
-    /* strălucirea nebuloasei, centrată pe nucleul hărții (--gx/--gy vin din JS) */
-    background:radial-gradient(ellipse 700px 600px at var(--gx,50vw) var(--gy,45vh),color-mix(in srgb,var(--nebula) 40%,transparent) 0%,color-mix(in srgb,var(--nebula) 26%,transparent) 45%,transparent 100%),var(--space-0)}
+    font:400 var(--fs-md)/1.45 var(--font);-webkit-font-smoothing:antialiased;background:var(--space-0)}
   ::selection{background:var(--acc);color:var(--on-acc)}
   :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
   [hidden]{display:none !important}
@@ -20,8 +16,12 @@
   ::-webkit-scrollbar-thumb{background:var(--glass-line);border:3px solid transparent;background-clip:padding-box;border-radius:6px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  #stars canvas{position:fixed;z-index:0;pointer-events:none;will-change:transform,opacity}
-  #stars .sl i{position:fixed;z-index:0;pointer-events:none;border-radius:50%;background:var(--ink);transform:translate(var(--x,0),var(--y,0));opacity:calc(var(--a) * var(--o,1));will-change:transform,opacity}
+  /* fundal: totul se mișcă pe compozitor (WAAPI / tranziții pe transform și opacity) */
+  #nebula{position:fixed;left:0;top:0;width:1400px;height:1200px;margin:-600px 0 0 -700px;pointer-events:none;z-index:0;
+    background:radial-gradient(closest-side,color-mix(in srgb,var(--nebula) 40%,transparent),color-mix(in srgb,var(--nebula) 26%,transparent) 45%,transparent);
+    transition:transform .7s cubic-bezier(.16,1,.3,1);will-change:transform}
+  #stars .sl{position:fixed;left:0;top:0;width:0;height:0;z-index:0;pointer-events:none;will-change:transform;transition:transform .9s cubic-bezier(.16,1,.3,1)}
+  #stars i{position:absolute;pointer-events:none;background-size:100% 100%;will-change:transform,opacity}
   .shoot{position:fixed;left:-110px;top:0;z-index:0;width:110px;height:1.2px;opacity:0;pointer-events:none;transform-origin:100% 50%;background:linear-gradient(90deg,transparent,var(--ink));will-change:transform,opacity}
   .skip{position:fixed;left:var(--sp-3);top:var(--sp-3);z-index:100;background:var(--acc);color:var(--on-acc);font-weight:600;
     padding:var(--sp-2) var(--sp-3);border-radius:var(--r-pill);transform:translateY(-200%)}
@@ -133,12 +133,15 @@
   [data-page="news"] .search,[data-page="jurnal"] .search{display:none}
 
   .stage{flex:1;min-height:0;position:relative;overflow:hidden}
-  #map{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  #map{position:absolute;inset:0}
+  #cam{position:absolute;inset:0;transform-origin:0 0;transition:transform .7s cubic-bezier(.16,1,.3,1)}
+  #cam,#mapsvg{width:100%;height:100%}
+  #mapsvg{position:absolute;inset:0;overflow:visible}
+  #map.instant #cam,#map.instant .planet,#map.instant .lbl{transition:none}
   .ring{fill:none;stroke:var(--ring);stroke-width:1;transition:stroke var(--t-card),opacity var(--t-card)}
   .ring.dash{stroke-dasharray:2 7}
   .ring.on{stroke:color-mix(in srgb,var(--acc) 40%,transparent)}
   .ring.faded{opacity:.4}
-  .core-t{font:500 11px var(--mono);letter-spacing:.12em;fill:var(--nebula)}
   .rz{cursor:pointer;outline:none}
   .rz text{font:400 11px var(--mono);letter-spacing:.2em;fill:var(--ink-3);transition:fill var(--t-fast)}
   #sys.tight .rz text{font-size:10px;letter-spacing:.12em}
@@ -149,41 +152,46 @@
   .rz:focus-visible .rzh{stroke:var(--acc);stroke-opacity:.3}
   .rz:focus-visible text{fill:var(--ink)}
 
-  .planet{cursor:pointer;outline:none;transition:opacity var(--t-card)}
-  .planet.fresh,.planet.gone,.lbl.gone{opacity:0}
-  .planet .body{transform-box:fill-box;transform-origin:center;transition:r var(--t-card) var(--ease),fill var(--t-card),stroke var(--t-card),transform var(--t-fast) var(--ease)}
-  .planet.st-deschis .body{fill:var(--st-open)}
-  .planet.st-in_lucru .body{fill:var(--st-work)}
-  .planet.st-rezolvat .body{fill:var(--space-0);stroke:var(--st-done);stroke-width:1.5}
-  .planet .glow{fill:none;stroke:var(--st-work);stroke-width:5;opacity:0;transition:opacity var(--t-card),r var(--t-card) var(--ease)}
-  .planet.st-in_lucru .glow{opacity:.9}
-  .planet .halo{display:none;fill:none;stroke:var(--st-crit);stroke-width:1.5;stroke-opacity:.35}
-  .planet.pr-critica .halo{display:block}
-  .planet .s1,.planet .s2{display:none;fill:none;stroke:var(--acc)}
-  .planet .s1{stroke-width:1.2;stroke-opacity:.6}
-  .planet .s2{stroke-width:1;stroke-opacity:.25}
-  .planet.sel .s1,.planet.sel .s2{display:block}
-  .planet .hit{fill:transparent;stroke:none}
-  .planet:focus-visible .hit{stroke:var(--acc);stroke-width:2}
-  .planet:hover .body,.planet:focus-visible .body{transform:scale(1.25)}
+  /* nucleul și orbitele: HTML, ca rotația să ruleze pe compozitor */
+  #orbits{position:absolute;left:0;top:0;width:0;height:0;--ck:1}
+  .core{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none}
+  .core i{position:absolute;left:50%;top:50%;border-radius:50%}
+  .core .halo{width:calc(160px*var(--ck));height:calc(160px*var(--ck));margin:calc(-80px*var(--ck)) 0 0 calc(-80px*var(--ck));background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 35%,transparent),transparent)}
+  .core .disc{width:calc(76px*var(--ck));height:calc(76px*var(--ck));margin:calc(-38px*var(--ck)) 0 0 calc(-38px*var(--ck));background:radial-gradient(closest-side,var(--ink),var(--acc) 45%,transparent)}
+  .core b{position:absolute;left:0;top:0;transform:translate(-50%,-50%);font:500 calc(11px*var(--ck))/1 var(--mono);letter-spacing:.12em;color:var(--nebula)}
+  .orb{position:absolute;left:0;top:0;width:0;height:0;z-index:1;will-change:transform}
+  .planet{position:absolute;width:calc(var(--h)*2);height:calc(var(--h)*2);margin:calc(var(--h)*-1) 0 0 calc(var(--h)*-1);border-radius:50%;cursor:pointer;outline:none;
+    transition:left .6s var(--ease),top .6s var(--ease),opacity var(--t-card)}
+  .orb:has(.planet:hover),.orb:has(.planet:focus-visible),.orb:has(.planet.sel){z-index:2}   /* inelul planetei active stă deasupra celorlalte inele */
+  .planet:hover,.planet:focus-visible,.planet.sel{z-index:2}
+  .planet:focus-visible{outline:2px solid var(--acc)}
+  .planet.fresh,.planet.gone{opacity:0}
   .planet.dim{opacity:.12;pointer-events:none}
+  .up{position:absolute;inset:0}
+  .up i{position:absolute;left:50%;top:50%;width:var(--d);height:var(--d);margin:calc(var(--d)/-2) 0 0 calc(var(--d)/-2);border-radius:50%;pointer-events:none}
+  .body{--d:calc(var(--r)*2);transition:width var(--t-card) var(--ease),height var(--t-card) var(--ease),margin var(--t-card) var(--ease),background-color var(--t-card),border-color var(--t-card),box-shadow var(--t-card),transform var(--t-fast) var(--ease)}
+  .planet.st-deschis .body{background:var(--st-open)}
+  .planet.st-in_lucru .body{background:var(--st-work);box-shadow:0 0 12px 2px var(--st-work)}
+  .planet.st-rezolvat .body{background:var(--space-0);border:1.5px solid var(--st-done)}
+  .up .halo{--d:calc(var(--r)*2 + 20px);display:none;border:1.5px solid var(--st-crit);opacity:.35}
+  .planet.pr-critica .up .halo{display:block}
+  .up .s1,.up .s2{display:none;border:1px solid var(--acc)}
+  .up .s1{--d:calc(var(--r)*2 + 32px);border-width:1.2px;opacity:.6}
+  .up .s2{--d:calc(var(--r)*2 + 52px);opacity:.25}
+  .planet.sel .s1,.planet.sel .s2{display:block}
+  .planet:hover .body,.planet:focus-visible .body{transform:scale(1.25)}
   .planet.dim .body{transform:scale(.6)}
-  .wave{fill:none;stroke:var(--acc);stroke-width:1.5;transform-box:fill-box;transform-origin:center;pointer-events:none}
+  .wave{border:1.5px solid var(--acc)}
 
-  .lbl{pointer-events:none;transition:opacity var(--t-card)}
-  .lbl.dim{opacity:.12}
-  .lbl.flying{opacity:0}
-  #sys.far .lbl.dim{opacity:0}
-  .lbl.dim .ttl{display:none}
-  .lbl line{stroke:var(--ink);stroke-opacity:.3;stroke-width:1;transition:stroke var(--t-fast),stroke-opacity var(--t-fast)}
-  #sys:not(.far) .lbl line{display:none}
-  .lbl .code{font:500 11px var(--mono);letter-spacing:.04em;fill:var(--ink-3);paint-order:stroke;stroke:var(--space-0);stroke-width:3px;stroke-linejoin:round;transition:fill var(--t-fast)}
-  .lbl .ttl{font:400 13px var(--font);fill:var(--ink);opacity:0;paint-order:stroke;stroke:var(--space-0);stroke-width:3px;stroke-linejoin:round;transition:opacity var(--t-fast)}
-  .lbl.sel .code{fill:var(--acc-h)}
-  .lbl.sel line{stroke:var(--acc);stroke-opacity:1}
-  .planet:hover + .lbl line,.planet:focus-visible + .lbl line{stroke-opacity:.7}
-  .planet:hover + .lbl .code,.planet:focus-visible + .lbl .code{fill:var(--ink)}
-  #sys.far .ttl,.planet:hover + .lbl .ttl,.planet:focus-visible + .lbl .ttl,.lbl.sel .ttl{opacity:1}
+  .planet .lbl{margin:0;position:absolute;left:50%;top:50%;pointer-events:none;white-space:nowrap;transition:transform .5s var(--ease)}
+  .planet.flying .lbl{opacity:0}
+  .planet .code{display:block;font:500 11px/14px var(--mono);letter-spacing:.04em;color:var(--ink-3);transition:color var(--t-fast)}
+  .planet .ttl{display:block;margin-top:4px;font:400 13px/17px var(--font);color:var(--ink);white-space:pre;opacity:0;transition:opacity var(--t-fast)}
+  .planet .code,.planet .ttl{text-shadow:0 0 3px var(--space-0),0 0 3px var(--space-0)}
+  .planet.dim .ttl{display:none}
+  .planet.sel .code{color:var(--acc-h)}
+  .planet:hover .code,.planet:focus-visible .code{color:var(--ink)}
+  #map.tt .ttl,.planet:hover .ttl,.planet:focus-visible .ttl,.planet.sel .ttl{opacity:1}
 
   .map-msg{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;text-align:center;padding-bottom:var(--sp-7)}
   .map-msg .empty{pointer-events:auto;background:var(--glass-dark);border:1px solid var(--glass-line);border-radius:var(--r-card);padding:var(--sp-5)}
@@ -400,7 +408,7 @@
     .legend{left:var(--sp-4);right:var(--sp-4);bottom:44px;gap:4px 14px}
     .ticker{left:var(--sp-4);right:var(--sp-4);max-width:calc(100% - 32px);bottom:6px}
     body.card-open .ticker{right:var(--sp-4)}
-    .lbl .ttl{display:none}
+    .planet .ttl{display:none}
     .panel{inset:0;width:auto;z-index:50;border-radius:0;border:0;background:var(--glass-dark);transform:translateX(100%);opacity:1;
       transition:transform var(--t-card) var(--ease),visibility 0s linear var(--t-card)}
     .panel.open{transform:none;transition:transform var(--t-card) var(--ease)}

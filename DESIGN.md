@@ -203,10 +203,10 @@ Un spațiu, o sticlă, un accent, patru culori de observație.
 
 - Bara de sus transparentă, 64px: marca `wfm/extended`, tab-urile (punct mov înaintea celui curent), căutarea ca pill, „Tichet nou”, lacătul de admin (cerc de sticlă 40px, popover sub el).
 - Sub bară, banda de filtre: status segmentat cu numere (Toate e primul și implicit, apoi Active, Deschise, În lucru, Rezolvate, Arhivă pentru admin), prioritate, zonă și ordine (doar în Listă), comutatorul Hartă | Listă, export (admin), numărul de rezultate.
-- Harta ocupă restul ecranului. Cu ≤ 10 tichete vizibile pe desktop lat, etichetele (cod + titlu pe 2 rânduri) stau în afara inelului exterior, legate cu o linie de 1px; altfel stă doar codul lângă planetă, titlul apare la hover/focus/selecție.
-- Etichetele nu se suprapun: plasare greedy pe poziții candidate (8 în jurul planetei, sau deplasări verticale în afara inelului), care evită etichetele deja puse, corpurile planetelor, numele inelelor și marginile scenei; cu histerezis, ca să nu sară în timpul rotației.
+- Harta ocupă restul ecranului. Etichetele stau mereu lângă planetă: cu ≤ 10 tichete vizibile pe desktop, cod + titlu pe 2 rânduri; altfel doar codul, titlul apare la hover/focus/selecție.
+- Etichetele nu se suprapun: plasare greedy pe 8 poziții candidate în jurul planetei, care evită etichetele deja puse, corpurile planetelor, nucleul, numele inelelor și marginile scenei; recalculată o dată pe secundă cât harta se rotește, cu histerezis și glisare lină (.5s) la schimbarea poziției.
 - Pe hartă mică numele inelelor se împrăștie pe arc (interiorul sus, celelalte stânga/dreapta), ca să nu se stiveze.
-- Cardul de detaliu: sticlă fixă în dreapta (400px, sus 88px, jos 24px, scroll intern); harta își mută centrul spre stânga cât e deschis. Pe mobil (≤900px) cardul devine ecran întreg cu buton înapoi.
+- Cardul de detaliu: sticlă fixă în dreapta (400px, sus 88px, jos 24px, scroll intern); harta își mută centrul spre stânga cât e deschis (doar translație, raza rămâne aceeași). Pe mobil (≤900px) cardul devine ecran întreg cu buton înapoi.
 - Lista: rânduri de sticlă de 64px pe grila `84px | 1fr | auto | auto` (cod, titlu + meta, prioritate în puncte, status); pe mobil pe două linii.
 - News: coloană de 820px; fiecare anunț pe grila `76px | 28px | 1fr` (data, orbita cu punctul, cardul). Pe mobil o coloană, data trece în linia de autor.
 - Jurnal: tabel într-un card de sticlă, coloană de 1100px.
@@ -215,7 +215,7 @@ Un spațiu, o sticlă, un accent, patru culori de observație.
 
 ## Elevation & Depth
 
-Adâncimea vine din spațiu, nu din umbre: trei straturi de stele (fund: canvas cu 95 de stele, factor de paralaxă 0.25; mijloc: 45 de puncte, 0.55; față: 22 de puncte, 1), nebuloasa și sticla cu blur. O singură umbră, `0 30px 80px rgba(0,0,0,.35)`, pentru ce plutește: cardul, popover-ul, toast-ul.
+Adâncimea vine din spațiu, nu din umbre: trei straturi de stele (95 / 45 / 22 de stele, factor de adâncime 0.25 / 0.55 / 1), fiecare o imagine desenată o singură dată, nebuloasa (un element fix mutat cu transform) și sticla cu blur. O singură umbră, `0 30px 80px rgba(0,0,0,.35)`, pentru ce plutește: cardul, popover-ul, toast-ul.
 
 ### Named Rules
 **The Depth Rule.** Ce e mai aproape se mișcă mai mult: deriva, paralaxa după mouse (max 12px) și camera dintre pagini se înmulțesc cu factorul stratului.
@@ -243,11 +243,12 @@ Adâncimea vine din spațiu, nu din umbre: trei straturi de stele (fund: canvas 
 42px, sticlă, contur `ink-3` (3:1), rază 10px; focus contur mov + inel 1px; eroare contur roșu și mesaj sub câmp.
 
 ### Harta (signature)
-- Nucleu „WFM” cu halou mov, care pulsează încet. Inelele sunt cercuri de 1px `ring`; al treilea e punctat și „curge”.
+- Nucleu „WFM” cu halou mov, care pulsează încet. Inelele sunt cercuri de 1px `ring`; al treilea e punctat.
 - Numele inelului e clicabil: filtrează zona (a doua apăsare scoate filtrul); inelul ales se aprinde mov 40%, celelalte se estompează.
-- Planetele se rotesc lent (inelul interior o tură în ~6 min) și se opresc cât mouse-ul e pe hartă sau pe card, cu reluare lină.
+- Planetele se rotesc lent (inelul interior o tură în ~6 min), pe compozitor: fiecare inel e un strat rotit, planetele se contra-rotesc ca să rămână drepte. Rotația se oprește lin (rampă de 300ms) cât mouse-ul e pe hartă sau pe card, cât e deschis un card și cât căutarea are text.
 - Hover/focus: planeta crește 1.25×, apare titlul, linia se aprinde. Selecția: două inele mov care pulsează.
 - Filtrele estompează planetele la 12% (nu dispar). Tichetul nou zboară din nucleu pe o curbă (~900ms), apoi un val.
+- Căutarea pe hartă: cu 1–4 rezultate, camera face zoom lin (max 1.8×, 700ms) pe ele; Enter deschide primul rezultat; Escape revine.
 - Legenda jos-stânga, ticker-ul cu ultimul anunț jos-centru.
 
 ### Card de detaliu
@@ -260,12 +261,12 @@ Cronologie ca o orbită: o linie verticală în gradient (mov → `glass-line`),
 Pill de sticlă închisă care intră de sus (de jos pe mobil), cu pictogramă pe cerc mov (roșu la eroare).
 
 ### Mișcare
-- **Hartă → Listă**: camera intră în nucleu (harta scale 1 → 7, ease-in, 460ms; inelele și planetele zboară spre margini), apoi lista iese din nucleu (clip-path cerc de la nucleu, 560ms) cu rândurile intrând în cascadă (28ms).
-- **Listă → Hartă**: lista se strânge în nucleu (380ms), apoi harta se deschide din el (scale 0.25 → 1, 700ms).
-- **Între pagini**: camera se mută lateral în ordinea tab-urilor: pagina veche iese 90px în lateral cu fade, cea nouă intră din partea opusă (560ms), stelele alunecă cu 70px pe stratul apropiat (mai puțin pe cele îndepărtate), nebuloasa se mută lin (`@property --gx/--gy`, 700ms). Pe News, anunțurile intră în cascadă.
+- **Hartă → Listă**: camera intră în nucleu (harta scale 1 → 5, ease-in, 320ms), apoi lista iese din nucleu (scale 0.2 → 1 cu origine în nucleu, 420ms), cu toate rândurile intrând în cascadă (pas ≤ 24ms, total ≤ 300ms).
+- **Listă → Hartă**: lista se strânge în nucleu (260ms), apoi harta se deschide din el (scale 0.3 → 1, 480ms).
+- **Între pagini**: camera se mută lateral în ordinea tab-urilor: pagina veche iese 90px în lateral (280ms), cea nouă intră din partea opusă (380ms); stelele alunecă 70px pe stratul apropiat (mai puțin pe cele îndepărtate), nebuloasa se mută lin (700ms). Pe News, anunțurile intră în cascadă (50ms).
 - Easing de bază `cubic-bezier(.16,1,.3,1)`; card 420ms, micro 160ms.
-- Tot ce e continuu (stele, rotație, puls, curgerea inelului) rulează într-un singur `requestAnimationFrame` (rar, la 500ms, cât timp doar se rotește) și se oprește în tab ascuns, după 60 s fără activitate și la reduced-motion. Cost măsurat: ~14 ms/s cu animația pornită, 0 ms/s în repaus.
-- Reduced-motion: fără rotație, zbor, zoom, paralaxă; tranzițiile devin fade de 160ms.
+- Tot ce e continuu (deriva și sclipirea stelelor, rotația inelelor, pulsul nucleului, halourile) e animație pe compozitor (`transform`/`opacity`), fără scrieri din JS la fiecare cadru. Paralaxa după mouse e o tranziție CSS pe straturi, scrisă cel mult o dată la 100ms. Toate animațiile infinite se opresc în tab ascuns și după 60 s fără activitate. Cost măsurat: ~4.5 ms/s cu animația pornită, 0.2 ms/s în repaus; cu CPU încetinit 4×, rotația ocupă ~1% din firul principal.
+- Reduced-motion: fără rotație, zbor, zoom animat, paralaxă; tranzițiile devin fade de 160ms.
 
 ## Do's and Don'ts
 
@@ -278,7 +279,7 @@ Pill de sticlă închisă care intră de sus (de jos pe mobil), cu pictogramă p
 
 ### Don't:
 - **Don't** introduce un al doilea accent sau culori de zonă.
-- **Don't** adăuga animații CSS infinite sau fundaluri care se redesenează la fiecare cadru.
+- **Don't** scrie din JS la fiecare cadru și nu anima proprietăți care se repictează (`clip-path`, gradiente, atribute SVG, variabile CSS moștenite); mișcarea continuă e doar WAAPI/tranziții pe `transform`/`opacity`.
 - **Don't** suprapune etichete pe hartă; orice etichetă nouă intră în plasarea fără coliziuni.
 - **Don't** pune panouri de instrucțiuni pe ecran; indicațiile stau unde se folosesc (`/` pe căutare, `title` cu N, finalul listei).
 - **Don't** folosi bordură colorată laterală, gradient text sau emoji ca iconuri; pictogramele vin din `Icons.html`.

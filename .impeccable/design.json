@@ -267,18 +267,23 @@
       },
       {
         "name": "view",
-        "value": "460ms in / 560ms out (Hartă → Listă); 380ms / 700ms (Listă → Hartă)",
+        "value": "320ms + 420ms (Hartă → Listă); 260ms + 480ms (Listă → Hartă)",
         "purpose": "Tranziția prin nucleul WFM."
       },
       {
         "name": "page",
-        "value": "420ms out / 560ms in, 90px lateral; stele 70px pe stratul apropiat",
+        "value": "280ms out / 380ms in, 90px lateral; stele 70px pe stratul apropiat",
         "purpose": "Camera care se mută între Tichete, News, Jurnal."
       },
       {
         "name": "orbit",
         "value": "~6 min / tură (inelul interior)",
-        "purpose": "Rotația lentă a planetelor; se oprește la hover, 60 s inactivitate, tab ascuns, reduced-motion."
+        "purpose": "Rotația pe compozitor (inel rotit, planete contra-rotite); se oprește la hover, card deschis, căutare, 60 s inactivitate, tab ascuns, reduced-motion."
+      },
+      {
+        "name": "search-zoom",
+        "value": "max 1.8×, 700ms",
+        "purpose": "Camera pe 1–4 rezultate ale căutării."
       }
     ],
     "breakpoints": [
@@ -404,7 +409,7 @@
     ],
     "donts": [
       "**Don't** introduce un al doilea accent sau culori de zonă.",
-      "**Don't** adăuga animații CSS infinite sau fundaluri care se redesenează la fiecare cadru.",
+      "**Don't** scrie din JS la fiecare cadru și nu anima proprietăți care se repictează (`clip-path`, gradiente, atribute SVG, variabile CSS moștenite); mișcarea continuă e doar WAAPI/tranziții pe `transform`/`opacity`.",
       "**Don't** suprapune etichete pe hartă; orice etichetă nouă intră în plasarea fără coliziuni.",
       "**Don't** pune panouri de instrucțiuni pe ecran; indicațiile stau unde se folosesc (`/` pe căutare, `title` cu N, finalul listei).",
       "**Don't** folosi bordură colorată laterală, gradient text sau emoji ca iconuri; pictogramele vin din `Icons.html`.",

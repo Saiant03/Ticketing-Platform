@@ -1,5 +1,5 @@
 """Măsoară costul fundalului: ms de task-uri pe secundă (TaskDuration), pe harta Orbită, fără interacțiune.
-Țintă: < 15 ms/s cât animația rulează, < 5 ms/s după ce se oprește (60 s fără activitate).
+Țintă: < 15 ms/s cât animația rulează, < 5 ms/s după ce se oprește (60 s fără activitate); la final se raportează (fără țintă) și mișcarea continuă a mouse-ului.
 Rulare: python3 dev/perf.py (cu dev/preview.py pornit; durează ~100 s)."""
 from browser import launch
 from playwright.sync_api import sync_playwright
@@ -19,4 +19,8 @@ with sync_playwright() as p:
     print(f"repaus după 60 s fără activitate: {rest:.1f} ms/s | țintă < 5 ms/s")
     pg.mouse.move(720, 300); pg.wait_for_timeout(3000)  # activitate: bucla reia, rotirea rămâne oprită cât mouse-ul e pe hartă
     t0 = task(); pg.wait_for_timeout(5000); print(f"după reluare (mouse pe hartă, rotirea oprită, stele active): {(task() - t0) / 5 * 1000:.1f} ms/s")
+    pg.mouse.move(100, 500); pg.wait_for_timeout(1000)  # mișcare continuă 3 s: pași de 40px la 50 ms, peste hartă
+    t0 = task()
+    for i in range(60): pg.mouse.move(100 + (i * 40) % 1240, 300 + (i % 5) * 30); pg.wait_for_timeout(50)
+    print(f"mouse în mișcare continuă 3 s (pași de 40px la 50 ms): {(task() - t0) / 3 * 1000:.1f} ms/s | fără țintă")
     b.close()
