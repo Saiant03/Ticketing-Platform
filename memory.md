@@ -104,10 +104,11 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-1. Utilizatorul copiază `Tokens`, `Styles`, `Index`, `App` și `Icons` în Apps Script și testează „Panou calm” pe `/dev` (tema movă, bara neagră, panoul pe toată lățimea, rândul pe 4 coloane, finalul listei, News). De urmărit: dacă panoul pe toată lățimea în tema light pare prea întunecat și dacă pe mobil selecturile (ordine, prioritate) lasă prea puțin loc pentru status și zone.
-2. **Deploy automat și link scurt**: secretele `CLASPRC_JSON`, `SCRIPT_ID`, `DEPLOYMENT_ID` sunt setate (login clasp cu `saiu.antonio.arrise@gmail.com`, doar cele 3 permisiuni Apps Script). Rularea manuală fără `deploy` a ieșit verde (run 37252776774): manifestul luat cu `clasp pull`, 7 fișiere împinse pe `/dev`. Utilizatorul a văzut aplicația pe `/dev`. Rularea cu `deploy` (run 37253096113) a publicat versiunea 22 pe `/exec`. Branch-ul implicit pe GitHub e deja `main` (singurul branch). Link scurt: https://tinyurl.com/wfm-extended → `/exec` (făcut de utilizator; domeniu propriu refuzat, rămânem pe TinyURL). Punctul 2 e încheiat.
-   - Secretul se ia cu `cloudshell download ~/.clasprc.json` + Notepad; copiat din terminal se strică (JSON invalid).
-   - Workflow-ul folosește `@google/clasp@3` (Node 20); `deploy --deploymentId` e încă valid în v3. Aplicația rămâne pe Apps Script.
-   - De confirmat cu utilizatorul: rularea de test verde și `/dev` actualizat. Dacă firma blochează Cloud Shell/clasp, varianta e `clasp login` local cu Node.js.
-   - Vechiul branch `claude/sleepy-heisenberg-8bihmr` se șterge doar dacă utilizatorul confirmă.
-   - Recomandat link TinyURL; Google Sites e alternativa (aplicația în cadru). Dacă la Sites pagina apare goală, trebuie `setXFrameOptionsMode(ALLOWALL)` în `doGet` (neverificat).
+Runda 2 „Orbită” (cerută după testul pe `/dev`; pe `/exec` e încă „Panou calm”, versiunea 22):
+1. Filtrul implicit pe Tichete devine „Toate” (date reale: 0 active, 14 rezolvate, deci harta apărea goală).
+2. Corecturi: numele inelelor înghesuite pe mobil; etichetele apropiate (ex. TIS-12/TIS-13) pe desktop; stele pe mai multe straturi de adâncime fără cost mare.
+3. Tranziție Hartă → Listă: zoom în planeta „WFM”, apoi lista apare din ea (și invers).
+4. Tranziție între tab-urile Tichete și News.
+5. News mai interesant, dar ușor de citit.
+6. Rescrie `DESIGN.md` și `.impeccable/design.json` din build.
+7. Publică pe `/exec`: rulare manuală a workflow-ului „Deploy Apps Script” pe `main` cu `deploy: true`.
