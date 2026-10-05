@@ -42,6 +42,16 @@ jobs:
           npm install -g @google/clasp
           echo "$CLASPRC_JSON" > ~/.clasprc.json
           printf '{"scriptId":"%s","rootDir":"src"}' "$SCRIPT_ID" > .clasp.json
+          if [ ! -f src/appsscript.json ]; then
+            mkdir -p "$RUNNER_TEMP/live"
+            printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > "$RUNNER_TEMP/live/.clasp.json"
+            (cd "$RUNNER_TEMP/live" && clasp pull) || true
+            cp "$RUNNER_TEMP/live/appsscript.json" src/ || true
+          fi
+          if [ ! -f src/appsscript.json ]; then
+            echo "Lipseste src/appsscript.json si nu a putut fi luat din proiectul live (clasp pull). Adauga manifestul in src/."
+            exit 1
+          fi
           clasp push --force
 
       - name: clasp deploy (versiune noua pe /exec)

@@ -6,7 +6,7 @@ Citește fișierul ăsta la începutul fiecărei sesiuni noi. Actualizează-l la
 
 Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app Google Apps Script (HtmlService). Datele stau în Google Sheet (foile Tichete, News, Jurnal), iar capturile într-un folder Drive.
 - Utilizatori: specialiști pe desktop (raportează și urmăresc tichete) și 3 admini (triază, publică News).
-- Repo: `Saiant03/Ticketing-Platform`, **public**. Branch de lucru: `claude/sleepy-heisenberg-8bihmr`.
+- Repo: `Saiant03/Ticketing-Platform`, **public**. Se lucrează doar pe `main` (regulă confirmată de utilizator; vechiul branch `claude/sleepy-heisenberg-8bihmr` nu se mai folosește).
 - Utilizatorul scrie în română; vrea răspunsuri scurte și directe, fără emoji.
 
 ## Unde e fiecare lucru
@@ -92,7 +92,9 @@ python3 dev/perf.py                    # ms/s de task-uri în repaus după înc�
 
 ## Cum pune utilizatorul codul în Apps Script
 
-1. Pentru fiecare fișier: deschide linkul raw `https://raw.githubusercontent.com/Saiant03/Ticketing-Platform/claude/sleepy-heisenberg-8bihmr/src/<Fișier>`, apasă Ctrl+A, Ctrl+C, apoi lipește în fișierul cu același nume din editor (fișierele HTML se scriu fără `.html`) și salvează.
+După ce sunt setate secretele GitHub (vezi „Următorul pas”), push-ul pe `main` face pasul 1 automat. Până atunci, manual:
+
+1. Pentru fiecare fișier: deschide linkul raw `https://raw.githubusercontent.com/Saiant03/Ticketing-Platform/main/src/<Fișier>`, apasă Ctrl+A, Ctrl+C, apoi lipește în fișierul cu același nume din editor (fișierele HTML se scriu fără `.html`) și salvează.
 2. Testează pe Deploy → Test deployments → URL-ul `/dev`.
 3. Publică din Deploy → Manage deployments → creion → New version → Deploy. Revenirea se face alegând versiunea anterioară.
 
@@ -102,5 +104,7 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 1. Utilizatorul copiază `Tokens`, `Styles`, `Index`, `App` și `Icons` în Apps Script și testează „Panou calm” pe `/dev` (tema movă, bara neagră, panoul pe toată lățimea, rândul pe 4 coloane, finalul listei, News). De urmărit: dacă panoul pe toată lățimea în tema light pare prea întunecat și dacă pe mobil selecturile (ordine, prioritate) lasă prea puțin loc pentru status și zone.
 2. **Deploy automat și link frumos** (cerut pentru sesiunea următoare). Decizie: aplicația rămâne pe Apps Script (date în Sheet/Drive-ul firmei, acces prin Google, gratuit); alte hostinguri ar cere API public sau mutarea datelor.
-   - `.github/workflows/deploy.yml` există deja: `clasp push` la push pe `main` când se schimbă `src/**`, plus `clasp deploy` pe `/exec` la rulare manuală cu `deploy: true`. Lipsesc secretele GitHub `CLASPRC_JSON`, `SCRIPT_ID`, `DEPLOYMENT_ID`. Ghidează utilizatorul click cu click: `clasp login` local pentru `~/.clasprc.json`, Script ID din Project Settings, Deployment ID din Manage deployments, apoi Settings → Secrets and variables → Actions. Atenție: workflow-ul rulează doar pe `main`, iar lucrul se face pe `claude/sleepy-heisenberg-8bihmr`; trebuie decis cum ajunge codul pe `main` (merge/PR). Verifică și că `src/appsscript.json` există (`clasp push --force` suprascrie manifestul; fără el push-ul eșuează).
+   - `.github/workflows/deploy.yml`: la push pe `main` care schimbă `src/**` face `clasp push` (ajunge pe `/dev`); la rulare manuală din Actions cu `deploy: true` publică și o versiune nouă pe `/exec`. Manifestul: dacă `src/appsscript.json` lipsește, workflow-ul îl ia din proiectul live cu `clasp pull`, deci nu se ghicesc setările web app-ului.
+   - Lipsesc secretele GitHub `CLASPRC_JSON`, `SCRIPT_ID`, `DEPLOYMENT_ID`. Ghidează utilizatorul click cu click: `clasp login` local pentru `~/.clasprc.json`, Script ID din Project Settings, Deployment ID din Manage deployments, apoi GitHub → Settings → Secrets and variables → Actions.
+   - Pe GitHub, branch-ul implicit trebuie schimbat pe `main` (Settings → General → Default branch); vechiul branch poate fi șters după aceea, doar dacă utilizatorul confirmă.
    - Link scurt către `/exec` sau o pagină Google Sites care include aplicația.

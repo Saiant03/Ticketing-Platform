@@ -15,6 +15,7 @@ Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlSer
 
 ## Reguli
 
+- Se lucreaza doar pe `main`: commit si push direct pe `main`, fara branch-uri de lucru, chiar daca sesiunea propune alt branch. Un push pe `main` care schimba `src/` trimite codul automat in Apps Script (`/dev`) prin `.github/workflows/deploy.yml`; `/exec` se actualizeaza doar la rularea manuala cu `deploy`.
 - Repo-ul e public: niciun cod de admin, ID de spreadsheet sau alt secret in cod. Codurile de admin stau in Script Properties (`ADMINS`).
 - Orice functie server noua sau schimbata se oglindeste in `dev/mock-gas.js`.
 - Verificarea vizuala se face cu `python3 dev/preview.py` + `python3 dev/shoot.py`.
