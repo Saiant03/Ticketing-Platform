@@ -18,7 +18,6 @@
   const NEWS_TYPES = { update: 'Update', fix: 'Fix', anunt: 'Anunț' };
   const NT_CLS = { update: 'c-work', fix: 'c-done', anunt: 'c-open' };
   const ST_CLS = { deschis: 'c-open', in_lucru: 'c-work', rezolvat: 'c-done' };
-  const ST_DOT = { deschis: 'open', in_lucru: 'work', rezolvat: 'done' };
   const MON3 = ['IAN', 'FEB', 'MAR', 'APR', 'MAI', 'IUN', 'IUL', 'AUG', 'SEP', 'OCT', 'NOI', 'DEC'];
   const MAX_FILES = 5;
   const PAGE = 50;
@@ -89,7 +88,7 @@
   function stKey(st) { return STATUSES[st] ? st : 'deschis'; }
   function statusFlap(t, prefix) {
     const s = stKey(t.status);
-    return `<span class="r-st"><i class="dot dot-${ST_DOT[s]}" aria-hidden="true"></i>${flap(STATUSES[s], prefix + ':' + t.id, ST_CLS[s], STATUSES[s], 8)}</span>`;
+    return `<span class="r-st">${flap(STATUSES[s], prefix + ':' + t.id, ST_CLS[s], STATUSES[s])}</span>`;
   }
   function statusText(st) { return `<span class="st">${STATUSES[stKey(st)]}</span>`; }
   function prioHtml(p) {
@@ -237,29 +236,17 @@
     S.shown = PAGE; vt(() => { renderZones(); renderToolbar(); renderList(); }, 'list');
   }
 
-  // ---------- antetul panoului: contoare, ceas, zone ----------
-  function renderCounters() {
-    const box = $('#counters'), ready = !(S.loading && !S.tickets.length);
-    const n = st => S.tickets.filter(t => t.status === st).length;
-    const crit = S.tickets.filter(t => t.status !== 'rezolvat' && t.priority === 'critica').length;
-    const c = (lbl, v, key, cls) => `<div><dt>${lbl}</dt><dd>${flap(ready ? pad(v) : '', 'cnt:' + key, 'lg' + (cls ? ' ' + cls : ''), ready ? String(v) : 'se încarcă', 2)}</dd></div>`;
-    box.innerHTML = c('Deschise', n('deschis'), 'open') + c('În lucru', n('in_lucru'), 'work', 'c-work') + c('Critice', crit, 'crit', crit ? 'c-crit' : '');
-    if (ready) animateFlaps(box, S.intro ? { all: true, delay: 100 } : null);
-  }
-  function renderClock() {
-    const d = new Date(), el = $('#clock');
-    el.innerHTML = flap(hhmm(d), 'clock', 'lg', 'Ora ' + hhmm(d));
-    animateFlaps(el, S.intro ? { all: true, delay: 300 } : null);
-    clearTimeout(S.clockT);
-    S.clockT = setTimeout(renderClock, 60500 - d.getSeconds() * 1000 - d.getMilliseconds());
-  }
+  // ---------- antetul panoului: zone, prioritate ----------
   function renderZones() {
     const active = S.tickets.filter(t => t.status !== 'rezolvat');
     const counts = {}; ZONES.forEach(z => { counts[z.key] = 0; }); counts[''] = 0;
     active.forEach(t => { counts[zoneOf(t).key]++; });
     $('#zoneRow').innerHTML = ZONES.map(z => `<button class="zchip" data-zone="${esc(z.key)}" aria-pressed="${S.f.zone === z.key}" title="Arată doar zona ${esc(z.key)}">
         ${zi(z)}<span>${esc(z.key)}</span><span class="zn">${counts[z.key]}</span></button>`).join('');
-    renderCounters();
+    const pn = {}; active.forEach(t => { pn[t.priority] = (pn[t.priority] || 0) + 1; });
+    const pf = $('#prioFilter');
+    pf.innerHTML = '<option value="all">Orice prioritate</option>' + Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]} · ${pn[k] || 0}</option>`).join('');
+    pf.value = S.f.prio;
   }
 
   // ---------- toolbar ----------
@@ -273,28 +260,21 @@
     }).join('');
     $('#exportBtn').hidden = !S.isAdmin;
   }
-  function initToolbar() {
-    $('#prioFilter').innerHTML = '<option value="all">Orice prioritate</option>' +
-      Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]}</option>`).join('');
-  }
 
   // ---------- listă (panoul de plecări) ----------
   function rowHtml(t, i) {
     const z = zoneOf(t), nc = (t.comments || []).length, na = (t.attachments || []).length;
     const cur = S.sel === t.id && (S.panel === 'ticket');
-    const old = t.created && !isToday(new Date(t.created));
+    const counts = (nc ? `<span class="r-n" title="${nc} comentarii">${icon('i-comment')}${nc}</span>` : '') + (na ? `<span class="r-n" title="${na} capturi">${icon('i-image')}${na}</span>` : '');
     return `<div role="listitem"><button class="row${t.status === 'rezolvat' ? ' resolved' : ''}${S.flash === t.id ? ' flash' : ''}" data-id="${esc(t.id)}" data-i="${i}" style="--i:${i}"${cur ? ' aria-current="true"' : ''}>
-      <span class="r-time${old ? ' old' : ''}" title="${esc(absDate(t.created, true))}">${boardTime(t.created)}</span>
-      ${flap(t.id, 'cod:' + t.id, '', t.id, 6)}
-      ${zoneCell(z)}
-      <span class="r-t"><span class="r-title">${esc(t.title)}</span><span class="r-by">${esc(t.reporter)} · ${relDate(t.created)}</span></span>
-      <span class="r-n">${nc ? `<span title="${nc} comentarii">${icon('i-comment')}${nc}</span>` : ''}${na ? `<span title="${na} capturi">${icon('i-image')}${na}</span>` : ''}</span>
+      <span class="r-code">${esc(t.id)}</span>
+      <span class="r-t"><span class="r-title">${esc(t.title)}</span><span class="r-by">${zoneCell(z)} · ${esc(t.reporter)} · ${relDate(t.created)}${counts}</span></span>
       ${prioHtml(t.priority)}
       ${statusFlap(t, 'st')}
     </button></div>`;
   }
   function boardEmpty(title, text, extra) {
-    return `<div class="empty"><span class="sign-ar left" aria-hidden="true"><svg><use href="#i-sign"/></svg></span><h3>${title}</h3><p>${text}</p>${extra || ''}</div>`;
+    return `<div class="empty"><h3>${title}</h3><p>${text}</p>${extra || ''}</div>`;
   }
   function renderList() {
     const list = $('#list'), meta = $('#listMeta');
@@ -313,25 +293,26 @@
       return;
     }
     const vis = visible();
-    const parts = [`<span>${vis.length} ${vis.length === 1 ? 'tichet' : 'tichete'}</span>`];
-    if (S.f.zone) parts.push(`<button class="chip" data-clear="zone" aria-label="Elimină filtrul zonă ${esc(S.f.zone)}">Zona: ${esc(S.f.zone)} ${icon('i-close')}</button>`);
-    if (S.f.prio !== 'all') parts.push(`<button class="chip" data-clear="prio" aria-label="Elimină filtrul prioritate">Prioritate: ${PRIOS[S.f.prio]} ${icon('i-close')}</button>`);
-    if (S.f.q.trim()) parts.push(`<button class="chip" data-clear="q" aria-label="Șterge căutarea">„${esc(S.f.q.trim())}” ${icon('i-close')}</button>`);
-    if (filtersActive()) parts.push('<button class="linkish" data-clear="all">Resetează filtrele</button>');
-    meta.innerHTML = parts.join('');
+    meta.innerHTML = `<span class="sr">${vis.length} ${vis.length === 1 ? 'tichet' : 'tichete'}</span>` +
+      (filtersActive() ? '<button class="linkish" data-clear="all">Resetează filtrele</button>' : '');
 
     if (!vis.length) {
       if (archive) list.innerHTML = boardEmpty('Arhiva e goală', 'Tichetele arhivate apar aici și pot fi restaurate.');
       else if (!S.tickets.length) list.innerHTML = boardEmpty('Niciun tichet încă', 'Primul tichet raportat va primi codul TIS-01.',
         `<button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button>`);
-      else list.innerHTML = boardEmpty('Niciun tichet pentru filtrele alese', 'Schimbă filtrele sau caută altfel. Dacă problema nu e raportată, deschide un tichet nou.',
-        `<p><button class="linkish" data-clear="all">Resetează filtrele</button></p><button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button>`);
+      else {
+        const q = S.f.q.trim();
+        list.innerHTML = boardEmpty(q ? `Nimic pentru „${esc(q)}”` : 'Niciun tichet pentru filtrele alese', 'Dacă problema nu e raportată încă, deschide un tichet.',
+          `<p><button class="linkish" data-clear="all">Resetează filtrele</button></p><button class="btn btn-primary" data-act="new">${icon('i-plus')}Raportează-o</button>`);
+      }
       return;
     }
     const fa = document.activeElement, fid = fa && fa.classList && fa.classList.contains('row') && list.contains(fa) ? fa.dataset.id : null;
     const slice = vis.slice(0, S.shown);
     list.innerHTML = slice.map(rowHtml).join('') +
-      (vis.length > slice.length ? `<button class="more" data-act="more">Arată încă ${Math.min(PAGE, vis.length - slice.length)} din ${vis.length - slice.length} rămase</button>` : '');
+      (vis.length > slice.length ? `<button class="more" data-act="more">Arată încă ${Math.min(PAGE, vis.length - slice.length)} din ${vis.length - slice.length} rămase</button>` : '') +
+      '<div class="list-end"><span>Nu găsești problema?</span><button class="linkish" data-act="new">Raportează-o</button>' +
+      '<span class="keys-inline"><kbd>N</kbd> tichet nou <kbd>J</kbd> <kbd>K</kbd> navighează <kbd>/</kbd> caută</span></div>';
     if (fid) { const r = $(`.row[data-id="${CSS.escape(fid)}"]`, list); if (r) r.focus({ preventScroll: true }); }
     if (S.intro && !REDUCED.matches) { list.classList.add('intro'); setTimeout(() => list.classList.remove('intro'), 1800); }
     animateFlaps(list, S.intro ? { all: true, limit: 20, delay: 150 } : (S.flipNew ? { force: S.flipNew, delay: 250 } : null));
@@ -364,18 +345,7 @@
       if (!t) { S.panel = 'empty'; return renderPanel(); }
       box.innerHTML = ticketHtml(t); hydrate(box); animateFlaps(box); return;
     }
-    box.innerHTML = `<div class="signs">
-      <h2 class="sign-h">${S.isAdmin ? 'Alege un tichet pentru triere' : 'Găsește sau raportează o problemă'}</h2>
-      <ol>
-        <li class="sign"><span class="sign-ar left" aria-hidden="true"><svg><use href="#i-sign"/></svg></span>
-          <span><b>Caută pe panou</b><small>După cod, titlu sau nume. Filtrează pe zona din WFM Extended.</small></span></li>
-        <li class="sign"><span class="sign-ar up" aria-hidden="true"><svg><use href="#i-sign"/></svg></span>
-          <span><b>Nu apare? Tichet nou</b><small>Câmpuri puține; capturile se lipesc cu Ctrl+V.</small></span></li>
-        <li class="sign"><span class="sign-ar plate" aria-hidden="true">${flap('TIS')}</span>
-          <span><b>Urmărește codul</b><small>Primești un cod TIS. Statusul se schimbă pe panou.</small></span></li>
-      </ol>
-      <div class="keys"><kbd>/</kbd><span>caută</span><kbd>N</kbd><span>tichet nou</span><kbd>J</kbd><span>următorul tichet</span><kbd>K</kbd><span>tichetul anterior</span><kbd>Esc</kbd><span>închide panoul</span></div>
-    </div>`;
+    box.innerHTML = ''; $('#panel').classList.remove('open');
   }
 
   function ticketHtml(t) {
@@ -480,7 +450,7 @@
       <div class="f-head">
         <button type="button" class="btn btn-quiet icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
         <h2 class="sign-h" id="nf-h" tabindex="-1">Tichet nou</h2>
-        <button type="button" class="btn btn-quiet icon-only" data-act="close" aria-label="Închide formularul">${icon('i-close')}</button>
+        <button type="button" class="btn btn-quiet icon-only" data-act="close" aria-label="Închide formularul" title="Închide (Esc)">${icon('i-close')}</button>
       </div>
       <div class="field"><label class="lbl" for="nf-reporter">Numele tău</label>
         <input class="input" id="nf-reporter" maxlength="120" autocomplete="name" value="${esc(d.reporter)}"${e.reporter ? ' aria-invalid="true" aria-describedby="nf-reporter-err"' : ''}>
@@ -606,7 +576,7 @@
       let seen = false;
       try { seen = sessionStorage.getItem('tis_intro') === '1'; sessionStorage.setItem('tis_intro', '1'); } catch (x) {}
       S.intro = !seen;
-      renderAll(); renderClock();
+      renderAll();
       if (S.intro) animateFlaps($('#brandFlaps'), { all: true });
       S.intro = false;
     }).catch(() => { S.loading = false; S.loadErr = true; renderList(); toast('Nu am putut încărca tichetele.', 'err'); });
@@ -744,9 +714,8 @@
         ? `<div class="confirm admin-actions"><span>Ștergi anunțul și capturile lui?</span><button class="btn btn-quiet" data-news-cancel>Anulează</button><button class="btn btn-danger" data-news-del="${esc(a.id)}">Șterge</button></div>`
         : `<div class="admin-actions"><button class="btn btn-quiet" data-news-edit="${esc(a.id)}">${icon('i-edit')}Editează</button><button class="btn btn-danger-quiet" data-news-ask="${esc(a.id)}">${icon('i-trash')}Șterge</button></div>`;
       return `<article class="news-item">
-        <div class="n-plate">${d ? `<time datetime="${d.toISOString()}">${flap(pad(d.getDate()) + ' ' + MON3[d.getMonth()], 'nd:' + a.id, '', d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear())}</time><span class="yr" aria-hidden="true">${d.getFullYear()}</span>` : ''}
-          ${flap(NEWS_TYPES[type], 'nt:' + a.id, NT_CLS[type], NEWS_TYPES[type], 6)}</div>
-        <div><h2>${esc(a.title)}</h2><p class="by">${esc(a.author)}${d ? ' · ' + hhmm(d) : ''}</p>
+        <div class="n-plate">${d ? `<time datetime="${d.toISOString()}">${flap(pad(d.getDate()) + ' ' + MON3[d.getMonth()], 'nd:' + a.id, '', d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear())}</time>` : ''}</div>
+        <div><h2>${esc(a.title)}</h2><p class="by"><span class="n-type ${NT_CLS[type]}">${NEWS_TYPES[type]}</span> ${esc(a.author)}${d ? ' · ' + hhmm(d) : ''}</p>
           <div class="news-body">${newsBody(a.body)}</div>
           ${(a.attachments || []).length ? shotsHtml(a.attachments) : ''}${actions}</div>
       </article>`;
@@ -879,13 +848,7 @@
       if (ds.status === 'archive' && !S.archived) { loadArchived(); renderToolbar(); return; }
       vt(() => { renderToolbar(); renderList(); }, 'list'); return;
     }
-    if (ds.clear) {
-      if (ds.clear === 'all') return resetFilters();
-      if (ds.clear === 'zone') S.f.zone = null;
-      if (ds.clear === 'prio') { S.f.prio = 'all'; $('#prioFilter').value = 'all'; }
-      if (ds.clear === 'q') { S.f.q = ''; $('#search').value = ''; }
-      vt(() => { renderZones(); renderList(); }, 'list'); return;
-    }
+    if (ds.clear) return resetFilters();
     if (t.classList.contains('row')) return S.sel === ds.id && S.panel === 'ticket' && !MOBILE.matches ? closePanel() : openTicket(ds.id);
     if (ds.open) return openTicket(ds.open, true);
     if (ds.shot) return openLightbox(ds.shot, ds.name);
@@ -912,7 +875,9 @@
     }
 
     switch (ds.act) {
-      case 'new': return openNew();
+      case 'new':
+        if (S.panel !== 'created' && S.f.q.trim() && !S.draft.title) S.draft.title = S.f.q.trim();
+        return openNew();
       case 'close': return closePanel();
       case 'reload': return load();
       case 'news-reload': return loadNews();
@@ -1079,40 +1044,9 @@
     }
   }, 20000);
 
-  // ---------- ambient: lumina din hol + reflexul de pe panou, oprite la inactivitate ----------
-  (function ambient() {
-    const body = document.body, board = $('#board'), sheen = $('#sheen');
-    let idleT = 0, last = 0, raf = 0, mx = 0, my = 0;
-    const sleep = () => { body.classList.add('idle'); board.classList.remove('lit'); };
-    const wake = () => {
-      const n = Date.now();
-      if (n - last < 500 && !body.classList.contains('idle')) return;
-      last = n; body.classList.remove('idle');
-      clearTimeout(idleT); idleT = setTimeout(sleep, 6000);
-    };
-    document.addEventListener('pointermove', e => {
-      wake();
-      if (REDUCED.matches || e.pointerType !== 'mouse' || !board.contains(e.target)) return;
-      mx = e.clientX; my = e.clientY;
-      if (!raf) raf = requestAnimationFrame(() => {
-        raf = 0;
-        const r = board.getBoundingClientRect();
-        sheen.style.transform = `translate3d(${mx - r.left}px,${my - r.top}px,0)`;
-        board.classList.add('lit');
-      });
-    }, { passive: true });
-    board.addEventListener('pointerleave', () => board.classList.remove('lit'));
-    document.addEventListener('keydown', wake);
-    document.addEventListener('pointerdown', wake);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) sleep(); else { wake(); renderClock(); } });
-    wake();
-  })();
-
   // ---------- start ----------
-  initToolbar();
   $('#brandFlaps').innerHTML = flap('WFM', 'brand:wfm', '', 'WFM');
   renderAll();
-  renderClock();
   load();
 })();
 </script>

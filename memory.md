@@ -15,11 +15,11 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 |---|---|
 | Cod Apps Script | `src/` (`Code.gs`, `Index`, `Tokens`, `Styles`, `Icons`, `App`) |
 | Adevărul despre produs | `PRODUCT.md` |
-| Design system-ul curent („Panou split-flap”, scris din build) | `DESIGN.md`, `.impeccable/design.json` |
-| Contractul de direcție („Panou split-flap”) | `.impeccable/surfaces/src-index-html.md` |
+| Design system-ul curent („Panou calm”, accent mov) | `DESIGN.md`, `.impeccable/design.json` |
+| Contractul de direcție („Panou split-flap”, înainte de „Panou calm”) | `.impeccable/surfaces/src-index-html.md` |
 | Planul implementat | `docs/plan-split-flap.md` |
 | Auditul UI-ului original (9/20) | `docs/audit/AUDIT.md`, `docs/audit/current/` |
-| Screenshot-uri ale versiunii „Panou split-flap” (runda finală) | `.impeccable/review/` |
+| Screenshot-uri ale versiunii curente („Panou calm”) | `.impeccable/review/` |
 | Workflow și deploy | `docs/workflow.md` |
 | Skill-uri vendorizate | `.claude/skills/` (`SOURCES.md`) |
 | Agenți pentru delegare | `.claude/agents/` (`runner` Haiku, `executor` Sonnet) |
@@ -37,7 +37,15 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - ambient (lumini în hol + reflex pe panou) oprit după 6s, în tab ascuns și la reduced-motion; măsurat 0.2 ms/s în repaus (`dev/perf.py`);
    - verificări: `flow.py` 21/21, `a11y.py` fără probleme (contrast AA pe panou și hol, contur câmpuri 3:1, fără scroll orizontal la 1440/1280/900/390), detectorul impeccable doar cu avertismente advisory;
    - review final făcut inline (fără sub-agenți): verdict **ship**; DESIGN.md și `design.json` rescrise din build.
-   Utilizatorul încă nu l-a văzut pe Apps Script.
+   Utilizatorul l-a pus pe Apps Script și l-a testat pe `/dev`: îi place aspectul și interactivitatea, dar i s-a părut „super bloated”.
+6. **„Panou calm” + accent mov** (prima sesiune cu delegare la agenți: executor a implementat, runner a verificat):
+   - accent mov în loc de galben: `#8A7BFF` pe suprafețe închise (`--sig`), `#6A55E0` în holul light (`--acc`); „În lucru” e mov;
+   - bara de sus neagră (material de panou), tab-ul curent cu bară movă; toast negru cu plăcuță movă;
+   - antetul panoului pe 2 rânduri (fără contoare și ceas); zonele ca text cu subliniere; prioritatea cu numere în opțiuni;
+   - rândul pe 4 coloane (COD text, PROBLEMĂ cu zonă/raportor/timp dedesubt, PRIO bare, STATUS pe plăcuțe fără umplutură);
+   - holul gol (indicatoarele și lista de scurtături) eliminat: panoul ocupă toată lățimea până deschizi ceva; la final de listă „Nu găsești problema? Raportează-o” + scurtăturile; fără rezultate, „Raportează-o” preia textul căutat;
+   - ambientul (lumini, reflex) șters; repaus 0.1 ms/s; News cu titlu mai mic și tipul ca etichetă lângă autor;
+   - verificări: `flow.py` 21/21, `a11y.py` fără probleme la 4 lățimi, `impeccable detect` doar advisory.
 
 ## Decizii confirmate de utilizator
 
@@ -45,14 +53,16 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 - Skill-ul `ponytail` e folosit pentru orice cod (copiat în `.claude/skills/`, fără hook-urile plugin-ului).
 
 - Utilizator principal: specialiști, pe desktop.
-- Temă light + dark după sistem. Direcția split-flap: panoul e mereu dark, holul urmează tema.
+- Temă light + dark după sistem. Panoul și bara sunt mereu dark, holul urmează tema.
+- Accentul e mov (`#8A7BFF` / `#6A55E0`); galbenul nu se mai folosește.
+- Interfața trebuie să rămână aerisită: fără contoare, ceas, ambient sau panouri de instrucțiuni.
 - Scope backend: UI + fixuri mici. Deja făcute:
   - codurile de minim 12 caractere ocolesc blocarea globală;
   - `getAttachmentThumb`;
   - `include()` + template în `doGet`;
   - helper `ownFile_`.
 - Numele „WFM Extended” și pagina News rămân.
-- Expresiv, nu corporate. Efectele ambientale sunt OK doar dacă se opresc la inactivitate, în tab ascuns și la reduced-motion.
+- Expresiv, nu corporate, dar fără încărcare: mișcarea doar ca răspuns la acțiuni sau schimbări de date.
 
 ## Constrângeri tehnice
 
@@ -69,7 +79,7 @@ python3 dev/preview.py &               # http://localhost:8080/, google.script.r
 python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390, light + dark
 python3 dev/flow.py                    # 21 de pași funcționali (selectori pentru „Panou split-flap”)
 python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
-python3 dev/perf.py                    # ms/s de task-uri în repaus (țintă < 5)
+python3 dev/perf.py                    # ms/s de task-uri în repaus după încărcare (țintă < 5)
 .claude/skills/impeccable/scripts/impeccable detect --json src/*.html
 ```
 
@@ -90,4 +100,4 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Utilizatorul copiază cele 5 fișiere HTML în Apps Script și testează pe `/dev` (Chrome): rotirea la intrare, filtrele cu rearanjare animată, panoul care alunecă, trimiterea unui tichet, News, Jurnal. De urmărit acolo: dacă View Transitions și `animation-timeline` merg în iframe-ul Google și dacă panoul negru în tema light pare „sumbru” (alternativa din plan: panou grafit mai deschis). Apoi ajustări după feedback.
+Utilizatorul copiază `Tokens`, `Styles`, `Index`, `App` și `Icons` în Apps Script și testează „Panou calm” pe `/dev`: tema movă, bara neagră, panoul pe toată lățimea și deschiderea panoului din dreapta, rândul pe 4 coloane, finalul listei, News. De urmărit: dacă panoul pe toată lățimea în tema light pare prea întunecat și dacă pe mobil selecturile (ordine, prioritate) lasă prea puțin loc pentru status și zone. Apoi ajustări după feedback.

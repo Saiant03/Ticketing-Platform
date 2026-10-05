@@ -59,4 +59,5 @@ Pentru fiecare: aplica design system-ul, pastreaza apelurile `google.script.run`
 - Faza 1 (audit): gata, `docs/audit/AUDIT.md`.
 - Faza 2 (design system): direcția „Sistem de zone” respinsă de utilizator („prea tabel de birou”); înlocuită cu „Panou split-flap” (contract în `.impeccable/surfaces/src-index-html.md`, plan în `docs/plan-split-flap.md`).
 - Faza 3 (redesign): „Panou split-flap” implementat pentru Tichete, News, Jurnal; `DESIGN.md` + `.impeccable/design.json` rescrise din build; screenshot-uri în `.impeccable/review/`.
+- Faza 3b: „Panou calm” + accent mov după feedback-ul de pe `/dev` (mai puțin încărcat); `DESIGN.md`, `design.json` și capturile din `.impeccable/review/` actualizate.
 - Faza 4 (QA): local `flow.py` 21/21, `a11y.py` curat, `perf.py` 0.2 ms/s în repaus; rămâne testul pe `/dev` cu date reale.

@@ -1,21 +1,35 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-04T23:51:00Z",
+  "generatedAt": "2026-10-05T12:00:00Z",
   "title": "Design System: WFM Extended",
   "extensions": {
     "colorMeta": {
-      "signal-yellow": {
+      "signal-violet": {
         "role": "primary",
-        "displayName": "Galben de semnal",
+        "displayName": "Mov de semnal",
         "tonalRamp": [
-          "#270000",
-          "#471100",
-          "#693300",
-          "#8B5400",
-          "#AF7700",
-          "#D49B00",
-          "#FABF00",
-          "#FFE549"
+          "#0C0031",
+          "#220063",
+          "#3A1196",
+          "#5138B7",
+          "#6B58D9",
+          "#8778FB",
+          "#ADAAFA",
+          "#D6D6FE"
+        ]
+      },
+      "signal-violet-hover": {
+        "role": "primary",
+        "displayName": "Mov de semnal: hover",
+        "tonalRamp": [
+          "#0D002F",
+          "#24015F",
+          "#3B2184",
+          "#5440A4",
+          "#6F5FC5",
+          "#8B7DE7",
+          "#B0A8FD",
+          "#D8D6FC"
         ]
       },
       "on-signal": {
@@ -30,6 +44,48 @@
           "#A3A5A8",
           "#C7C9CC",
           "#EDEEF2"
+        ]
+      },
+      "accent-hall": {
+        "role": "primary",
+        "displayName": "Mov de hol",
+        "tonalRamp": [
+          "#0C0030",
+          "#210162",
+          "#3A049C",
+          "#5134BE",
+          "#6A55E0",
+          "#8679FA",
+          "#ACAAFA",
+          "#D6D7FE"
+        ]
+      },
+      "accent-hall-hover": {
+        "role": "primary",
+        "displayName": "Mov de hol: hover",
+        "tonalRamp": [
+          "#0B0031",
+          "#200163",
+          "#37039E",
+          "#4D34C0",
+          "#6756E3",
+          "#827AFD",
+          "#A9ABFB",
+          "#D5D7FE"
+        ]
+      },
+      "on-accent-hall": {
+        "role": "neutral",
+        "displayName": "Text pe mov de hol",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
         ]
       },
       "board-case": {
@@ -204,14 +260,14 @@
         "role": "secondary",
         "displayName": "Observație: în lucru",
         "tonalRamp": [
-          "#270000",
-          "#471100",
-          "#693300",
-          "#8B5400",
-          "#AF7700",
-          "#D49B00",
-          "#FABF00",
-          "#FFE549"
+          "#0C0031",
+          "#220063",
+          "#3A1196",
+          "#5138B7",
+          "#6B58D9",
+          "#8778FB",
+          "#ADAAFA",
+          "#D6D6FE"
         ]
       },
       "status-resolved": {
@@ -534,7 +590,7 @@
       },
       "plate": {
         "displayName": "Plăcuță",
-        "purpose": "Cod, status, contoare, ceas, dată pe plăcuțe split-flap."
+        "purpose": "Status, dată, marcă și codul din detaliu pe plăcuțe split-flap."
       },
       "ticket-title": {
         "displayName": "Titlu de tichet",
@@ -554,7 +610,7 @@
       },
       "column-head": {
         "displayName": "Antet de coloană",
-        "purpose": "Antetul de coloane al panoului și etichetele contoarelor."
+        "purpose": "Antetul de coloane al panoului."
       }
     },
     "shadows": [
@@ -599,11 +655,6 @@
         "name": "page",
         "value": "200ms out / 360ms in",
         "purpose": "Slide orizontal la schimbarea paginii."
-      },
-      {
-        "name": "ambient",
-        "value": "40s / 52s",
-        "purpose": "Deriva luminilor din hol; pauză după 6s de inactivitate."
       }
     ],
     "breakpoints": [
@@ -634,17 +685,17 @@
       "name": "Buton primar (hol)",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Acțiunea principală din hol: galben cu text negru, săgeată care alunecă la hover.",
+      "description": "Acțiunea principală din hol: mov cu text alb (light), săgeată care alunecă la hover.",
       "html": "<button class=\"ds-btn-primary\">Trimite tichetul <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" class=\"ds-ar\"><path d=\"M4 12h15M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button>",
-      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:0;border-radius:2px;background:#FFC400;color:#0B0C0E;font:700 14px/1 Archivo,system-ui,sans-serif;font-stretch:108%;box-shadow:inset 0 -2px 0 rgba(11,12,14,.22);cursor:pointer;transition:background-color .15s,transform .12s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#FFD23D}.ds-btn-primary:hover .ds-ar{transform:translateX(3px)}.ds-ar{transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #0B0C0E;outline-offset:2px}"
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:0;border-radius:2px;background:#6A55E0;color:#fff;font:700 14px/1 Archivo,system-ui,sans-serif;font-stretch:108%;box-shadow:inset 0 -2px 0 rgba(11,12,14,.22);cursor:pointer;transition:background-color .15s,transform .12s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#5843CF}.ds-btn-primary:hover .ds-ar{transform:translateX(3px)}.ds-ar{transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #6A55E0;outline-offset:2px}"
     },
     {
-      "name": "Buton de semnal (bara galbenă)",
+      "name": "Buton de semnal (bara neagră)",
       "kind": "button",
       "refersTo": "button-sign",
-      "description": "Negru cu text galben, pe bara de sus: Tichet nou.",
+      "description": "Mov cu text negru, pe bara de sus: Tichet nou.",
       "html": "<div class=\"ds-bar-bg\"><button class=\"ds-btn-sign\">+ Tichet nou</button></div>",
-      "css": ".ds-bar-bg{background:#FFC400;padding:10px 16px}.ds-btn-sign{height:40px;padding:0 16px;border:0;border-radius:2px;background:#0B0C0E;color:#FFC400;font:700 14px/1 Archivo,system-ui,sans-serif;font-stretch:115%;cursor:pointer}.ds-btn-sign:hover{background:#24272C}.ds-btn-sign:active{transform:scale(.97)}.ds-btn-sign:focus-visible{outline:2px solid #0B0C0E;outline-offset:3px}"
+      "css": ".ds-bar-bg{background:#0B0C0E;padding:10px 16px}.ds-btn-sign{height:38px;padding:0 16px;border:0;border-radius:2px;background:#8A7BFF;color:#0B0C0E;font:700 14px/1 Archivo,system-ui,sans-serif;font-stretch:115%;cursor:pointer}.ds-btn-sign:hover{background:#A093FF}.ds-btn-sign:active{transform:scale(.97)}.ds-btn-sign:focus-visible{outline:2px solid #8A7BFF;outline-offset:3px}"
     },
     {
       "name": "Buton quiet (hol)",
@@ -658,32 +709,32 @@
       "name": "Câmp (hol)",
       "kind": "input",
       "refersTo": "input-hall",
-      "description": "Câmp de formular în hol, focus cu inel galben.",
+      "description": "Câmp de formular în hol, focus cu contur mov.",
       "html": "<label class=\"ds-lbl\">Ce nu merge?<input class=\"ds-input\" placeholder=\"ex. Câmpul dată nu se completează la import\"></label>",
-      "css": ".ds-lbl{display:block;font:700 13px/1.4 Archivo,system-ui,sans-serif;color:#0B0C0E}.ds-input{display:block;margin-top:6px;width:100%;height:40px;padding:0 12px;border:1px solid #82888F;border-radius:2px;background:#fff;color:#0B0C0E;font:400 14px Archivo,system-ui,sans-serif}.ds-input::placeholder{color:#5B6068}.ds-input:hover{border-color:#5B6068}.ds-input:focus{outline:none;border-color:#0B0C0E;box-shadow:0 0 0 3px #FFC400}"
+      "css": ".ds-lbl{display:block;font:700 13px/1.4 Archivo,system-ui,sans-serif;color:#0B0C0E}.ds-input{display:block;margin-top:6px;width:100%;height:40px;padding:0 12px;border:1px solid #82888F;border-radius:2px;background:#fff;color:#0B0C0E;font:400 14px Archivo,system-ui,sans-serif}.ds-input::placeholder{color:#5B6068}.ds-input:hover{border-color:#5B6068}.ds-input:focus{outline:none;border-color:#6A55E0;box-shadow:0 0 0 1px #6A55E0}"
     },
     {
       "name": "Căutare (panou)",
       "kind": "input",
       "refersTo": "input-board",
-      "description": "Câmp pe panoul negru, focus și caret galbene.",
+      "description": "Câmp pe panoul negru, focus și caret mov.",
       "html": "<div class=\"ds-board\"><input class=\"ds-input-board\" placeholder=\"Caută după cod, titlu, nume\"></div>",
-      "css": ".ds-board{background:#0B0C0E;padding:16px}.ds-input-board{width:100%;height:40px;padding:0 12px;border:1px solid #5E636B;border-radius:2px;background:#15171A;color:#F4F4F0;caret-color:#FFC400;font:400 14px Archivo,system-ui,sans-serif}.ds-input-board::placeholder{color:#8F949C}.ds-input-board:focus{outline:none;border-color:#FFC400;box-shadow:0 0 0 1px #FFC400}"
+      "css": ".ds-board{background:#0B0C0E;padding:16px}.ds-input-board{width:100%;height:40px;padding:0 12px;border:1px solid #5E636B;border-radius:2px;background:#15171A;color:#F4F4F0;caret-color:#8A7BFF;font:400 14px Archivo,system-ui,sans-serif}.ds-input-board::placeholder{color:#8F949C}.ds-input-board:focus{outline:none;border-color:#8A7BFF;box-shadow:0 0 0 1px #8A7BFF}"
     },
     {
-      "name": "Tab-uri (bara galbenă)",
+      "name": "Tab-uri (bara neagră)",
       "kind": "nav",
-      "description": "Navigația principală; tab-ul curent e un bloc negru cu text galben.",
+      "description": "Navigația principală; tab-ul curent are o bară movă de 3px jos.",
       "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab ds-on\" href=\"#\">Tichete</a><a class=\"ds-tab\" href=\"#\">News</a><a class=\"ds-tab\" href=\"#\">Jurnal</a></nav>",
-      "css": ".ds-tabs{display:flex;height:60px;background:#FFC400}.ds-tab{display:flex;align-items:center;position:relative;padding:0 16px;color:#0B0C0E;font:700 15px Archivo,system-ui,sans-serif;font-stretch:115%;text-decoration:none}.ds-tab::after{content:'';position:absolute;left:16px;right:16px;bottom:12px;height:3px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-tab:hover::after{transform:none}.ds-on{background:#0B0C0E;color:#FFC400}.ds-on::after{display:none}.ds-tab:focus-visible{outline:2px solid #0B0C0E;outline-offset:-4px}"
+      "css": ".ds-tabs{display:flex;height:60px;background:#0B0C0E}.ds-tab{display:flex;align-items:center;position:relative;padding:0 16px;color:#A4A8AF;font:700 15px Archivo,system-ui,sans-serif;font-stretch:115%;text-decoration:none}.ds-tab:hover{color:#F4F4F0}.ds-tab::after{content:'';position:absolute;left:16px;right:16px;bottom:12px;height:3px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .25s cubic-bezier(.16,1,.3,1)}.ds-tab:hover::after{transform:none}.ds-on{color:#F4F4F0}.ds-on::after{transform:none;background:#8A7BFF;bottom:0}.ds-tab:focus-visible{outline:2px solid #8A7BFF;outline-offset:-4px}"
     },
     {
       "name": "Chip de zonă (panou)",
       "kind": "chip",
       "refersTo": "zone-chip-active",
-      "description": "Filtru pe zona din WFM Extended: pictogramă, nume, număr; activ galben.",
+      "description": "Filtru pe zona din WFM Extended: text cu pictogramă și număr, fără contur; activ cu subliniere movă.",
       "html": "<div class=\"ds-board\"><button class=\"ds-zchip\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M3 14h4.5v7H3zm6.75-5h4.5v12h-4.5zM16.5 3H21v18h-4.5z\"/></svg>Raportare <b>1</b></button> <button class=\"ds-zchip ds-on\" aria-pressed=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M10.5 3h3v8h3.5L12 16.5 7 11h3.5zM3 14h3v4h12v-4h3v7H3z\"/></svg>Import <b>1</b></button></div>",
-      "css": ".ds-board{background:#0B0C0E;padding:16px}.ds-zchip{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:1px solid #5E636B;border-radius:2px;background:transparent;color:#F4F4F0;font:600 13px Archivo,system-ui,sans-serif;cursor:pointer}.ds-zchip b{font-size:12px;color:#A4A8AF}.ds-zchip svg{transition:transform .45s cubic-bezier(.16,1,.3,1)}.ds-zchip:hover{border-color:#A4A8AF}.ds-zchip:hover svg{transform:rotateY(180deg)}.ds-zchip.ds-on{background:#FFC400;border-color:#FFC400;color:#0B0C0E}.ds-zchip.ds-on b{color:#0B0C0E}.ds-zchip:focus-visible{outline:2px solid #FFC400;outline-offset:2px}"
+      "css": ".ds-board{background:#0B0C0E;padding:16px}.ds-zchip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:0;border-radius:2px;background:transparent;color:#A4A8AF;font:600 13px Archivo,system-ui,sans-serif;cursor:pointer}.ds-zchip b{font-size:12px;color:#A4A8AF}.ds-zchip svg{transition:transform .45s cubic-bezier(.16,1,.3,1)}.ds-zchip:hover{color:#F4F4F0;background:#15171A}.ds-zchip:hover svg{transform:rotateY(180deg)}.ds-zchip.ds-on{color:#F4F4F0;box-shadow:inset 0 -2px 0 #8A7BFF}.ds-zchip.ds-on b{color:#F4F4F0}.ds-zchip:focus-visible{outline:2px solid #8A7BFF;outline-offset:2px}"
     },
     {
       "name": "Plăcuțe split-flap",
@@ -691,73 +742,84 @@
       "refersTo": "flap-plate",
       "description": "Semnătura: cod și status pe plăcuțe, cu linie de despicare și observație colorată.",
       "html": "<div class=\"ds-board\"><span class=\"ds-flap\"><i>T</i><i>I</i><i>S</i><i>-</i><i>1</i><i>4</i></span> <span class=\"ds-flap ds-work\"><i>Î</i><i>N</i><i> </i><i>L</i><i>U</i><i>C</i><i>R</i><i>U</i></span></div>",
-      "css": ".ds-board{background:#0B0C0E;padding:16px;display:flex;gap:16px}.ds-flap{display:inline-flex;gap:2px;color:#F4F4F0;font:700 14px/22px Archivo,system-ui,sans-serif;font-stretch:75%;font-variant-numeric:tabular-nums}.ds-flap i{position:relative;width:14px;height:22px;text-align:center;font-style:normal;white-space:pre;border-radius:2px;background:linear-gradient(#202328 50%,#1A1C20 50%)}.ds-flap i::before{content:'';position:absolute;left:0;right:0;top:calc(50% - .5px);height:1px;background:#050506}.ds-work{color:#FFC400}"
+      "css": ".ds-board{background:#0B0C0E;padding:16px;display:flex;gap:16px}.ds-flap{display:inline-flex;gap:2px;color:#F4F4F0;font:700 14px/22px Archivo,system-ui,sans-serif;font-stretch:75%;font-variant-numeric:tabular-nums}.ds-flap i{position:relative;width:14px;height:22px;text-align:center;font-style:normal;white-space:pre;border-radius:2px;background:linear-gradient(#202328 50%,#1A1C20 50%)}.ds-flap i::before{content:'';position:absolute;left:0;right:0;top:calc(50% - .5px);height:1px;background:#050506}.ds-work{color:#8A7BFF}"
     },
     {
       "name": "Rând de tichet (panou)",
       "kind": "custom",
       "refersTo": "ticket-row",
-      "description": "O „cursă” pe panou: ora, cod, zonă, problemă, prioritate, status; marker galben la hover și selecție.",
-      "html": "<div class=\"ds-row\"><span class=\"ds-time\">09:17</span><span class=\"ds-code\">TIS-13</span><span class=\"ds-zone\">RAPORTARE</span><span class=\"ds-t\">Raportul săptămânal afișează totaluri duble<small>Ioana Marin · acum 14 ore</small></span><span class=\"ds-st\">ÎN LUCRU</span></div>",
-      "css": ".ds-row{position:relative;display:grid;grid-template-columns:56px 92px 124px 1fr 110px;gap:12px;align-items:center;min-height:56px;padding:6px 24px;background:#0B0C0E;color:#F4F4F0;font:400 14px Archivo,system-ui,sans-serif;border-bottom:1px solid #23262B;cursor:pointer}.ds-row::before{content:'';position:absolute;left:0;top:50%;width:4px;height:26px;margin-top:-13px;background:#FFC400;transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.16,1,.3,1)}.ds-row:hover{background:#15171A}.ds-row:hover::before{transform:none}.ds-time,.ds-code{font-weight:700;font-stretch:75%;font-size:15px}.ds-zone{font-size:12px;font-weight:700;letter-spacing:.06em;font-stretch:85%}.ds-t{font-size:15px;font-weight:500;font-stretch:85%;min-width:0}.ds-t small{display:block;font-size:12px;color:#A4A8AF}.ds-st{color:#FFC400;font-weight:700;font-stretch:75%;letter-spacing:.08em}"
+      "description": "O „cursă” pe panou: cod, problemă cu meta, prioritate, status; marker mov la hover și selecție.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-code\">TIS-13</span><span class=\"ds-t\">Raportul săptămânal afișează totaluri duble<small>Raportare · Ioana Marin · acum 14 ore</small></span><span class=\"ds-pr\"><i class=\"on\"></i><i class=\"on\"></i><i class=\"on\"></i><i></i></span><span class=\"ds-st\">ÎN LUCRU</span></div>",
+      "css": ".ds-row{position:relative;display:grid;grid-template-columns:84px 1fr 72px 128px;gap:12px;align-items:center;min-height:56px;padding:6px 24px;background:#0B0C0E;color:#F4F4F0;font:400 14px Archivo,system-ui,sans-serif;border-bottom:1px solid #23262B;cursor:pointer}.ds-row::before{content:'';position:absolute;left:0;top:50%;width:4px;height:26px;margin-top:-13px;background:#8A7BFF;transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.16,1,.3,1)}.ds-row:hover{background:#15171A}.ds-row:hover::before{transform:none}.ds-code{font-weight:700;font-stretch:75%;font-size:14px;letter-spacing:.03em}.ds-t{font-size:15px;font-weight:500;font-stretch:85%;min-width:0}.ds-t small{display:block;font-size:12px;color:#A4A8AF}.ds-pr{display:inline-flex;align-items:flex-end;gap:2px;height:13px}.ds-pr i{display:block;width:3px;background:#5E636B}.ds-pr i:nth-child(1){height:4px}.ds-pr i:nth-child(2){height:7px}.ds-pr i:nth-child(3){height:10px}.ds-pr i:nth-child(4){height:13px}.ds-pr i.on{background:#F4F4F0}.ds-st{color:#8A7BFF;font-weight:700;font-stretch:75%;letter-spacing:.08em}"
     }
   ],
   "narrative": {
-    "northStar": "Panoul de plecări",
-    "overview": "Lista de tichete este un panou split-flap de aeroport: un obiect negru mat, cu plăcuțe grafit și caractere albe, pe care fiecare tichet e o „cursă” cu ORA, COD, ZONĂ, PROBLEMĂ, PRIO și STATUS. Când ceva se schimbă, plăcuțele se rotesc literă cu literă. În jurul panoului e holul terminalului: un fond deschis sau de noapte, după tema sistemului, cu semnalistică galben-negru (bara de sus, butoane, indicatoare cu săgeți pline). Panoul nu urmează tema: e mereu întunecat.\n\nSistemul refuză tabelul gri de birou și cardurile glass. Expresivitatea vine din obiectul-panou și din mișcarea lui, nu din decor: un singur font, două materiale (panou și hol), un galben de semnal și patru culori de observație. Totul decorativ se oprește când utilizatorul nu face nimic.",
+    "northStar": "Panoul de plecări, calm",
+    "overview": "Lista de tichete este un panou split-flap de aeroport: un obiect negru mat pe care fiecare tichet e o „cursă” cu COD, PROBLEMĂ, PRIO și STATUS. Plăcuțele split-flap nu sunt decor, ci eveniment: apar doar unde o valoare se schimbă (statusul, codul la trimitere, data din News, marca) și se rotesc literă cu literă când se schimbă. Bara de sus e din același material ca panoul, deci panoul pare să continue sub navigație. În dreapta, holul (light sau noapte, după sistem) apare doar când ai deschis un tichet sau formularul.\n\nSistemul refuză tabelul gri de birou, cardurile glass și instrucțiunile care stau pe ecran degeaba. Expresivitatea vine din obiectul-panou și din mișcarea lui: un singur font, două materiale (panou și hol), un accent mov și patru culori de observație. Nimic nu se mișcă fără motiv.",
     "keyCharacteristics": [
-      "Panou mereu dark, hol light/dark după sistem.",
-      "Plăcuțe split-flap doar pentru valori scurte și schimbătoare: cod, status, contoare, ceas, dată.",
-      "Galben de semnal pentru bara de sus, acțiunea primară și filtrul activ.",
+      "Panou și bară mereu dark; holul light/dark după sistem.",
+      "Plăcuțe split-flap doar pentru valori scurte care se schimbă: status, cod în momentul de trimitere și în detaliu, dată, marcă.",
+      "Accent mov: `#8A7BFF` pe suprafețe închise, `#6A55E0` în holul light.",
       "Un singur font variabil, Archivo, folosit pe axa de lățime.",
-      "Mișcare cu sens: rotire la schimbare, View Transitions la rearanjare, ambient oprit la inactivitate."
+      "Mișcare cu sens: rotire la schimbare, View Transitions la rearanjare și la deschiderea panoului; fără animații continue."
     ],
     "rules": [
       {
         "name": "The Two Materials Rule",
-        "body": "Orice element stă fie pe panou, fie în hol. Elementele de panou (plăcuțe, rânduri, jurnal, banda de cod din detaliu) folosesc doar board-*; elementele de hol folosesc doar hall-* / night-*.",
+        "body": "Orice element stă fie pe panou, fie în hol. Bara, plăcuțele, rândurile, jurnalul, banda de cod din detaliu și toast-ul sunt material de panou; restul e hol.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Accent Rule",
+        "body": "Un singur accent, mov. Nu există al doilea semnal (galbenul a fost scos). Movul marchează acțiunea primară, selecția și starea „În lucru”, nimic decorativ.",
         "section": "colors"
       },
       {
         "name": "The Observation Rule",
-        "body": "Culorile de status apar doar pe fond de panou. În hol, statusul se scrie în text sau stă pe o bandă de panou.",
+        "body": "Culorile de status apar doar pe fond de panou. În hol, statusul se scrie în text sau stă pe o bandă de panou (ex. tipul anunțului din News).",
         "section": "colors"
       },
       {
         "name": "The No Zone Color Rule",
-        "body": "Zonele nu au culori. Se recunosc după pictogramă (albă pe panou, neagră în hol) și nume; galbenul marchează doar filtrul activ.",
+        "body": "Zonele nu au culori. Se recunosc după pictogramă și nume.",
         "section": "colors"
       },
       {
         "name": "The Plate Rule",
-        "body": "Pe plăcuțe merg doar valori scurte care se schimbă: cod, status, contoare, ceas, dată, tipul anunțului. Titlurile și numele se citesc ca text normal.",
+        "body": "Plăcuțele sunt rezervate valorilor care se schimbă și merită urmărite: status, codul în detaliu și la trimitere, data din News, marca. Codul din listă, titlurile și numele se citesc ca text normal.",
+        "section": "typography"
+      },
+      {
+        "name": "The Uppercase Rule",
+        "body": "Majuscule doar pe plăcuțe, în antetul de coloane și pe eticheta de tip din News. Zona, prioritatea și titlurile de secțiune sunt scrise normal.",
         "section": "typography"
       },
       {
         "name": "The Tabular Rule",
-        "body": "`font-variant-numeric: tabular-nums` pe tot documentul; orele și codurile se aliniază pe coloane.",
+        "body": "`font-variant-numeric: tabular-nums` pe tot documentul.",
         "section": "typography"
       },
       {
-        "name": "The Lit Object Rule",
-        "body": "Singura lumină de pe pagină e ambientală: două pete radiale foarte slabe (galben și alb) care se mișcă lent în hol și un reflex care urmărește mouse-ul pe panou. Ambele se opresc după 6s fără activitate, în tab ascuns și la reduced-motion.",
+        "name": "The Still Room Rule",
+        "body": "Nu există lumini ambientale, reflexe sau animații în buclă. Totul se mișcă doar ca răspuns la o acțiune sau la o schimbare de date (repaus măsurat: 0.1 ms/s).",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** pune pe plăcuțe doar coduri, statusuri, contoare, ore și date.",
+      "**Do** pune pe plăcuțe doar statusuri, date și coduri în momentele în care contează.",
       "**Do** rotește numai ce s-a schimbat; o schimbare de filtru se rezolvă prin View Transition, nu prin rotire.",
-      "**Do** păstrează panoul întunecat în ambele teme și lasă holul să urmeze sistemul.",
-      "**Do** oprește orice animație continuă la 6s de inactivitate, în tab ascuns și la reduced-motion (ținta: sub 5 ms/s de task-uri în repaus).",
+      "**Do** păstrează panoul și bara întunecate în ambele teme și lasă holul să urmeze sistemul.",
+      "**Do** folosește `--acc` în componente și lasă suprafața să decidă nuanța de mov.",
       "**Do** verifică textul nou la 4.5:1 și conturul controalelor la 3:1, pe panou și în hol, în ambele teme.",
       "**Do** confirmă inline acțiunile distructive, cu codul tichetului în text."
     ],
     "donts": [
+      "**Don't** reintroduce galbenul sau un al doilea accent.",
       "**Don't** folosi culorile de status în hol pe fond deschis; pune-le pe o bandă de panou.",
       "**Don't** da culori zonelor.",
-      "**Don't** folosi gradient text, glass decorativ sau bordură colorată laterală pe rânduri; marker-ul de rând e o bară scurtă, nu o bordură.",
+      "**Don't** pune contoare, ceas, lumini ambientale sau animații în buclă pe ecran; nu adaugă panouri de instrucțiuni.",
+      "**Don't** folosi gradient text, glass decorativ sau bordură colorată laterală pe rânduri; marker-ul de rând e o bară scurtă.",
       "**Don't** pune kicker sau eyebrow deasupra titlurilor.",
-      "**Don't** înlocui cursorul nativ; lumina urmărește mouse-ul, cursorul rămâne cel normal.",
       "**Don't** folosi emoji sau glife ca iconuri; pictogramele vin din `Icons.html`.",
       "**Don't** introduce al doilea font sau monospace.",
       "**Don't** deschide modale pentru sarcini care încap în panoul de detaliu."

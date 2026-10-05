@@ -12,10 +12,11 @@ light=dict(re.findall(r'--([\w-]+):\s*(#[0-9A-Fa-f]{6})', css.split('@media')[0]
 dark={**light, **dict(re.findall(r'--([\w-]+):\s*(#[0-9A-Fa-f]{6})', css.split('@media')[1]))}
 # (text, fundal, prag); 3.0 = text mare sau element non-text
 hall=[('ink','bg',4.5),('ink','surface',4.5),('ink-2','bg',4.5),('ink-2','surface',4.5),('ink-3','bg',4.5),('ink-3','surface',4.5),('ink-3','surface-2',4.5),
-      ('bg','ink',4.5),('danger','bg',4.5),('danger','surface',4.5),('danger','danger-soft',4.5),('ok','bg',4.5),('focus','bg',3.0),('line-strong','bg',3.0)]
+      ('bg','ink',4.5),('danger','bg',4.5),('danger','surface',4.5),('danger','danger-soft',4.5),('ok','bg',4.5),('focus','bg',3.0),('line-strong','bg',3.0),
+      ('on-acc','acc',4.5),('on-acc','acc-h',4.5),('acc','bg',3.0),('acc','surface',3.0)]
 board=[('b-ink','b-case',4.5),('b-ink','b-plate',4.5),('b-ink','b-sel',4.5),('b-ink','b-field',4.5),('b-ink-2','b-case',4.5),('b-ink-2','b-plate',4.5),
        ('b-ink-2','b-sel',4.5),('b-ink-2','b-field',4.5),('b-ph','b-field',4.5),('st-open','b-plate',4.5),('st-work','b-plate',4.5),('st-done','b-plate',4.5),
-       ('st-crit','b-plate',4.5),('st-crit','b-case',4.5),('sig','b-case',3.0),('on-sig','sig',4.5),('on-sig','st-crit',4.5),('sig','on-sig',4.5),('b-field-line','b-case',3.0)]
+       ('st-crit','b-plate',4.5),('st-crit','b-case',4.5),('sig','b-case',3.0),('on-sig','sig',4.5),('on-sig','sig-h',4.5),('on-sig','st-crit',4.5),('sig','on-sig',4.5),('b-field-line','b-case',3.0)]
 for name,t in (('light',light),('dark',dark)):
     bad=[f"{a}/{b}={cr(t[a],t[b]):.2f}" for a,b,m in hall+board if cr(t[a],t[b])<m]
     print(name, "below threshold:", bad or "none")
@@ -31,7 +32,7 @@ with sync_playwright() as p:
           const vis=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'};
           const unl=[...document.querySelectorAll('input:not([type=file]):not([type=hidden]),textarea,select')].filter(vis).filter(e=>!e.labels.length&&!e.getAttribute('aria-label')).map(e=>e.id);
           const small=[...document.querySelectorAll('button,a,select,input')].filter(vis).filter(e=>{const r=e.getBoundingClientRect();return r.height<32}).map(e=>(e.className||e.id||e.tagName)+':'+Math.round(e.getBoundingClientRect().height));
-          const over=[...document.querySelectorAll('body *')].filter(vis).filter(e=>e.getBoundingClientRect().right>innerWidth+1&&!e.closest('.zchips,.seg,.jt-wrap,.sr,.list,.ambient,.sheen')).map(e=>e.className||e.tagName).slice(0,6);
+          const over=[...document.querySelectorAll('body *')].filter(vis).filter(e=>e.getBoundingClientRect().right>innerWidth+1&&!e.closest('.zchips,.seg,.jt-wrap,.sr,.list')).map(e=>e.className||e.tagName).slice(0,6);
           return {unlabeled:unl, under32:small.slice(0,12), hscroll:document.documentElement.scrollWidth>innerWidth, overflow:over}
         }""")
         print(w, r)
