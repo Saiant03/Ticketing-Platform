@@ -15,11 +15,11 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 |---|---|
 | Cod Apps Script | `src/` (`Code.gs`, `Index`, `Tokens`, `Styles`, `Icons`, `App`) |
 | Adevărul despre produs | `PRODUCT.md` |
-| Design system-ul curent („Panou calm”, accent mov) | `DESIGN.md`, `.impeccable/design.json` |
+| Design system-ul curent („Orbită”, accent mov) | `DESIGN.md`, `.impeccable/design.json` |
 | Contractul de direcție („Panou split-flap”, înainte de „Panou calm”) | `.impeccable/surfaces/src-index-html.md` |
-| Planul implementat | `docs/plan-split-flap.md` |
+| Planul implementat | `docs/plan-orbita.md` (înainte `docs/plan-split-flap.md`) |
 | Auditul UI-ului original (9/20) | `docs/audit/AUDIT.md`, `docs/audit/current/` |
-| Screenshot-uri ale versiunii curente („Panou calm”) | `.impeccable/review/` |
+| Screenshot-uri ale versiunii curente („Orbită”) | `.impeccable/review/` |
 | Workflow și deploy | `docs/workflow.md`, ghid click cu click `docs/deploy.md` |
 | Skill-uri vendorizate | `.claude/skills/` (`SOURCES.md`) |
 | Agenți pentru delegare | `.claude/agents/` (`runner` Haiku, `executor` Sonnet) |
@@ -47,7 +47,18 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - ambientul (lumini, reflex) șters; repaus 0.1 ms/s; News cu titlu mai mic și tipul ca etichetă lângă autor;
    - verificări: `flow.py` 21/21, `a11y.py` fără probleme la 4 lățimi, `impeccable detect` doar advisory.
 
-7. **„Orbită”** (octombrie 2026): utilizatorului „Panou calm” i s-a părut prea simplu și corporate. Am făcut 3 concepte (`docs/concepts/`: A Afiș, B Orbită, C Pietre); a ales B, interactiv, cu animații în fundal. Admin doar ca iconiță lacăt cu popover pentru parolă. Implementat după `docs/plan-orbita.md`: hartă SVG cu inele pe zone și planete pe tichete, card de sticlă, vedere Listă, News cronologie, stele pe canvas, rotație lentă, zbor la tichet nou. Verificări: `flow.py` 28/28, `a11y.py` curat, `perf.py` 9.8 ms/s animat și 0 în repaus. Abateri: stelele sunt un canvas desenat o dată și mișcat cu transform (redesenarea costa prea mult), ticker static. `DESIGN.md` și `.impeccable/design.json` încă descriu „Panou calm” și trebuie rescrise din build.
+7. **„Orbită”** (octombrie 2026): utilizatorului „Panou calm” i s-a părut prea simplu și corporate. Am făcut 3 concepte (`docs/concepts/`: A Afiș, B Orbită, C Pietre); a ales B, interactiv, cu animații în fundal. Admin doar ca iconiță lacăt cu popover pentru parolă. Implementat după `docs/plan-orbita.md`: hartă SVG cu inele pe zone și planete pe tichete, card de sticlă, vedere Listă, News cronologie, stele pe canvas, rotație lentă, zbor la tichet nou. Verificări: `flow.py` 28/28, `a11y.py` curat, `perf.py` 9.8 ms/s animat și 0 în repaus. Abateri: stelele sunt un canvas desenat o dată și mișcat cu transform (redesenarea costa prea mult), ticker static.
+
+8. **„Orbită” runda 2** (commit `b25412d`, publicată pe `/exec`), cerută după testul pe `/dev`:
+   - filtrul implicit e „Toate” (primul în bandă), ca harta să aibă planete și cu datele reale (0 active, 14 rezolvate);
+   - pe hartă mică (pași între inele < 40px) numele inelelor se împrăștie pe arc la unghiuri fixe `[0, -0.9, 0.8, -0.3, 0.45]` rad, font 10px;
+   - etichetele se plasează greedy fără coliziuni (`placeLabels`): 8 poziții candidate în jurul planetei (modul near) sau deplasări verticale în afara inelului (modul far, ≤ 10 tichete), evitând etichetele puse, corpurile celorlalte planete, numele inelelor și marginile; cu histerezis;
+   - stele pe 3 straturi de adâncime: fundul e canvas (95, f 0.25), mijlocul și fața sunt puncte DOM (45 și 22) mișcate prin variabile CSS; 3 canvasuri pe tot ecranul costau 20 ms/s;
+   - Hartă → Listă: zoom în nucleul WFM, lista iese din el (clip-path cerc); invers lista se strânge în nucleu și harta se deschide din el; `.stage` are `overflow:hidden`;
+   - între pagini camera se mută lateral (pagina veche iese, cea nouă intră din partea opusă, stelele alunecă după adâncime, nebuloasa se mută lin prin `@property --gx/--gy`);
+   - News: coloană de dată, linie-orbită cu puncte colorate după tip, cel mai nou anunț evidențiat, primul paragraf mai mare;
+   - verificări: `flow.py` 34/34 (inclusiv coliziuni de etichete la 1440 și 390, nume de inele la 390, tranziții), `a11y.py` curat (contrast minim 5.59), `perf.py` 14.2 ms/s animat și 0 în repaus, `impeccable detect` doar advisory;
+   - `DESIGN.md` și `.impeccable/design.json` rescrise din build.
 
 ## Decizii confirmate de utilizator
 
@@ -78,10 +89,10 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 ```bash
 pip install playwright                 # o dată pe sesiune (Chromium e deja în /opt/pw-browsers/chromium)
 python3 dev/preview.py &               # http://localhost:8080/, google.script.run simulat, cod admin de test 1234
-python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390, light + dark
-python3 dev/flow.py                    # 21 de pași funcționali (selectori pentru „Panou split-flap”)
+python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390, doar dark
+python3 dev/flow.py                    # 34 de pași funcționali („Orbită”), inclusiv coliziuni de etichete și tranziții
 python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
-python3 dev/perf.py                    # ms/s de task-uri în repaus după încărcare (țintă < 5)
+python3 dev/perf.py                    # ms/s de task-uri: < 15 cu animația pornită, < 5 în repaus (~100 s)
 .claude/skills/impeccable/scripts/impeccable detect --json src/*.html
 ```
 
@@ -104,11 +115,6 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 2 „Orbită” (cerută după testul pe `/dev`; pe `/exec` e încă „Panou calm”, versiunea 22):
-1. Filtrul implicit pe Tichete devine „Toate” (date reale: 0 active, 14 rezolvate, deci harta apărea goală).
-2. Corecturi: numele inelelor înghesuite pe mobil; etichetele apropiate (ex. TIS-12/TIS-13) pe desktop; stele pe mai multe straturi de adâncime fără cost mare.
-3. Tranziție Hartă → Listă: zoom în planeta „WFM”, apoi lista apare din ea (și invers).
-4. Tranziție între tab-urile Tichete și News.
-5. News mai interesant, dar ușor de citit.
-6. Rescrie `DESIGN.md` și `.impeccable/design.json` din build.
-7. Publică pe `/exec`: rulare manuală a workflow-ului „Deploy Apps Script” pe `main` cu `deploy: true`.
+Runda 2 „Orbită” e publicată pe `/exec`. Utilizatorul o testează pe datele reale (14 tichete rezolvate, deci harta în modul cu coduri lângă planete). Așteaptă feedback-ul lui. Note pentru runda următoare:
+- `perf.py` are marjă mică (14.2 din 15 ms/s); orice efect continuu nou trebuie măsurat.
+- În headless, capturile prind tranzițiile terminate; pentru cadre intermediare se opresc animațiile cu `getAnimations()` + `pause()` + `currentTime` (vezi raportul rundei 2).
