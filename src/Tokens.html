@@ -1,75 +1,59 @@
 <style>
-  /* Design tokens WFM Extended, „Panou split-flap”. Singura sursă pentru culori, tipografie, spațiere, mișcare. */
+  /* Design tokens WFM Extended, „Orbită”. Singura sursă pentru culori, tipografie, spațiere, mișcare. Doar dark. */
   :root{
     color-scheme: dark;
-    --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
-
-    /* lățimi Archivo (axa wdth) */
-    --w-plate: 75%;   /* plăcuțe, majuscule */
-    --w-title: 85%;   /* titluri de tichet */
-    --w-body: 100%;
-    --w-sign: 115%;   /* semnalistică */
-    --w-wide: 125%;   /* titluri de pagină */
+    --font: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
     --fs-xs: .75rem;    /* 12 */
     --fs-sm: .8125rem;  /* 13 */
     --fs-md: .875rem;   /* 14, corp */
-    --fs-row: .9375rem; /* 15, titlu de tichet */
+    --fs-row: .9375rem; /* 15 */
     --fs-lg: 1.0625rem; /* 17 */
     --fs-xl: 1.375rem;  /* 22 */
-    --fs-2xl: 1.875rem; /* 30 */
+    --fs-2xl: 1.625rem; /* 26, titlul cardului */
+    --fs-3xl: 2.75rem;  /* 44, titlul de pagină */
 
     --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
-    --radius: 2px;
-    --bar-h: 60px;
-    --panel-w: 460px;
-    --row-h: 56px;
+    --r-card: 20px; --r-pill: 999px; --r-sm: 10px;
+    --bar-h: 64px;
+    --card-w: 400px;
 
-    /* panoul */
-    --b-case: #0B0C0E;
-    --b-plate: #1A1C20;
-    --b-plate-top: #202328;
-    --b-split: #050506;
-    --b-ink: #F4F4F0;
-    --b-ink-2: #A4A8AF;
-    --b-ph: #8F949C;
-    --b-line: #23262B;
-    --b-field: #15171A;
-    --b-field-line: #5E636B;
-    --b-hover: #15171A;
-    --b-sel: #24272C;
+    /* spațiu */
+    --space-0: #06050C;
+    --nebula: #2A1B5E;
+    --glass: rgba(255,255,255,.06);
+    --glass-2: rgba(255,255,255,.10);
+    --glass-line: rgba(255,255,255,.12);
+    --glass-dark: rgba(10,8,22,.92);   /* sticlă închisă: popover, toast, lightbox */
+    --ring: rgba(255,255,255,.10);
+    --blur: 18px;
 
-    /* semnal (mov pe suprafețe închise) + observații de status */
-    --sig: #8A7BFF;
-    --sig-h: #A093FF;
-    --on-sig: #0B0C0E;
-    --st-open: #F4F4F0;
-    --st-work: #8A7BFF;
-    --st-done: #3DDC84;
-    --st-crit: #FF4D3D;
+    /* cerneală (text >= 13px; ink-2 și ink-3 trec 4.5:1 și pe sticlă) */
+    --ink: #F4F4F0;
+    --ink-2: rgba(244,244,240,.78);
+    --ink-3: rgba(244,244,240,.64);
 
-    /* holul */
-    --bg: #0E0F11;
-    --surface: #16181B;
-    --surface-2: #1E2024;
-    --line: #2A2D32;
-    --line-strong: #666B73;
-    --ink: #F2F2EE;
-    --ink-2: #C6C8CC;
-    --ink-3: #9A9EA5;
+    /* accent */
     --acc: #8A7BFF;
     --acc-h: #A093FF;
     --on-acc: #0B0C0E;
     --focus: #8A7BFF;
-    --danger: #FF6B5E;
-    --danger-soft: #34191A;
+
+    /* status */
+    --st-open: #F4F4F0;
+    --st-work: #8A7BFF;
+    --st-done: rgba(244,244,240,.45);   /* planetă goală, doar contur */
+    --st-crit: #FF4D3D;
     --ok: #3DDC84;
+    --danger: #FF6B5E;
+    --danger-soft: rgba(255,107,94,.12);
 
-    --shadow-pop: 0 16px 36px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
-    --scrim: rgba(0,0,0,.6);
+    --shadow-card: 0 30px 80px rgba(0,0,0,.35);
 
+    /* mișcare */
     --ease: cubic-bezier(.16,1,.3,1);
-    --ease-in: cubic-bezier(.55,0,.8,.2);
-    --t-panel: 280ms;
+    --t-fast: 160ms;
+    --t-card: 420ms;
   }
 </style>

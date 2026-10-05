@@ -47,6 +47,8 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - ambientul (lumini, reflex) șters; repaus 0.1 ms/s; News cu titlu mai mic și tipul ca etichetă lângă autor;
    - verificări: `flow.py` 21/21, `a11y.py` fără probleme la 4 lățimi, `impeccable detect` doar advisory.
 
+7. **„Orbită”** (octombrie 2026): utilizatorului „Panou calm” i s-a părut prea simplu și corporate. Am făcut 3 concepte (`docs/concepts/`: A Afiș, B Orbită, C Pietre); a ales B, interactiv, cu animații în fundal. Admin doar ca iconiță lacăt cu popover pentru parolă. Implementat după `docs/plan-orbita.md`: hartă SVG cu inele pe zone și planete pe tichete, card de sticlă, vedere Listă, News cronologie, stele pe canvas, rotație lentă, zbor la tichet nou. Verificări: `flow.py` 28/28, `a11y.py` curat, `perf.py` 9.8 ms/s animat și 0 în repaus. Abateri: stelele sunt un canvas desenat o dată și mișcat cu transform (redesenarea costa prea mult), ticker static. `DESIGN.md` și `.impeccable/design.json` încă descriu „Panou calm” și trebuie rescrise din build.
+
 ## Decizii confirmate de utilizator
 
 - Execuția se deleagă mereu la agenți pe model mai slab: `runner` (Haiku) pentru verificări și căutări, `executor` (Sonnet) pentru cod după specificație. Designul, review-ul, commit-ul și push-ul rămân la agentul principal (vezi `CLAUDE.md`).
@@ -54,8 +56,8 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 
 - Utilizator principal: specialiști, pe desktop.
 - Doar temă dark (confirmat; tema light scoasă din `Tokens.html`). `dev/shoot.py` și `dev/a11y.py` verifică doar dark.
-- Accentul e mov (`#8A7BFF` / `#6A55E0`); galbenul nu se mai folosește.
-- Interfața trebuie să rămână aerisită: fără contoare, ceas, ambient sau panouri de instrucțiuni.
+- Accentul e mov `#8A7BFF`.
+- Direcția vizuală e „Orbită” (harta cu planete). Animațiile de fundal sunt cerute explicit, dar se opresc în tab ascuns, după 60 s de inactivitate și la reduced-motion.
 - Scope backend: UI + fixuri mici. Deja făcute:
   - codurile de minim 12 caractere ocolesc blocarea globală;
   - `getAttachmentThumb`;

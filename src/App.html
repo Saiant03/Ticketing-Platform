@@ -12,19 +12,21 @@
     { key: 'Altul', id: 'altul' }
   ];
   const NO_ZONE = { key: '', id: 'none' };
+  // inelele hărții: General, Altul și fără zonă stau împreună pe „Altele”
+  const RINGS = ['Import', 'Interfață', 'Date', 'Raportare', 'Altele'];
   const STATUSES = { deschis: 'Deschis', in_lucru: 'În lucru', rezolvat: 'Rezolvat' };
   const PRIOS = { scazuta: 'Scăzută', medie: 'Medie', ridicata: 'Ridicată', critica: 'Critică' };
   const PRIO_RANK = { scazuta: 1, medie: 2, ridicata: 3, critica: 4 };
   const NEWS_TYPES = { update: 'Update', fix: 'Fix', anunt: 'Anunț' };
-  const NT_CLS = { update: 'c-work', fix: 'c-done', anunt: 'c-open' };
-  const ST_CLS = { deschis: 'c-open', in_lucru: 'c-work', rezolvat: 'c-done' };
   const MON3 = ['IAN', 'FEB', 'MAR', 'APR', 'MAI', 'IUN', 'IUL', 'AUG', 'SEP', 'OCT', 'NOI', 'DEC'];
   const MAX_FILES = 5;
   const PAGE = 50;
   const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const MOBILE = window.matchMedia('(max-width:900px)');
 
   const S = {
-    page: 'tichete',
+    page: 'tichete', view: 'map',
     tickets: [], loading: true, loadErr: false, archived: null, archivedLoading: false,
     isAdmin: false, pin: '', adminName: '',
     f: { q: '', status: 'active', prio: 'all', zone: null, sort: 'new' },
@@ -35,7 +37,7 @@
     news: [], newsLoaded: false, newsLoading: false, newsErr: false, compose: null, newsConfirm: null,
     journal: null, journalLoading: false,
     thumbs: {}, full: {}, pending: {},
-    sig: '', nsig: '', flash: null, intro: false, flipNew: null
+    sig: '', nsig: '', flyNew: null
   };
 
   const $ = (sel, root) => (root || document).querySelector(sel);
@@ -47,6 +49,7 @@
     S.draft.reporter = sessionStorage.getItem('tis_reporter') || '';
     S.cmtName = S.draft.reporter;
   } catch (e) {}
+  try { const v = localStorage.getItem('tis_view'); if (v === 'map' || v === 'list') S.view = v; else if (MOBILE.matches) S.view = 'list'; } catch (e) { if (MOBILE.matches) S.view = 'list'; }
 
   // ---------- utilitare ----------
   function gasReady() { return typeof google !== 'undefined' && google.script && google.script.run; }
@@ -83,107 +86,25 @@
   }
   function zoneOf(t) { return ZONES.find(z => z.key === (t.category || '')) || NO_ZONE; }
   function zoneLabel(z) { return z.key || 'Fără zonă'; }
-  function zi(z) { return `<svg class="zi" aria-hidden="true"><use href="#z-${z.id}"/></svg>`; }
-  function zoneCell(z) { return `<span class="r-zone${z.id === 'none' ? ' none' : ''}" data-z="${z.id}">${zi(z)}<span>${esc(zoneLabel(z))}</span></span>`; }
+  function ringIdx(t) { const i = RINGS.indexOf(t.category || ''); return i < 0 ? RINGS.length - 1 : i; }
+  function zoneCell(z) { return `<span class="r-zone" data-z="${z.id}">${esc(zoneLabel(z))}</span>`; }
   function stKey(st) { return STATUSES[st] ? st : 'deschis'; }
-  function statusFlap(t, prefix) {
-    const s = stKey(t.status);
-    return `<span class="r-st">${flap(STATUSES[s], prefix + ':' + t.id, ST_CLS[s], STATUSES[s])}</span>`;
-  }
-  function statusText(st) { return `<span class="st">${STATUSES[stKey(st)]}</span>`; }
-  function prioHtml(p) {
+  function stChip(st) { const k = stKey(st); return `<span class="chip" data-st="${k}">${STATUSES[k]}</span>`; }
+  function prioChip(p) { const k = PRIOS[p] ? p : 'medie'; return `<span class="chip${k === 'critica' ? ' crit' : ''}">${PRIOS[k]}</span>`; }
+  function prioDots(p) {
     const k = PRIOS[p] ? p : 'medie', r = PRIO_RANK[k];
-    let bars = '';
-    for (let i = 1; i <= 4; i++) bars += `<i${i <= r ? ' class="on"' : ''}></i>`;
-    return `<span class="pr ${k}"><span class="bars" aria-hidden="true">${bars}</span><span class="lbl-pr">${PRIOS[k]}</span></span>`;
+    let d = '';
+    for (let i = 1; i <= 4; i++) d += `<i${i <= r ? ' class="on"' : ''}></i>`;
+    return `<span class="pr ${k}" title="Prioritate: ${PRIOS[k]}"><span class="dots" aria-hidden="true">${d}</span><span class="sr">${PRIOS[k]}</span></span>`;
   }
   function icon(id, cls) { return `<svg class="ic${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="#${id}"/></svg>`; }
   function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function isToday(d) { return d.toDateString() === new Date().toDateString(); }
-  // ORA pe panou: ora de azi sau data scurtă (03 OCT)
+  // ora de azi sau data scurtă (03 OCT), pentru Jurnal
   function boardTime(ts) {
     if (!ts) return '';
     const d = new Date(ts);
     return isToday(d) ? hhmm(d) : pad(d.getDate()) + ' ' + MON3[d.getMonth()];
-  }
-
-  // ---------- motorul split-flap ----------
-  // flap() desenează valoarea finală; animateFlaps() rotește doar cheile care s-au schimbat față de ultima randare.
-  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const FLAP = new Map();
-  const GLYPHS = 'ABCDEFGHIJKLMNOPRSTUVXYZ0123456789-';
-  const Q = [];
-  let flapTimer = 0;
-  function flap(text, key, cls, label, len) {
-    let v = String(text == null ? '' : text).toUpperCase();
-    if (len && v.length < len) v += ' '.repeat(len - v.length);
-    const chars = Array.from(v).map(c => `<span class="ch" aria-hidden="true">${esc(c)}</span>`).join('');
-    return `<span class="flap${cls ? ' ' + cls : ''}"${key ? ` data-key="${esc(key)}"` : ''} data-v="${esc(v)}"><span class="sr">${esc(label == null ? text : label)}</span>${chars}</span>`;
-  }
-  function animateFlaps(root, o) {
-    if (!root) return;
-    o = o || {};
-    const vh = window.innerHeight;
-    root.querySelectorAll('.flap[data-key]').forEach(el => {
-      const k = el.dataset.key, v = el.dataset.v, prev = FLAP.get(k);
-      FLAP.set(k, v);
-      let from = null;
-      if (o.all) from = '';
-      else if (o.force && k.slice(k.indexOf(':') + 1) === o.force) from = '';
-      else if (prev !== undefined && prev !== v) from = prev;
-      if (from === null || REDUCED.matches || document.hidden) return;
-      const row = el.closest('[data-i]'), ri = row ? +row.dataset.i : 0;
-      if (o.limit && ri >= o.limit) return;
-      const r = el.getBoundingClientRect();
-      if (!r.width || r.bottom < 0 || r.top > vh) return;
-      spin(el, from, (o.delay || 0) + (o.all ? ri * 35 : 0));
-    });
-  }
-  function spin(el, from, delay) {
-    const now = performance.now(), fin = Array.from(el.dataset.v), prev = Array.from(from);
-    el.querySelectorAll('.ch').forEach((c, i) => {
-      for (let k = Q.length - 1; k >= 0; k--) if (Q[k].c === c) Q.splice(k, 1);
-      const seq = [], n = 2 + Math.floor(Math.random() * 5);
-      for (let j = 0; j < n; j++) seq.push(GLYPHS[Math.floor(Math.random() * GLYPHS.length)]);
-      seq.push(fin[i] || ' ');
-      c.textContent = prev[i] || ' ';
-      Q.push({ c, seq, i: 0, at: now + delay + i * 28 });
-    });
-    if (!flapTimer) flapTimer = setInterval(flapTick, 45);
-  }
-  function flapTick() {
-    const now = performance.now();
-    for (let k = Q.length - 1; k >= 0; k--) {
-      const q = Q[k];
-      if (now < q.at) continue;
-      q.c.dataset.p = q.c.textContent;
-      q.c.textContent = q.seq[q.i++];
-      q.c.className = q.c.classList.contains('fa') ? 'ch fb' : 'ch fa';
-      if (q.i >= q.seq.length) Q.splice(k, 1); else q.at = now + 45;
-    }
-    if (!Q.length) { clearInterval(flapTimer); flapTimer = 0; }
-  }
-
-  // ---------- View Transitions ----------
-  // vt(fn, tip): rulează randarea într-o tranziție dacă browserul o suportă; altfel direct. Numele se pun doar pe durata tranziției.
-  const MOBILE = window.matchMedia('(max-width:900px)');
-  function vtNames(kind, on) {
-    if (kind.indexOf('list') >= 0) {
-      const lr = $('#list').getBoundingClientRect();
-      $$('#list .row').forEach(r => {
-        const b = on && r.getBoundingClientRect();
-        r.style.viewTransitionName = on && b.bottom > lr.top && b.top < lr.bottom ? 'r-' + r.dataset.id.replace(/[^\w-]/g, '_') : '';
-      });
-    }
-    if (kind.indexOf('panel') >= 0) $('#panel').style.viewTransitionName = on && !MOBILE.matches ? 'panel' : '';
-    if (kind.indexOf('page') >= 0) $('#main').style.viewTransitionName = on ? 'page' : '';
-  }
-  function vt(fn, kind) {
-    if (!document.startViewTransition || REDUCED.matches || document.hidden) { fn(); return Promise.resolve(); }
-    vtNames(kind, true);
-    const tr = document.startViewTransition(() => { fn(); vtNames(kind, true); });
-    tr.finished.finally(() => vtNames(kind, false));
-    return tr.updateCallbackDone.catch(() => {});
   }
   function findTicket(id) {
     return S.tickets.find(t => t.id === id) || (S.archived || []).find(t => t.id === id) || null;
@@ -194,6 +115,8 @@
   }
   function errMsg(e, fallback) { return (e && e.message) || fallback; }
   function adminErr(e) { return /admin/i.test(errMsg(e, '')); }
+  function planetEl(id) { return $(`.planet[data-id="${CSS.escape(id)}"]`); }
+  function rowEl(id) { return $(`.row[data-id="${CSS.escape(id)}"]`); }
 
   // ---------- toast ----------
   function toast(msg, kind) {
@@ -215,12 +138,12 @@
     const hay = [t.id, t.title, t.reporter, t.desc, t.category].join(' ').toLowerCase();
     return q.split(/\s+/).every(w => hay.indexOf(w) >= 0);
   }
+  // tichetele din vederea aleasă (status), înainte de zonă / prioritate / căutare
+  function scope() { return (S.f.status === 'archive' ? (S.archived || []) : S.tickets).filter(t => inStatus(t, S.f.status)); }
   function visible() {
     const f = S.f, q = f.q.trim().toLowerCase();
-    const src = f.status === 'archive' ? (S.archived || []) : S.tickets;
-    const out = src.filter(t =>
-      inStatus(t, f.status) &&
-      (!f.zone || zoneOf(t).key === f.zone) &&
+    const out = scope().filter(t =>
+      (!f.zone || RINGS[ringIdx(t)] === f.zone) &&
       (f.prio === 'all' || t.priority === f.prio) &&
       matchesQuery(t, q));
     const upd = t => t.updatedAt || t.created || 0;
@@ -232,24 +155,15 @@
   function filtersActive() { return !!(S.f.q.trim() || S.f.zone || S.f.prio !== 'all' || S.f.status !== 'active'); }
   function resetFilters() {
     S.f = { q: '', status: 'active', prio: 'all', zone: null, sort: S.f.sort };
-    $('#search').value = ''; $('#prioFilter').value = 'all';
-    S.shown = PAGE; vt(() => { renderZones(); renderToolbar(); renderList(); }, 'list');
+    $('#search').value = '';
+    S.shown = PAGE; renderToolbar(); renderBoard();
+  }
+  function toggleRing(key) {
+    S.f.zone = S.f.zone === key ? null : key; S.shown = PAGE;
+    renderToolbar(); renderBoard();
   }
 
-  // ---------- antetul panoului: zone, prioritate ----------
-  function renderZones() {
-    const active = S.tickets.filter(t => t.status !== 'rezolvat');
-    const counts = {}; ZONES.forEach(z => { counts[z.key] = 0; }); counts[''] = 0;
-    active.forEach(t => { counts[zoneOf(t).key]++; });
-    $('#zoneRow').innerHTML = ZONES.map(z => `<button class="zchip" data-zone="${esc(z.key)}" aria-pressed="${S.f.zone === z.key}" title="Arată doar zona ${esc(z.key)}">
-        ${zi(z)}<span>${esc(z.key)}</span><span class="zn">${counts[z.key]}</span></button>`).join('');
-    const pn = {}; active.forEach(t => { pn[t.priority] = (pn[t.priority] || 0) + 1; });
-    const pf = $('#prioFilter');
-    pf.innerHTML = '<option value="all">Orice prioritate</option>' + Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]} · ${pn[k] || 0}</option>`).join('');
-    pf.value = S.f.prio;
-  }
-
-  // ---------- toolbar ----------
+  // ---------- banda de filtre ----------
   function renderToolbar() {
     const opts = [['active', 'Active'], ['deschis', 'Deschise'], ['in_lucru', 'În lucru'], ['rezolvat', 'Rezolvate'], ['all', 'Toate']];
     if (S.isAdmin) opts.push(['archive', 'Arhivă']);
@@ -258,52 +172,77 @@
       const n = k === 'archive' ? (S.archived ? S.archived.length : '') : S.tickets.filter(t => inStatus(t, k)).length;
       return `<button data-status="${k}" aria-pressed="${S.f.status === k}">${l}${n !== '' ? ` <span class="n">${n}</span>` : ''}</button>`;
     }).join('');
+    const pn = {}; S.tickets.filter(t => t.status !== 'rezolvat').forEach(t => { pn[t.priority] = (pn[t.priority] || 0) + 1; });
+    const pf = $('#prioFilter');
+    pf.innerHTML = '<option value="all">Orice prioritate</option>' + Object.keys(PRIOS).reverse().map(k => `<option value="${k}">${PRIOS[k]} · ${pn[k] || 0}</option>`).join('');
+    pf.value = S.f.prio;
+    const zs = $('#zoneSel');
+    zs.innerHTML = '<option value="">Toate zonele</option>' + RINGS.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+    zs.value = S.f.zone || '';
+    $('#sortSel').value = S.f.sort;
     $('#exportBtn').hidden = !S.isAdmin;
+    $('#viewMap').setAttribute('aria-pressed', String(S.view === 'map'));
+    $('#viewList').setAttribute('aria-pressed', String(S.view === 'list'));
+    $('#stage').dataset.view = document.body.dataset.view = S.view;
+    $('#search').placeholder = S.view === 'map' ? 'Caută pe hartă…' : 'Caută în listă…';
+  }
+  function setView(v) {
+    if (S.view === v) return;
+    S.view = v;
+    try { localStorage.setItem('tis_view', v); } catch (e) {}
+    renderToolbar(); renderBoard(); kick();
+  }
+  function renderMeta() {
+    const meta = $('#listMeta');
+    if ((S.f.status === 'archive' && S.archivedLoading) || (S.loading && !S.tickets.length)) { meta.textContent = 'Se încarcă…'; return; }
+    const n = visible().length;
+    meta.innerHTML = `<span>${n} ${n === 1 ? 'rezultat' : 'rezultate'}</span>` + (filtersActive() ? '<button class="linkish" data-clear="all">Resetează filtrele</button>' : '');
+  }
+  function renderBoard() {
+    renderMeta();
+    if (S.view === 'map') { $('#list').hidden = true; $('#map').style.display = ''; syncMap(); }
+    else { $('#map').style.display = 'none'; $('#mapMsg').hidden = true; S.flyNew = null; renderList(); }
   }
 
-  // ---------- listă (panoul de plecări) ----------
+  // ---------- listă ----------
   function rowHtml(t, i) {
     const z = zoneOf(t), nc = (t.comments || []).length, na = (t.attachments || []).length;
     const cur = S.sel === t.id && (S.panel === 'ticket');
     const counts = (nc ? `<span class="r-n" title="${nc} comentarii">${icon('i-comment')}${nc}</span>` : '') + (na ? `<span class="r-n" title="${na} capturi">${icon('i-image')}${na}</span>` : '');
-    return `<div role="listitem"><button class="row${t.status === 'rezolvat' ? ' resolved' : ''}${S.flash === t.id ? ' flash' : ''}" data-id="${esc(t.id)}" data-i="${i}" style="--i:${i}"${cur ? ' aria-current="true"' : ''}>
+    return `<div role="listitem"><button class="row${t.status === 'rezolvat' ? ' resolved' : ''}" data-id="${esc(t.id)}" data-i="${i}"${cur ? ' aria-current="true"' : ''}>
       <span class="r-code">${esc(t.id)}</span>
       <span class="r-t"><span class="r-title">${esc(t.title)}</span><span class="r-by">${zoneCell(z)} · ${esc(t.reporter)} · ${relDate(t.created)}${counts}</span></span>
-      ${prioHtml(t.priority)}
-      ${statusFlap(t, 'st')}
+      ${prioDots(t.priority)}
+      ${stChip(t.status)}
     </button></div>`;
   }
-  function boardEmpty(title, text, extra) {
+  function emptyBox(title, text, extra) {
     return `<div class="empty"><h3>${title}</h3><p>${text}</p>${extra || ''}</div>`;
   }
   function renderList() {
-    const list = $('#list'), meta = $('#listMeta');
+    const list = $('#list');
+    list.hidden = false;
     const archive = S.f.status === 'archive';
     if ((archive && S.archivedLoading) || (!archive && S.loading && !S.tickets.length)) {
       list.setAttribute('aria-busy', 'true');
       list.innerHTML = Array.from({ length: 8 }, () => '<div class="skel" aria-hidden="true"><i></i><i></i><i></i><i></i></div>').join('');
-      meta.textContent = 'Se încarcă…';
       return;
     }
     list.removeAttribute('aria-busy');
     if (!archive && S.loadErr && !S.tickets.length) {
-      meta.textContent = '';
-      list.innerHTML = boardEmpty('Nu am putut încărca tichetele', 'Verifică conexiunea și încearcă din nou.',
-        `<button class="btn btn-board" data-act="reload">${icon('i-refresh')}Reîncearcă</button>`);
+      list.innerHTML = emptyBox('Nu am putut încărca tichetele', 'Verifică conexiunea și încearcă din nou.',
+        `<button class="btn btn-ghost" data-act="reload">${icon('i-refresh')}Reîncearcă</button>`);
       return;
     }
     const vis = visible();
-    meta.innerHTML = `<span class="sr">${vis.length} ${vis.length === 1 ? 'tichet' : 'tichete'}</span>` +
-      (filtersActive() ? '<button class="linkish" data-clear="all">Resetează filtrele</button>' : '');
-
     if (!vis.length) {
-      if (archive) list.innerHTML = boardEmpty('Arhiva e goală', 'Tichetele arhivate apar aici și pot fi restaurate.');
-      else if (!S.tickets.length) list.innerHTML = boardEmpty('Niciun tichet încă', 'Primul tichet raportat va primi codul TIS-01.',
-        `<button class="btn btn-primary" data-act="new">${icon('i-plus')}Tichet nou</button>`);
+      if (archive) list.innerHTML = emptyBox('Arhiva e goală', 'Tichetele arhivate apar aici și pot fi restaurate.');
+      else if (!S.tickets.length) list.innerHTML = emptyBox('Niciun tichet încă', 'Primul tichet raportat va primi codul TIS-01.',
+        `<button class="btn btn-solid" data-act="new">${icon('i-plus')}Tichet nou</button>`);
       else {
         const q = S.f.q.trim();
-        list.innerHTML = boardEmpty(q ? `Nimic pentru „${esc(q)}”` : 'Niciun tichet pentru filtrele alese', 'Dacă problema nu e raportată încă, deschide un tichet.',
-          `<p><button class="linkish" data-clear="all">Resetează filtrele</button></p><button class="btn btn-primary" data-act="new">${icon('i-plus')}Raportează-o</button>`);
+        list.innerHTML = emptyBox(q ? `Nimic pentru „${esc(q)}”` : 'Niciun tichet pentru filtrele alese', 'Dacă problema nu e raportată încă, deschide un tichet.',
+          `<p><button class="linkish" data-clear="all">Resetează filtrele</button></p><button class="btn btn-solid" data-act="new">${icon('i-plus')}Raportează-o</button>`);
       }
       return;
     }
@@ -313,79 +252,74 @@
       (vis.length > slice.length ? `<button class="more" data-act="more">Arată încă ${Math.min(PAGE, vis.length - slice.length)} din ${vis.length - slice.length} rămase</button>` : '') +
       '<div class="list-end"><span>Nu găsești problema?</span><button class="linkish" data-act="new">Raportează-o</button>' +
       '<span class="keys-inline"><kbd>N</kbd> tichet nou <kbd>J</kbd> <kbd>K</kbd> navighează <kbd>/</kbd> caută</span></div>';
-    if (fid) { const r = $(`.row[data-id="${CSS.escape(fid)}"]`, list); if (r) r.focus({ preventScroll: true }); }
-    if (S.intro && !REDUCED.matches) { list.classList.add('intro'); setTimeout(() => list.classList.remove('intro'), 1800); }
-    animateFlaps(list, S.intro ? { all: true, limit: 20, delay: 150 } : (S.flipNew ? { force: S.flipNew, delay: 250 } : null));
-    S.flipNew = null;
+    if (fid) { const r = rowEl(fid); if (r) r.focus({ preventScroll: true }); }
   }
 
-  // ---------- panou de detaliu (holul) ----------
+  // ---------- cardul de detaliu ----------
   function setPanel(mode, id) {
     S.panel = mode; S.confirm = null; S.editing = false;
     if (id !== undefined) S.sel = id;
-    return vt(() => {
-      renderPanel(); renderList();
-      $('#panel').classList.toggle('open', mode !== 'empty');
-    }, mode === 'created' ? 'panel list' : 'panel');
+    renderPanel(); renderBoard();
   }
   function closePanel() {
     const id = S.sel;
-    return setPanel('empty', null).then(() => {
-      const row = id && $(`.row[data-id="${CSS.escape(id)}"]`);
-      if (row) row.focus();
-    });
+    setPanel('empty', null);
+    const el = id && (S.view === 'map' ? planetEl(id) : rowEl(id));
+    if (el) el.focus();
+  }
+  // cardul glisează din dreapta; conținutul se golește abia după ieșire
+  function syncCard() {
+    const open = S.panel !== 'empty';
+    $('#panel').classList.toggle('open', open);
+    document.body.classList.toggle('card-open', open);
+    clearTimeout(S.clr);
+    if (!open) S.clr = setTimeout(() => { if (S.panel === 'empty') $('#panelInner').innerHTML = ''; }, 500);
   }
 
   function renderPanel() {
     const box = $('#panelInner');
-    if (S.panel === 'new') { box.innerHTML = newFormHtml(); wireNewForm(); return; }
-    if (S.panel === 'created') { box.innerHTML = createdHtml(); animateFlaps(box, { all: true, delay: 120 }); return; }
-    if (S.panel === 'ticket') {
-      const t = findTicket(S.sel);
-      if (!t) { S.panel = 'empty'; return renderPanel(); }
-      box.innerHTML = ticketHtml(t); hydrate(box); animateFlaps(box); return;
-    }
-    box.innerHTML = ''; $('#panel').classList.remove('open');
+    if (S.panel === 'ticket' && !findTicket(S.sel)) S.panel = 'empty';
+    if (S.panel === 'new') box.innerHTML = newFormHtml();
+    else if (S.panel === 'created') box.innerHTML = createdHtml();
+    else if (S.panel === 'ticket') { box.innerHTML = ticketHtml(findTicket(S.sel)); hydrate(box); }
+    if (S.panel === 'new') wireNewForm();
+    syncCard();
   }
 
   function ticketHtml(t) {
     const z = zoneOf(t), archived = !!t.archived;
-    const strip = `<div class="p-strip">
-      <button class="btn btn-board icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
-      ${flap(t.id, 'pcod:' + t.id, '', t.id, 6)}
-      <button class="btn btn-board p-copy" data-act="copy" data-code="${esc(t.id)}" aria-label="Copiază codul ${esc(t.id)}" title="Copiază codul">${flap('Copiază', 'copy:' + t.id, 'sm', 'Copiază', 7)}</button>
-      ${statusFlap(t, 'pst')}
+    const top = `<div class="p-top">
+      <button class="btn-circle sm p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
+      <span class="p-code">${esc(t.id)}</span>
+      <button class="btn btn-ghost sm p-copy" data-act="copy" data-code="${esc(t.id)}" aria-label="Copiază codul ${esc(t.id)}" title="Copiază codul">Copiază</button>
+      <button class="btn-circle sm p-x" data-act="close" aria-label="Închide detaliul" title="Închide (Esc)">${icon('i-close')}</button>
     </div>`;
     const titleBlock = S.editing
       ? `<form class="edit" data-form="edit">
           <div class="field"><label class="lbl" for="ed-title">Titlu</label><input class="input" id="ed-title" maxlength="200" value="${esc(t.title)}" required></div>
           <div class="field"><label class="lbl" for="ed-desc">Descriere</label><textarea class="textarea" id="ed-desc" rows="6" maxlength="4000">${esc(t.desc)}</textarea></div>
-          <div class="form-actions"><button type="button" class="btn btn-quiet" data-act="edit-cancel">Anulează</button><button type="submit" class="btn btn-primary">Salvează</button></div>
+          <div class="form-actions"><button type="button" class="btn btn-ghost" data-act="edit-cancel">Anulează</button><button type="submit" class="btn btn-solid">Salvează</button></div>
         </form>`
       : `<h2 class="p-title" id="p-title" tabindex="-1">${esc(t.title)}</h2>`;
-    const facts = `<dl class="p-facts">
-      ${archived ? '<dt>Stare</dt><dd>Arhivat</dd>' : ''}
-      <dt>Zonă</dt><dd class="p-zone">${zi(z)}${esc(zoneLabel(z))}</dd>
-      <dt>Prioritate</dt><dd>${prioHtml(t.priority)}</dd>
-      <dt>Raportat</dt><dd>${esc(t.reporter)} · <span title="${esc(absDate(t.created, true))}">${relDate(t.created)}</span></dd>
-      ${t.updatedBy ? `<dt>Modificat</dt><dd>${esc(t.updatedBy)} · <span title="${esc(absDate(t.updatedAt, true))}">${relDate(t.updatedAt)}</span></dd>` : ''}
-    </dl>`;
-    const desc = S.editing ? '' : `<div class="p-section"><h3>Descriere</h3>${t.desc ? `<div class="desc">${esc(t.desc)}</div>` : '<p class="desc none">Fără descriere.</p>'}</div>`;
-    const shots = (t.attachments || []).length ? `<div class="p-section"><h3>Capturi <span class="n">${t.attachments.length}</span></h3>${shotsHtml(t.attachments)}</div>` : '';
-    return strip + titleBlock + facts + (S.isAdmin ? adminBoxHtml(t) : '') + desc + shots + (archived ? '' : commentsHtml(t));
+    const chips = `<div class="chips">${prioChip(t.priority)}${stChip(t.status)}<span class="chip">${esc(zoneLabel(z))}</span>${archived ? '<span class="chip">Arhivat</span>' : ''}</div>`;
+    const who = `<div class="who"><span class="avatar" aria-hidden="true">${esc(initials(t.reporter))}</span><span>Raportat de <b>${esc(t.reporter)}</b></span><time title="${esc(absDate(t.created, true))}">${relDate(t.created)}</time></div>` +
+      (t.updatedBy ? `<p class="hint upd">Modificat de ${esc(t.updatedBy)} · <span title="${esc(absDate(t.updatedAt, true))}">${relDate(t.updatedAt)}</span></p>` : '');
+    const desc = S.editing ? '' : `<div class="p-section"><h3 class="cap">Descriere</h3>${t.desc ? `<div class="desc">${esc(t.desc)}</div>` : '<p class="desc none">Fără descriere.</p>'}</div>`;
+    const shots = (t.attachments || []).length ? `<div class="p-section"><h3 class="cap">Capturi <span class="n">${t.attachments.length}</span></h3>${shotsHtml(t.attachments)}</div>` : '';
+    return top + titleBlock + chips + who + (S.isAdmin ? adminBoxHtml(t) : '') + desc + shots + (archived ? '' : commentsHtml(t));
   }
 
   function adminBoxHtml(t) {
     if (t.archived) {
       return `<div class="admin-box"><div class="full admin-actions">
-        <button class="btn btn-quiet" data-act="restore">${icon('i-restore')}Restaurează</button>
-        <button class="btn btn-danger-quiet" data-act="purge-ask">${icon('i-trash')}Șterge definitiv</button></div>
+        <button class="btn btn-ghost" data-act="restore">${icon('i-restore')}Restaurează</button>
+        <button class="btn btn-danger-ghost" data-act="purge-ask">${icon('i-trash')}Șterge definitiv</button></div>
         ${S.confirm === 'purge' ? `<div class="full confirm"><span>Ștergi definitiv ${esc(t.id)} și capturile lui? Nu se mai poate recupera.</span>
-          <button class="btn btn-quiet" data-act="confirm-cancel">Anulează</button><button class="btn btn-danger" data-act="purge">Șterge definitiv</button></div>` : ''}
+          <button class="btn btn-ghost" data-act="confirm-cancel">Anulează</button><button class="btn btn-danger" data-act="purge">Șterge definitiv</button></div>` : ''}
       </div>`;
     }
     const seg = Object.keys(STATUSES).map(k =>
-      `<button data-set-status="${k}" aria-pressed="${t.status === k}"><svg class="ic" aria-hidden="true"><use href="#s-${k}"/></svg>${STATUSES[k]}</button>`).join('');
+      `<button data-set-status="${k}" aria-pressed="${t.status === k}">${STATUSES[k]}</button>`).join('');
     const pOpts = Object.keys(PRIOS).map(k => `<option value="${k}"${t.priority === k ? ' selected' : ''}>${PRIOS[k]}</option>`).join('');
     const zOpts = `<option value=""${!t.category ? ' selected' : ''}>Fără zonă</option>` +
       ZONES.map(z => `<option value="${esc(z.key)}"${t.category === z.key ? ' selected' : ''}>${esc(z.key)}</option>`).join('');
@@ -394,11 +328,11 @@
       <div><label class="lbl" for="ad-prio">Prioritate</label><select class="select" id="ad-prio">${pOpts}</select></div>
       <div><label class="lbl" for="ad-zone">Zonă</label><select class="select" id="ad-zone">${zOpts}</select></div>
       <div class="full admin-actions">
-        <button class="btn btn-quiet" data-act="edit"${S.editing ? ' disabled' : ''}>${icon('i-edit')}Editează textul</button>
-        <button class="btn btn-quiet" data-act="archive-ask">${icon('i-archive')}Arhivează</button>
+        <button class="btn btn-ghost" data-act="edit"${S.editing ? ' disabled' : ''}>${icon('i-edit')}Editează textul</button>
+        <button class="btn btn-ghost" data-act="archive-ask">${icon('i-archive')}Arhivează</button>
       </div>
-      ${S.confirm === 'archive' ? `<div class="full confirm"><span>Arhivezi ${esc(t.id)}? Dispare din listă; îl poți restaura din Arhivă.</span>
-        <button class="btn btn-quiet" data-act="confirm-cancel">Anulează</button><button class="btn btn-danger" data-act="archive">Arhivează</button></div>` : ''}
+      ${S.confirm === 'archive' ? `<div class="full confirm"><span>Arhivezi ${esc(t.id)}? Dispare din hartă; îl poți restaura din Arhivă.</span>
+        <button class="btn btn-ghost" data-act="confirm-cancel">Anulează</button><button class="btn btn-danger" data-act="archive">Arhivează</button></div>` : ''}
     </div>`;
   }
 
@@ -410,14 +344,14 @@
         <div class="cmt-t">${esc(c.text)}</div></div></div>`).join('')
       : '<p class="desc none">Niciun comentariu. Adaugă detalii sau întreabă de stadiu.</p>';
     const draft = S.cmtDraft[t.id] || '';
-    return `<div class="p-section"><h3>Comentarii <span class="n">${cs.length || ''}</span></h3>
+    return `<div class="p-section"><h3 class="cap">Comentarii <span class="n">${cs.length || ''}</span></h3>
       <div class="thread">${thread}</div>
       <form class="composer" data-form="comment" novalidate>
         ${S.isAdmin ? '' : `<label class="sr" for="cm-name">Numele tău</label><input class="input" id="cm-name" placeholder="Numele tău" maxlength="120" value="${esc(S.cmtName)}" autocomplete="name">`}
         <label class="sr" for="cm-text">Comentariu</label>
         <textarea class="textarea" id="cm-text" rows="3" maxlength="4000" placeholder="Scrie un comentariu${S.isAdmin ? ' ca ' + esc(S.adminName) : ''}">${esc(draft)}</textarea>
         <p class="field-err" id="cm-err" hidden></p>
-        <div class="form-actions"><span class="hint" style="margin-right:auto">Ctrl+Enter trimite</span><button type="submit" class="btn btn-primary">Trimite</button></div>
+        <div class="form-actions"><span class="hint" style="margin-right:auto">Ctrl+Enter trimite</span><button type="submit" class="btn btn-solid">Trimite</button></div>
       </form></div>`;
   }
 
@@ -440,17 +374,17 @@
     const sim = similarTo(S.draft.title);
     if (!sim.length) return '';
     return `<div class="similar"><p>Poate e deja raportat:</p>${sim.map(t =>
-      `<button type="button" data-open="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span>${statusText(t.status)}</button>`).join('')}</div>`;
+      `<button type="button" data-open="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span>${stChip(t.status)}</button>`).join('')}</div>`;
   }
   function newFormHtml() {
     const d = S.draft, e = S.formErr;
-    const zp = ZONES.map(z => `<button type="button" role="radio" data-zone-pick="${esc(z.key)}" aria-checked="${d.zone === z.key}">${zi(z)}${esc(z.key)}</button>`).join('');
+    const zp = ZONES.map(z => `<button type="button" role="radio" data-zone-pick="${esc(z.key)}" aria-checked="${d.zone === z.key}">${esc(z.key)}</button>`).join('');
     const pr = Object.keys(PRIOS).map(k => `<button type="button" role="radio" data-prio-pick="${k}" aria-checked="${d.prio === k}">${PRIOS[k]}</button>`).join('');
     return `<form id="newForm" novalidate>
       <div class="f-head">
-        <button type="button" class="btn btn-quiet icon-only p-back" data-act="close" aria-label="Înapoi la listă">${icon('i-back')}</button>
+        <button type="button" class="btn-circle sm p-back" data-act="close" aria-label="Înapoi la hartă">${icon('i-back')}</button>
         <h2 class="sign-h" id="nf-h" tabindex="-1">Tichet nou</h2>
-        <button type="button" class="btn btn-quiet icon-only" data-act="close" aria-label="Închide formularul" title="Închide (Esc)">${icon('i-close')}</button>
+        <button type="button" class="btn-circle sm p-x" data-act="close" aria-label="Închide formularul" title="Închide (Esc)">${icon('i-close')}</button>
       </div>
       <div class="field"><label class="lbl" for="nf-reporter">Numele tău</label>
         <input class="input" id="nf-reporter" maxlength="120" autocomplete="name" value="${esc(d.reporter)}"${e.reporter ? ' aria-invalid="true" aria-describedby="nf-reporter-err"' : ''}>
@@ -460,9 +394,9 @@
         ${e.title ? `<p class="field-err" id="nf-title-err">${esc(e.title)}</p>` : ''}
         <div id="nf-similar">${similarHtml()}</div></div>
       <div class="field"><span class="lbl" id="nf-zone-l">Zona din WFM Extended <span class="opt">· opțional</span></span>
-        <div class="zpick" role="radiogroup" aria-labelledby="nf-zone-l">${zp}</div></div>
+        <div class="pills" role="radiogroup" aria-labelledby="nf-zone-l">${zp}</div></div>
       <div class="field"><span class="lbl" id="nf-prio-l">Prioritate</span>
-        <div class="seg full" role="radiogroup" aria-labelledby="nf-prio-l">${pr}</div></div>
+        <div class="pills" role="radiogroup" aria-labelledby="nf-prio-l">${pr}</div></div>
       <div class="field"><label class="lbl" for="nf-desc">Descriere <span class="opt">· pași, ce te așteptai, ce s-a întâmplat</span></label>
         <textarea class="textarea" id="nf-desc" rows="5" maxlength="4000">${esc(d.desc)}</textarea></div>
       <div class="field"><span class="lbl" id="nf-files-l">Capturi <span class="opt">· opțional, max ${MAX_FILES}</span></span>
@@ -472,8 +406,8 @@
       <p class="field-err" id="nf-err" role="alert"${e.form ? '' : ' hidden'}>${esc(e.form || '')}</p>
       <div class="form-actions">
         <span class="hint" id="nf-progress" style="margin-right:auto" aria-live="polite"></span>
-        <button type="button" class="btn btn-quiet" data-act="close">Renunță</button>
-        <button type="submit" class="btn btn-primary${S.submitting ? ' busy' : ''}" id="nf-submit"${S.submitting ? ' disabled' : ''}>Trimite tichetul${icon('i-arrow', 'ar')}</button>
+        <button type="button" class="btn btn-ghost" data-act="close">Renunță</button>
+        <button type="submit" class="btn btn-solid${S.submitting ? ' busy' : ''}" id="nf-submit"${S.submitting ? ' disabled' : ''}>Trimite tichetul${icon('i-arrow', 'ar')}</button>
       </div>
     </form>`;
   }
@@ -491,15 +425,13 @@
   function createdHtml() {
     const c = S.createdCode;
     return `<div class="done">
-      <div class="done-board">
-        ${flap(c, 'big:' + c, 'xl', c)}
-        <p class="done-label">${flap('Înregistrat', 'ok:' + c, 'c-done', 'Tichet înregistrat')}</p>
-      </div>
-      <p class="lead">Păstrează codul ca referință. Statusul tichetului se schimbă pe panou; adminii răspund în comentarii.</p>
+      <p class="cap">Tichet înregistrat</p>
+      <div class="done-code" tabindex="-1">${esc(c)}</div>
+      <p class="lead">Păstrează codul ca referință. Statusul tichetului se schimbă pe hartă; adminii răspund în comentarii.</p>
       <div class="form-actions">
-        <button class="btn btn-primary" data-open="${esc(c)}">Deschide tichetul${icon('i-arrow', 'ar')}</button>
-        <button class="btn btn-quiet" data-act="copy" data-code="${esc(c)}" aria-label="Copiază codul ${esc(c)}">${flap('Copiază', 'copyc:' + c, 'sm', 'Copiază', 7)}</button>
-        <button class="btn btn-quiet" data-act="new">Raportează altul</button>
+        <button class="btn btn-solid" data-open="${esc(c)}">Deschide tichetul${icon('i-arrow', 'ar')}</button>
+        <button class="btn btn-ghost" data-act="copy" data-code="${esc(c)}" aria-label="Copiază codul ${esc(c)}">Copiază</button>
+        <button class="btn btn-ghost" data-act="new">Raportează altul</button>
       </div></div>`;
   }
 
@@ -570,24 +502,19 @@
   // ---------- acțiuni server ----------
   function load(quiet) {
     if (!gasReady()) { S.loading = false; S.loadErr = true; renderAll(); toast('Deschide aplicația prin linkul publicat (…/exec).', 'err'); return; }
-    if (!quiet) { S.loading = true; renderList(); }
+    if (!quiet) { S.loading = true; renderBoard(); }
     gs('getTickets').then(list => {
       S.tickets = list || []; S.loading = false; S.loadErr = false; S.sig = sig(S.tickets);
-      let seen = false;
-      try { seen = sessionStorage.getItem('tis_intro') === '1'; sessionStorage.setItem('tis_intro', '1'); } catch (x) {}
-      S.intro = !seen;
       renderAll();
-      if (S.intro) animateFlaps($('#brandFlaps'), { all: true });
-      S.intro = false;
-    }).catch(() => { S.loading = false; S.loadErr = true; renderList(); toast('Nu am putut încărca tichetele.', 'err'); });
+    }).catch(() => { S.loading = false; S.loadErr = true; renderBoard(); toast('Nu am putut încărca tichetele.', 'err'); });
   }
   function sig(list) { return list.map(t => [t.id, t.status, t.priority, t.category, t.updatedAt || 0, (t.comments || []).length, t.title].join(':')).join('|'); }
-  // ce se vede pe panou și în panoul de detaliu (fără ora modificării)
+  // ce se vede pe hartă și în card (fără ora modificării)
   function vsig(list) { return list.map(t => [t.id, t.status, t.priority, t.category, t.title, t.desc, (t.comments || []).length].join(':')).join('|'); }
   function loadArchived() {
-    S.archivedLoading = true; renderList();
-    gs('getArchived', S.pin).then(list => { S.archived = list || []; S.archivedLoading = false; renderToolbar(); renderList(); })
-      .catch(e => { S.archivedLoading = false; S.f.status = 'active'; renderToolbar(); renderList(); toast(errMsg(e, 'Nu am putut încărca arhiva.'), 'err'); if (adminErr(e)) logout(); });
+    S.archivedLoading = true; renderBoard();
+    gs('getArchived', S.pin).then(list => { S.archived = list || []; S.archivedLoading = false; renderToolbar(); renderBoard(); })
+      .catch(e => { S.archivedLoading = false; S.f.status = 'active'; renderToolbar(); renderBoard(); toast(errMsg(e, 'Nu am putut încărca arhiva.'), 'err'); if (adminErr(e)) logout(); });
   }
 
   function submitNew() {
@@ -605,9 +532,8 @@
         S.cmtName = S.cmtName || d.reporter;
         S.tickets = res.tickets; S.sig = sig(S.tickets);
         S.draft = { reporter: d.reporter, title: '', desc: '', zone: '', prio: 'medie', files: [] };
-        S.submitting = false; S.createdCode = res.code; S.flash = res.code; S.flipNew = res.code; S.formErr = {};
-        renderZones(); renderToolbar(); setPanel('created');
-        setTimeout(() => { S.flash = null; }, 1700);
+        S.submitting = false; S.createdCode = res.code; S.flyNew = res.code; S.formErr = {};
+        renderToolbar(); setPanel('created');
       })
       .catch(err => { S.submitting = false; S.formErr = { form: errMsg(err, 'Tichetul nu s-a salvat. Încearcă din nou.') }; renderPanel(); });
   }
@@ -636,7 +562,7 @@
     if (!S.isAdmin) { S.cmtName = name; try { sessionStorage.setItem('tis_reporter', name); } catch (x) {} }
     const c = { author: S.isAdmin ? S.adminName : name, admin: S.isAdmin, text, at: Date.now() };
     t.comments = (t.comments || []).concat([c]); S.cmtDraft[t.id] = '';
-    renderPanel(); renderList();
+    renderPanel(); renderBoard();
     gs('addComment', t.id, text, S.isAdmin ? '' : name, S.isAdmin ? S.pin : '')
       .then(list => { S.tickets = list; S.sig = sig(list); renderAll(); })
       .catch(e => { t.comments = t.comments.filter(x => x !== c); S.cmtDraft[t.id] = text; renderPanel(); toast(errMsg(e, 'Comentariul nu s-a trimis.'), 'err'); });
@@ -654,20 +580,20 @@
   // ---------- admin ----------
   function renderAdmin() {
     document.body.classList.toggle('admin-on', S.isAdmin);
-    const btn = $('#adminBtn');
-    btn.innerHTML = S.isAdmin
-      ? `<span class="dot" aria-hidden="true"></span><span>${esc(S.adminName)}</span>${icon('i-logout')}`
-      : `${icon('i-lock')}<span>Admin</span>`;
-    btn.title = S.isAdmin ? 'Ieși din modul admin' : 'Intră ca admin';
-    btn.setAttribute('aria-label', S.isAdmin ? 'Ieși din modul admin (' + S.adminName + ')' : 'Intră ca admin');
+    const btn = $('#adminBtn'), lbl = S.isAdmin ? 'Admin: ' + S.adminName : 'Admin';
+    $('use', btn).setAttribute('href', S.isAdmin ? '#i-unlock' : '#i-lock');
+    btn.setAttribute('aria-label', lbl); btn.title = lbl;
+    $('#pinForm').hidden = S.isAdmin; $('#adminInfo').hidden = !S.isAdmin; $('#adminName').textContent = S.adminName;
     $('.tab[data-page="jurnal"]').hidden = !S.isAdmin;
     $('#newsNewBtn').hidden = !S.isAdmin;
-    if (!S.isAdmin && S.page === 'jurnal') setPage('tichete', true);
+    if (!S.isAdmin && S.page === 'jurnal') setPage('tichete');
   }
   function openPop(open) {
     const pop = $('#adminPop');
     pop.hidden = !open; $('#adminBtn').setAttribute('aria-expanded', String(open));
-    if (open) { $('#pinErr').hidden = true; $('#pinInput').value = ''; $('#pinInput').focus(); }
+    if (!open) return;
+    if (S.isAdmin) $('#logoutBtn').focus();
+    else { $('#pinErr').hidden = true; $('#pinInput').value = ''; $('#pinInput').focus(); }
   }
   function login(e) {
     e.preventDefault();
@@ -699,29 +625,39 @@
   function newsBody(text) {
     return String(text || '').split(/\n{2,}/).map(b => '<p>' + esc(b).replace(/\n/g, '<br>') + '</p>').join('');
   }
+  // ultimul anunț, ca ticker sub hartă
+  function renderTicker() {
+    const tk = $('#ticker'), a = S.news[0];
+    tk.hidden = !a;
+    if (a) tk.innerHTML = `<b>news ▸</b> ${esc(a.title)} · ${esc(relDate(a.created).split(',')[0])}`;
+  }
   function renderNews() {
+    renderTicker();
     $('#newsNewBtn').hidden = !S.isAdmin || !!S.compose;
     $('#newsCompose').innerHTML = S.compose ? composeHtml() : '';
     if (S.compose) wireCompose();
     const box = $('#newsList');
     if (S.newsLoading && !S.news.length) { box.innerHTML = '<p class="sub">Se încarcă anunțurile…</p>'; return; }
-    if (S.newsErr && !S.news.length) { box.innerHTML = `<div class="empty"><h3>Nu am putut încărca anunțurile</h3><button class="btn btn-quiet" data-act="news-reload">${icon('i-refresh')}Reîncearcă</button></div>`; return; }
+    if (S.newsErr && !S.news.length) { box.innerHTML = `<div class="empty"><h3>Nu am putut încărca anunțurile</h3><button class="btn btn-ghost" data-act="news-reload">${icon('i-refresh')}Reîncearcă</button></div>`; return; }
     if (!S.news.length) { box.innerHTML = `<div class="empty"><h3>Niciun anunț încă</h3><p>${S.isAdmin ? 'Publică primul update sau fix cu butonul Anunț nou.' : 'Aici apar update-urile și fix-urile din WFM Extended.'}</p></div>`; return; }
     box.innerHTML = S.news.map(a => {
       const type = NEWS_TYPES[a.type] ? a.type : 'anunt';
       const d = a.created ? new Date(a.created) : null;
       const actions = !S.isAdmin ? '' : S.newsConfirm === a.id
-        ? `<div class="confirm admin-actions"><span>Ștergi anunțul și capturile lui?</span><button class="btn btn-quiet" data-news-cancel>Anulează</button><button class="btn btn-danger" data-news-del="${esc(a.id)}">Șterge</button></div>`
-        : `<div class="admin-actions"><button class="btn btn-quiet" data-news-edit="${esc(a.id)}">${icon('i-edit')}Editează</button><button class="btn btn-danger-quiet" data-news-ask="${esc(a.id)}">${icon('i-trash')}Șterge</button></div>`;
-      return `<article class="news-item">
-        <div class="n-plate">${d ? `<time datetime="${d.toISOString()}">${flap(pad(d.getDate()) + ' ' + MON3[d.getMonth()], 'nd:' + a.id, '', d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear())}</time>` : ''}</div>
-        <div><h2>${esc(a.title)}</h2><p class="by"><span class="n-type ${NT_CLS[type]}">${NEWS_TYPES[type]}</span> ${esc(a.author)}${d ? ' · ' + hhmm(d) : ''}</p>
+        ? `<div class="confirm admin-actions"><span>Ștergi anunțul și capturile lui?</span><button class="btn btn-ghost" data-news-cancel>Anulează</button><button class="btn btn-danger" data-news-del="${esc(a.id)}">Șterge</button></div>`
+        : `<div class="admin-actions"><button class="btn btn-ghost" data-news-edit="${esc(a.id)}">${icon('i-edit')}Editează</button><button class="btn btn-danger-ghost" data-news-ask="${esc(a.id)}">${icon('i-trash')}Șterge</button></div>`;
+      return `<article class="news-item t-${type}">
+        <div class="n-card">
+          <p class="by"><span class="n-type">${NEWS_TYPES[type]}</span> ${esc(a.author)}${d ? ` · <time datetime="${d.toISOString()}">${esc(absDate(a.created, true))}</time>` : ''}</p>
+          <h2>${esc(a.title)}</h2>
           <div class="news-body">${newsBody(a.body)}</div>
-          ${(a.attachments || []).length ? shotsHtml(a.attachments) : ''}${actions}</div>
+          ${(a.attachments || []).length ? shotsHtml(a.attachments) : ''}${actions}
+        </div>
       </article>`;
     }).join('');
     hydrate(box);
   }
+
   function composeHtml() {
     const c = S.compose;
     const types = Object.keys(NEWS_TYPES).map(k => `<button type="button" role="radio" data-ntype="${k}" aria-checked="${c.type === k}">${NEWS_TYPES[k]}</button>`).join('');
@@ -736,8 +672,8 @@
         <input type="file" id="nw-file" accept="image/*" multiple hidden><div class="thumbs" id="nw-thumbs">${thumbsHtml(c.files)}</div></div>`}
       <p class="field-err" id="nw-err" role="alert" hidden></p>
       <div class="form-actions"><span class="hint" id="nw-progress" style="margin-right:auto" aria-live="polite"></span>
-        <button type="button" class="btn btn-quiet" data-act="compose-cancel">Renunță</button>
-        <button type="submit" class="btn btn-primary" id="nw-submit">${c.id ? 'Salvează' : 'Publică'}</button></div>
+        <button type="button" class="btn btn-ghost" data-act="compose-cancel">Renunță</button>
+        <button type="submit" class="btn btn-solid" id="nw-submit">${c.id ? 'Salvează' : 'Publică'}</button></div>
     </form>`;
   }
   function wireCompose() {
@@ -762,6 +698,8 @@
     }
   }
 
+
+
   // ---------- Jurnal ----------
   function loadJournal() {
     S.journalLoading = true; renderJournal();
@@ -776,80 +714,411 @@
     if (S.journalLoading && !S.journal) { box.innerHTML = '<p class="sub">Se încarcă jurnalul…</p>'; return; }
     if (!S.journal || !S.journal.length) { box.innerHTML = '<div class="empty"><h3>Jurnalul e gol</h3><p>Acțiunile pe tichete și anunțuri apar aici.</p></div>'; return; }
     const code = c => !c ? '' : /^TIS-/.test(c) && findTicket(c)
-      ? `<button class="jopen" data-open="${esc(c)}" aria-label="Deschide ${esc(c)}">${flap(c, null, '', '', 6)}</button>` : flap(c, null, '', c, 6);
+      ? `<button class="jopen" data-open="${esc(c)}" aria-label="Deschide ${esc(c)}">${esc(c)}</button>` : esc(c);
     box.innerHTML = `<div class="jt-wrap"><table class="jt"><thead><tr><th scope="col">Ora</th><th scope="col">Cod</th><th scope="col">Cine</th><th scope="col">Acțiune</th><th scope="col">Detaliu</th></tr></thead><tbody>${
-      S.journal.map(r => `<tr><td title="${esc(absDate(r.at, true))}">${r.at ? flap(boardTime(r.at), null, '', absDate(r.at, true), 6) : ''}</td><td>${code(r.cod)}</td>
+      S.journal.map(r => `<tr><td class="mono" title="${esc(absDate(r.at, true))}">${esc(boardTime(r.at))}</td><td class="mono">${code(r.cod)}</td>
         <td>${esc(r.admin)}</td><td>${esc(humanAction(r.action))}</td><td class="dim">${esc(r.detail)}</td></tr>`).join('')
     }</tbody></table></div>`;
   }
 
   // ---------- pagini ----------
-  function setPage(p, instant) {
+  function setPage(p) {
     S.page = p;
-    const apply = () => ['tichete', 'news', 'jurnal'].forEach(k => {
+    ['tichete', 'news', 'jurnal'].forEach(k => {
       $('#page-' + k).hidden = k !== p;
       const tab = $(`.tab[data-page="${k}"]`);
       if (k === p) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current');
     });
+    document.body.dataset.page = p;
+    if (p === 'tichete') { syncCard(); layoutMap(true); if (M.ready) drawGeo(); }
+    else { $('#panel').classList.remove('open'); document.body.classList.remove('card-open'); document.documentElement.style.setProperty('--gx', '50vw'); document.documentElement.style.setProperty('--gy', '32vh'); }
     if (p === 'news' && !S.newsLoaded) loadNews(); else if (p === 'news') renderNews();
     if (p === 'jurnal') loadJournal();
-    if (instant) { apply(); return Promise.resolve(); }
-    return vt(apply, 'page');
+    kick();
   }
   function openTicket(id, focusPanel) {
-    if (S.page !== 'tichete') setPage('tichete', true);
-    if (!findTicket(id)) { toast('Tichetul ' + id + ' nu e în lista curentă.', 'err'); return Promise.resolve(); }
-    return setPanel('ticket', id).then(() => {
-      const row = $(`.row[data-id="${CSS.escape(id)}"]`);
-      if (row) row.scrollIntoView({ block: 'nearest' });
-      if (focusPanel || MOBILE.matches) { const h = $('#p-title'); if (h) h.focus(); }
-    });
+    if (S.page !== 'tichete') setPage('tichete');
+    if (!findTicket(id)) { toast('Tichetul ' + id + ' nu e în lista curentă.', 'err'); return; }
+    setPanel('ticket', id);
+    const row = rowEl(id); if (row) row.scrollIntoView({ block: 'nearest' });
+    if (focusPanel || MOBILE.matches) { const h = $('#p-title'); if (h) h.focus(); }
+    if (S.view === 'map') zoomTo(M.p.get(id));
   }
   function openNew() {
-    if (S.page !== 'tichete') setPage('tichete', true);
+    if (S.page !== 'tichete') setPage('tichete');
     S.formErr = {};
-    return setPanel('new').then(() => {
-      const el = $(S.draft.reporter ? '#nf-title' : '#nf-reporter'); if (el) el.focus();
-    });
+    setPanel('new');
+    const el = $(S.draft.reporter ? '#nf-title' : '#nf-reporter'); if (el) el.focus();
   }
   function moveSel(dir) {
-    const rows = $$('.row');
-    if (!rows.length) return;
-    let i = rows.findIndex(r => r.dataset.id === S.sel);
-    i = i < 0 ? (dir > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, i + dir));
-    const id = rows[i].dataset.id;
-    openTicket(id).then(() => { const r = $(`.row[data-id="${CSS.escape(id)}"]`); if (r) r.focus(); });
+    const ids = visible().map(t => t.id);
+    if (!ids.length) return;
+    let i = ids.indexOf(S.sel);
+    i = i < 0 ? (dir > 0 ? 0 : ids.length - 1) : Math.max(0, Math.min(ids.length - 1, i + dir));
+    openTicket(ids[i]);
+    const el = MOBILE.matches ? null : S.view === 'map' ? planetEl(ids[i]) : rowEl(ids[i]);
+    if (el) el.focus();
   }
 
-  function renderAll() { renderAdmin(); renderZones(); renderToolbar(); renderList(); renderPanel(); if (S.page === 'news') renderNews(); if (S.page === 'jurnal') renderJournal(); }
+  // ---------- harta „Orbită” ----------
+  // Geometria vine din mărimea scenei: nucleul stă în centrul spațiului liber (în stânga cardului, când e deschis).
+  // Tot ce se mișcă în fundal (stele, orbite, puls, curgerea inelului) merge într-un singur requestAnimationFrame,
+  // care se oprește în tab ascuns, după 60 s fără activitate și la prefers-reduced-motion.
+  const NS = 'http://www.w3.org/2000/svg';
+  const TAU = Math.PI * 2;
+  const PR_R = { scazuta: 6, medie: 9, ridicata: 13, critica: 18 };
+  const PHASE = [0.6, 2.1, 3.7, 5.2, 1.4];                                  // faza fiecărui inel, ca planetele să nu se alinieze
+  const SPEED = [0, 1, 2, 3, 4].map(i => TAU / (360 * (1 + i * 0.6)));      // rad/s: inelul interior face o rotație în ~6 min
+  const IDLE_MS = 60000, SLOW_MS = 500, SVG_MS = 500;
+  const M = {
+    p: new Map(), G: { cx: 0, cy: 0, R: 0 }, T: null, rr: [0, 0, 0, 0, 0], rot: [0, 0, 0, 0, 0],
+    spd: 1, hover: false, hoverCard: false, far: false, free: 0, w: 0, h: 0, reserve: 72, ox: 0, oy: 0, lw: 200, ck: 1, n: 0,
+    act: performance.now(), last: 0, svgT: 0, raf: 0, tm: 0, busy: false, ready: false
+  };
+  const sys = $('#sys'), coreEl = $('#core'), dashEl = $('.ring.dash');
+  const ringEls = $$('#rings .ring'), rz = $$('.rz'), rps = $$('.rp');
+  rz.forEach((g, i) => { rps[i].id = 'rp' + i; $('textPath', g).setAttribute('href', '#rp' + i); });
+  const mk = (tag, cls, attrs) => {
+    const e = document.createElementNS(NS, tag);
+    if (cls) e.setAttribute('class', cls);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  };
+
+  // --- fundal: stele ---
+  // Un singur canvas, desenat o singură dată (3 clase de adâncime: mici și slabe în fund, mari și clare în față).
+  // Deriva, paralaxa după mouse și sclipirea sunt doar transform/opacity pe canvas, deci bucla nu redesenează nimic
+  // (fiecare redesenare costă mult în compozitorul software).
+  const PAD = 24;   // surplus de canvas, ca marginea să nu se vadă când canvasul se mișcă (derivă 16 + paralaxă 12)
+  const ST = { c: $('#stars'), sh: $('.shoot'), x: null, w: 0, h: 0, px: 0, py: 0, tx: 0, ty: 0, next: performance.now() + 9000,
+    s: Array.from({ length: 160 }, (_, i) => { const z = i < 90 ? 0 : i < 135 ? 1 : 2; return { u: Math.random(), v: Math.random(), r: [0.6, 0.9, 1.3][z] * (0.8 + Math.random() * 0.4), a: [0.4, 0.6, 0.9][z] * (0.6 + Math.random() * 0.4) }; }) };
+  ST.x = ST.c.getContext('2d');
+  function sizeStars() {
+    const d = Math.min(window.devicePixelRatio || 1, 1.5), w = window.innerWidth + 2 * PAD, h = window.innerHeight + 2 * PAD, x = ST.x;
+    ST.w = window.innerWidth; ST.h = window.innerHeight;
+    ST.c.width = Math.round(w * d); ST.c.height = Math.round(h * d);
+    ST.c.style.width = w + 'px'; ST.c.style.height = h + 'px'; ST.c.style.left = ST.c.style.top = -PAD + 'px';
+    x.setTransform(d, 0, 0, d, 0, 0); x.fillStyle = '#fff';
+    ST.s.forEach(s => { x.globalAlpha = s.a; x.beginPath(); x.arc(s.u * w, s.v * h, s.r, 0, TAU); x.fill(); });
+    moveStars(performance.now());
+  }
+  // deriva lentă (oscilație), paralaxa după mouse (max 12px) și sclipirea (opacitatea)
+  function moveStars(t) {
+    const a = t / 1000 / 90 * TAU, still = REDUCED.matches;
+    ST.c.style.transform = still ? 'none' : 'translate(' + (16 * Math.sin(a) + ST.px).toFixed(1) + 'px,' + (6 * Math.cos(a) + ST.py).toFixed(1) + 'px)';
+    ST.c.style.opacity = still ? 0.9 : (0.85 + 0.15 * Math.sin(t / 2200)).toFixed(2);
+  }
+  // stea căzătoare, rar: pornită din buclă, apoi animată pe compositor, în pași (puține cadre)
+  function shoot(t) {
+    if (t < ST.next) return;
+    ST.next = t + 8000 + Math.random() * 7000;
+    const x = Math.random() * ST.w * 0.7, y = Math.random() * ST.h * 0.35, a = (0.5 + Math.random() * 0.4).toFixed(2), at = (px, py) => 'translate(' + px.toFixed(0) + 'px,' + py.toFixed(0) + 'px) rotate(' + a + 'rad)';
+    ST.sh.animate([{ transform: at(x, y), opacity: 0.8 }, { transform: at(x + Math.cos(a) * 700, y + Math.sin(a) * 700), opacity: 0 }], { duration: 600, easing: 'steps(15)' });
+  }
+
+  // --- geometrie ---
+  function layoutMap(instant) {
+    const st = $('#stage'), w = st.clientWidth, h = st.clientHeight;
+    if (!w || !h || S.page !== 'tichete') return;
+    const mob = MOBILE.matches, free = S.panel !== 'empty' && !mob ? w - 448 : w;   // card 400 + 24 + 24
+    const far = !mob && free >= 800 && M.n <= 10;
+    const side = far ? Math.min(170, free * 0.17) : 32, avail = h - (mob ? 90 : M.reserve);
+    const R = Math.max(110, Math.min(avail / 2 - (far ? 62 : 40), free / 2 - side - 20));
+    const r = st.getBoundingClientRect();
+    M.w = w; M.h = h; M.free = free; M.far = far; M.ox = r.left; M.oy = r.top;
+    M.lw = far ? Math.max(120, Math.min(220, free / 2 - R - 36)) : 200;
+    sys.classList.toggle('far', far);
+    const T = { cx: free / 2, cy: avail / 2 + 4, R };
+    if (M.T && Math.abs(T.cx - M.T.cx) + Math.abs(T.cy - M.T.cy) + Math.abs(T.R - M.T.R) < 0.5) return;
+    M.T = T;
+    if (instant || REDUCED.matches || !M.ready) { M.G = { cx: T.cx, cy: T.cy, R: T.R }; M.ready = true; drawGeo(); placeAll(performance.now()); }
+    else kick(true);
+  }
+  function drawGeo() {
+    const { cx, cy, R } = M.G, rin = Math.max(54, R * 0.27), stp = (R - rin) / 4;
+    sys.setAttribute('transform', 'translate(' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')');
+    for (let i = 0; i < 5; i++) {
+      const r = rin + i * stp; M.rr[i] = r;
+      ringEls[i].setAttribute('r', r.toFixed(1));
+      rps[i].setAttribute('d', 'M' + (-r).toFixed(1) + ' 0A' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 0 1 ' + r.toFixed(1) + ' 0');
+      const sp = Math.min(1.2, (rz[i].textContent.length * 9 + 24) / 2 / r), a1 = -Math.PI / 2 - sp, a2 = -Math.PI / 2 + sp;   // zonă de click ca lungimea numelui
+      $('.rzh', rz[i]).setAttribute('d', 'M' + (r * Math.cos(a1)).toFixed(1) + ' ' + (r * Math.sin(a1)).toFixed(1) + 'A' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 0 1 ' + (r * Math.cos(a2)).toFixed(1) + ' ' + (r * Math.sin(a2)).toFixed(1));
+    }
+    M.ck = Math.min(38, rin * 0.5) / 38;
+    coreEl.setAttribute('transform', 'scale(' + M.ck.toFixed(3) + ')');
+    const rs = document.documentElement.style;   // strălucirea nebuloasei urmărește nucleul
+    rs.setProperty('--gx', (M.ox + cx).toFixed(0) + 'px'); rs.setProperty('--gy', (M.oy + cy).toFixed(0) + 'px');
+  }
+
+  // --- planete ---
+  const measure = document.createElement('canvas').getContext('2d');
+  function wrap(text, maxW, maxLines) {
+    measure.font = '400 13px "Space Grotesk", system-ui, sans-serif';
+    const lines = []; let cur = '';
+    String(text).split(/\s+/).forEach(wd => {
+      const nx = cur ? cur + ' ' + wd : wd;
+      if (!cur || measure.measureText(nx).width <= maxW) cur = nx; else { lines.push(cur); cur = wd; }
+    });
+    lines.push(cur);
+    let out = lines.slice(0, maxLines);
+    if (lines.length > maxLines) out[maxLines - 1] = lines.slice(maxLines - 1).join(' ');
+    out = out.map((l, i) => {
+      const cut = lines.length > maxLines && i === maxLines - 1;
+      if (!cut && measure.measureText(l).width <= maxW) return l;
+      while (l.length > 1 && measure.measureText(l + '…').width > maxW) l = l.slice(0, -1);
+      return l.replace(/\s+$/, '') + '…';
+    });
+    return { lines: out, w: Math.max(...out.map(l => measure.measureText(l).width)) };
+  }
+  function newPlanet(t) {
+    const el = mk('g', 'planet fresh', { tabindex: 0, role: 'button', 'data-id': t.id });
+    el.append(mk('circle', 'halo'), mk('circle', 'glow', { filter: 'url(#glow)' }), mk('circle', 'body'), mk('circle', 's1'), mk('circle', 's2'), mk('circle', 'hit'));
+    const lbl = mk('g', 'lbl'), ln = mk('line', null, { x2: 0, y2: 0 }), tx = mk('g', 'tx');
+    const code = mk('text', 'code', { y: 4 }), ttl = mk('text', 'ttl');
+    tx.append(code, ttl); lbl.append(ln, tx);
+    const pl = $('#planets'); pl.append(el, lbl);
+    return { id: t.id, el, lbl, ln, tx, code, ttl, a: 0, aT: 0, ring: 0, rad: 9, x: 0, y: 0, ox: 0, oy: 0, bw: 40, bh: 20, tw: 0, side: 0, mode: '', key: '', crit: false, sel: false, dim: false, fly: null, st: '', pr: '' };
+  }
+  function styleP(p, t, match) {
+    const st = stKey(t.status), k = PR_R[t.priority] ? t.priority : 'medie', rad = PR_R[k], el = p.el;
+    p.ring = ringIdx(t); p.rad = rad; p.dim = !match; p.crit = k === 'critica';
+    p.sel = S.sel === t.id && S.panel === 'ticket';
+    el.setAttribute('class', 'planet st-' + st + ' pr-' + k + (match ? '' : ' dim') + (p.sel ? ' sel' : '') + (p.fresh ? ' fresh' : '') + (p.fly ? ' flying' : ''));
+    p.lbl.setAttribute('class', 'lbl st-' + st + (match ? '' : ' dim') + (p.sel ? ' sel' : '') + (p.fly ? ' flying' : ''));
+    el.setAttribute('aria-label', t.id + ', ' + PRIOS[k] + ', ' + STATUSES[st] + ': ' + t.title);
+    el.setAttribute('tabindex', match ? '0' : '-1');
+    const b = el.children;   // halo, glow, body, s1, s2, hit
+    b[0].setAttribute('r', rad + 10); b[1].setAttribute('r', rad + 3); b[3].setAttribute('r', rad + 16); b[4].setAttribute('r', rad + 26); b[5].setAttribute('r', Math.max(rad + 8, 16));
+    b[2].setAttribute('r', rad); b[2].style.r = rad + 'px';
+    p.code.textContent = t.id;
+    const key = t.title + '|' + M.lw;
+    if (p.key !== key) {
+      p.key = key;
+      const w = wrap(t.title, M.lw, 2);
+      p.ttl.replaceChildren(...w.lines.map((l, i) => { const s = mk('tspan', null, { x: 0, y: 22 + 17 * i }); s.textContent = l; return s; }));
+      p.tw = w.w; p.nl = w.lines.length;
+    }
+    p.bw = Math.max(t.id.length * 6.8, p.tw) + 8; p.bh = 40 + 17 * (p.nl - 1);
+  }
+  function syncMap() {
+    layoutMap();
+    const f = S.f, vis = visible(), match = new Set(vis.map(t => t.id)), sc = scope();
+    if (M.n !== vis.length) { const was = M.n <= 10; M.n = vis.length; if (was !== M.n <= 10) layoutMap(); }
+    const by = [[], [], [], [], []], seen = new Set();
+    sc.forEach(t => by[ringIdx(t)].push(t));
+    by.forEach((arr, ri) => {
+      arr.sort((a, b) => (a.created || 0) - (b.created || 0) || a.n - b.n);
+      arr.forEach((t, k) => {
+        let p = M.p.get(t.id); const isNew = !p;
+        if (isNew) { p = newPlanet(t); M.p.set(t.id, p); p.fresh = true; }
+        const changed = !isNew && (p.st !== stKey(t.status) || p.pr !== t.priority);
+        p.st = stKey(t.status); p.pr = t.priority;
+        p.aT = PHASE[ri] + k / arr.length * TAU;
+        if (isNew || REDUCED.matches) p.a = p.aT;
+        if (isNew && S.flyNew === t.id && !REDUCED.matches) { p.fresh = false; p.fly = { t0: performance.now(), dur: 900 }; }
+        styleP(p, t, match.has(t.id));
+        if (isNew && p.fresh) { p.el.getBoundingClientRect(); p.fresh = false; p.el.classList.remove('fresh'); }
+        if (changed) wave(p);
+        seen.add(t.id);
+      });
+    });
+    M.p.forEach((p, id) => {
+      if (seen.has(id)) return;
+      M.p.delete(id); p.el.classList.add('gone'); p.lbl.classList.add('gone');
+      setTimeout(() => { p.el.remove(); p.lbl.remove(); }, 450);
+    });
+    S.flyNew = null;
+    rz.forEach((g, i) => { const on = f.zone === RINGS[i]; g.classList.toggle('on', on); g.setAttribute('aria-pressed', String(on)); ringEls[i].setAttribute('class', 'ring' + (i === 2 ? ' dash' : '') + (on ? ' on' : f.zone ? ' faded' : '')); });
+    mapMsg(sc);
+    placeAll(performance.now());
+    kick(true);
+  }
+  function mapMsg(sc) {
+    const m = $('#mapMsg'), archive = S.f.status === 'archive';
+    let h = '';
+    if (!archive && S.loadErr && !S.tickets.length) h = emptyBox('Nu am putut încărca tichetele', 'Verifică conexiunea și încearcă din nou.', `<button class="btn btn-ghost" data-act="reload">${icon('i-refresh')}Reîncearcă</button>`);
+    else if (!S.loading && !sc.length) {
+      if (archive) h = S.archivedLoading ? '' : emptyBox('Arhiva e goală', 'Tichetele arhivate apar aici și pot fi restaurate.');
+      else if (!S.tickets.length) h = emptyBox('Niciun tichet încă', 'Primul tichet raportat va primi codul TIS-01.', `<button class="btn btn-solid" data-act="new">${icon('i-plus')}Tichet nou</button>`);
+      else h = emptyBox('Niciun tichet în vederea asta', 'Alege altă stare sau resetează filtrele.', `<button class="linkish" data-clear="all">Resetează filtrele</button>`);
+    }
+    m.innerHTML = h; m.hidden = !h;
+  }
+  function wave(p) {
+    if (REDUCED.matches || !p.el.isConnected) return;
+    const c = mk('circle', 'wave', { r: p.rad });
+    p.el.append(c);
+    c.animate([{ transform: 'scale(1)', opacity: 0.7 }, { transform: 'scale(4.5)', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.16,1,.3,1)' }).onfinish = () => c.remove();
+  }
+  function zoomTo(p) {
+    if (REDUCED.matches || !p) return;
+    const m = $('#map');
+    m.style.transformOrigin = (M.G.cx + p.x).toFixed(0) + 'px ' + (M.G.cy + p.y).toFixed(0) + 'px';
+    m.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 700, easing: 'cubic-bezier(.16,1,.3,1)' });
+  }
+
+  // poziții: planeta pe inel, eticheta radial spre exterior (sau sub planetă când sunt multe tichete / ecran mic)
+  function placeAll(now) {
+    const far = M.far, Ro = M.G.R + 22, ps = [];
+    M.p.forEach(p => {
+      const r = M.rr[p.ring], a = p.a + M.rot[p.ring];
+      let x = r * Math.cos(a), y = r * Math.sin(a);
+      if (p.fly) {   // zbor din nucleu, pe o curbă
+        const k = Math.min(1, (now - p.fly.t0) / p.fly.dur), e = 1 - Math.pow(1 - k, 3), u = 1 - e;
+        const qx = x / 2 - y * 0.35, qy = y / 2 + x * 0.35;
+        x = 2 * u * e * qx + e * e * x; y = 2 * u * e * qy + e * e * y;
+      }
+      p.x = x; p.y = y;
+      if (far) { const d = Math.hypot(x, y) || 1; p.ox = x / d * Ro; p.oy = y / d * Ro; if (!p.dim && !p.fly) ps.push(p); }
+      else { p.ox = x; p.oy = y + p.rad + 12; }
+    });
+    if (far) relax(ps);
+    M.p.forEach(applyP);
+  }
+  // etichetele care se suprapun se depărtează pe verticală
+  function relax(ps) {
+    const lo = 14 - M.G.cy, hi = M.h - M.reserve + 8 - M.G.cy;
+    for (let it = 0; it < 6; it++) {
+      let moved = false;
+      for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {
+        const a = ps[i], b = ps[j];
+        if (a.ox * b.ox < 0) continue;
+        const ax0 = a.ox >= 0 ? a.ox : a.ox - a.bw - 8, bx0 = b.ox >= 0 ? b.ox : b.ox - b.bw - 8;
+        if (ax0 + a.bw + 8 <= bx0 || bx0 + b.bw + 8 <= ax0) continue;
+        const ay = a.oy - 12, by = b.oy - 12, o = Math.min(ay + a.bh, by + b.bh) - Math.max(ay, by);
+        if (o <= 0) continue;
+        const s = o / 2 + 2;
+        if (a.oy <= b.oy) { a.oy -= s; b.oy += s; } else { a.oy += s; b.oy -= s; }
+        moved = true;
+      }
+      if (!moved) break;
+    }
+    ps.forEach(p => { p.oy = Math.max(lo + 12, Math.min(hi - p.bh + 12, p.oy)); });
+  }
+  function applyP(p) {
+    p.el.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ')');
+    p.lbl.setAttribute('transform', 'translate(' + p.ox.toFixed(1) + ' ' + p.oy.toFixed(1) + ')');
+    if (M.far) {
+      const side = p.ox >= 0 ? 1 : -1;
+      if (p.mode !== 'far' || p.side !== side) {
+        p.mode = 'far'; p.side = side;
+        p.lbl.setAttribute('text-anchor', side > 0 ? 'start' : 'end');
+        p.tx.setAttribute('transform', 'translate(' + side * 8 + ' 0)'); p.ttl.removeAttribute('transform');
+      }
+      const qx = p.x - p.ox, qy = p.y - p.oy, k = 1 - (p.rad + 4) / (Math.hypot(qx, qy) || 1);
+      p.ln.setAttribute('x1', (qx * k).toFixed(1)); p.ln.setAttribute('y1', (qy * k).toFixed(1));
+    } else {
+      if (p.mode !== 'near') { p.mode = 'near'; p.side = 0; p.lbl.setAttribute('text-anchor', 'middle'); p.tx.removeAttribute('transform'); }
+      // titlul (doar la hover/focus/selecție) rămâne în scenă
+      const lo = -M.G.cx + p.tw / 2 + 8, hi = M.free - M.G.cx - p.tw / 2 - 8;
+      p.ttl.setAttribute('transform', 'translate(' + (Math.max(lo, Math.min(hi, p.ox)) - p.ox).toFixed(1) + ' 0)');
+    }
+  }
+
+  // --- bucla de animație (una singură) ---
+  function breathe(t) {
+    const pulse = 1 + 0.04 * Math.sin(t / 1800), b = 0.5 + 0.5 * Math.sin(t / 1300);
+    coreEl.setAttribute('transform', 'scale(' + (M.ck * pulse).toFixed(3) + ')');
+    dashEl.setAttribute('stroke-dashoffset', (-(t / 1000) * 5 % 18).toFixed(1));
+    M.p.forEach(p => {
+      if (p.crit && !p.dim) p.el.children[0].setAttribute('stroke-opacity', (0.22 + 0.2 * b).toFixed(2));
+      if (p.sel) {
+        p.el.children[3].setAttribute('r', (p.rad + 16 + 3 * b).toFixed(1)); p.el.children[4].setAttribute('r', (p.rad + 26 + 4 * b).toFixed(1));
+        p.el.children[3].setAttribute('stroke-opacity', (0.55 + 0.3 * b).toFixed(2)); p.el.children[4].setAttribute('stroke-opacity', (0.2 + 0.25 * b).toFixed(2));
+      }
+    });
+  }
+  function step(t, dt) {
+    ST.px += (ST.tx - ST.px) * (1 - Math.exp(-dt / 300)); ST.py += (ST.ty - ST.py) * (1 - Math.exp(-dt / 300));
+    moveStars(t); shoot(t);
+    let busy = Math.abs(ST.tx - ST.px) > 0.15 || Math.abs(ST.ty - ST.py) > 0.15;
+    const dm = Math.min(t - M.svgT, 500);   // harta se actualizează mai rar decât cadrele, cât timp doar se rotește lent
+    if (S.page === 'tichete' && S.view === 'map' && M.ready && (M.busy || dm >= SVG_MS)) {
+      M.svgT = t;
+      let moved = false;
+      const want = M.hover || M.hoverCard || S.panel !== 'empty' ? 0 : 1;   // ținta: se oprește ca să poți ținti, reia lin
+      if (M.spd !== want) { M.spd += (want - M.spd) * (1 - Math.exp(-dm / 350)); if (Math.abs(M.spd - want) < 0.003) M.spd = want; else busy = true; }
+      if (M.spd > 0) { for (let i = 0; i < 5; i++) M.rot[i] += dm / 1000 * M.spd * SPEED[i]; moved = true; }
+      const G = M.G, T = M.T, k = 1 - Math.exp(-dm / 130);
+      if (T && (Math.abs(T.cx - G.cx) > 0.3 || Math.abs(T.cy - G.cy) > 0.3 || Math.abs(T.R - G.R) > 0.3)) {
+        G.cx += (T.cx - G.cx) * k; G.cy += (T.cy - G.cy) * k; G.R += (T.R - G.R) * k;
+        drawGeo(); moved = busy = true;
+      } else if (T && (G.cx !== T.cx || G.cy !== T.cy || G.R !== T.R)) { M.G = { cx: T.cx, cy: T.cy, R: T.R }; drawGeo(); moved = true; }
+      M.p.forEach(p => {
+        if (p.a !== p.aT) { p.a += (p.aT - p.a) * (1 - Math.exp(-dm / 220)); if (Math.abs(p.aT - p.a) < 0.002) p.a = p.aT; moved = busy = true; }
+        if (p.fly) {
+          moved = busy = true;
+          if (t - p.fly.t0 >= p.fly.dur) { p.fly = null; p.el.classList.remove('flying'); p.lbl.classList.remove('flying'); wave(p); }
+        }
+      });
+      if (moved) placeAll(t);
+      breathe(t);
+    }
+    M.busy = busy;
+  }
+  function frame(t) {
+    M.raf = 0;
+    if (document.hidden || REDUCED.matches || (t - M.act > IDLE_MS && !M.busy)) return;
+    const dt = Math.min(t - M.last, 100); M.last = t;
+    step(t, dt);
+    if (M.busy) M.raf = requestAnimationFrame(frame);
+    else M.tm = setTimeout(() => { M.tm = 0; M.raf = requestAnimationFrame(frame); }, SLOW_MS);
+  }
+  // activitate: repornește bucla (după 60 s de pauză, în tab ascuns etc.); fast = rulează la fiecare cadru până se așază
+  function kick(fast) {
+    M.act = performance.now();
+    if (document.hidden || REDUCED.matches) return;
+    if (fast) { M.busy = true; if (M.tm) { clearTimeout(M.tm); M.tm = 0; } }
+    if (!M.raf && !M.tm) { M.last = performance.now(); M.raf = requestAnimationFrame(frame); }
+  }
+  ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => window.addEventListener(ev, () => kick(), { passive: true }));
+  window.addEventListener('pointermove', e => { ST.tx = -(e.clientX / ST.w - 0.5) * 24; ST.ty = -(e.clientY / ST.h - 0.5) * 24; }, { passive: true });  // max 12px pe stratul apropiat
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+  window.addEventListener('resize', sizeStars);
+  new ResizeObserver(() => { layoutMap(true); if (S.view === 'map' && S.page === 'tichete') syncMap(); }).observe($('#stage'));
+  MOBILE.addEventListener('change', () => { M.T = null; renderBoard(); });
+  $('#map').addEventListener('mouseenter', () => { M.hover = true; });
+  $('#map').addEventListener('mouseleave', () => { M.hover = false; });
+  $('#panel').addEventListener('mouseenter', () => { M.hoverCard = true; });
+  $('#panel').addEventListener('mouseleave', () => { M.hoverCard = false; });
+
+  function renderAll() { renderAdmin(); renderToolbar(); renderBoard(); renderPanel(); if (S.page === 'news') renderNews(); if (S.page === 'jurnal') renderJournal(); }
 
   // ---------- evenimente ----------
+  function pickPlanet(id) {
+    if (S.sel === id && S.panel === 'ticket' && !MOBILE.matches) closePanel(); else openTicket(id);
+  }
   document.addEventListener('click', e => {
-    const t = e.target.closest('button, [data-shot]');
     const pop = $('#adminPop');
     if (!pop.hidden && !e.target.closest('.admin-wrap')) openPop(false);
+    const pl = e.target.closest('.planet'), rg = e.target.closest('.rz');
+    if (pl) return pickPlanet(pl.dataset.id);
+    if (rg) return toggleRing(rg.dataset.ring);
+    const t = e.target.closest('button, [data-shot]');
     if (!t) return;
     const ds = t.dataset;
 
     if (t.classList.contains('tab')) return setPage(ds.page);
     if (t.id === 'newBtn') return openNew();
-    if (t.id === 'adminBtn') { if (S.isAdmin) { logout(); toast('Ai ieșit din modul admin.'); } else openPop(pop.hidden); return; }
+    if (t.id === 'adminBtn') return openPop(pop.hidden);
+    if (t.id === 'logoutBtn') { openPop(false); logout(); toast('Ai ieșit din modul admin.'); return; }
     if (t.id === 'pinCancel') return openPop(false);
     if (t.id === 'exportBtn') return exportCsv();
+    if (t.id === 'viewMap') return setView('map');
+    if (t.id === 'viewList') return setView('list');
     if (t.id === 'newsNewBtn') { S.compose = { title: '', body: '', type: 'update', files: [] }; renderNews(); $('#nw-title').focus(); return; }
     if (t.id === 'journalRefresh') return loadJournal();
     if (t.id === 'lbClose') return closeLightbox();
     if (t.id === 'lbIn') return lbZoom(LB.s + 0.5);
     if (t.id === 'lbOut') return lbZoom(LB.s - 0.5);
 
-    if (ds.zone !== undefined && t.classList.contains('zchip')) { S.f.zone = S.f.zone === ds.zone ? null : ds.zone; S.shown = PAGE; vt(() => { renderZones(); renderList(); }, 'list'); return; }
     if (ds.status) {
       S.f.status = ds.status; S.shown = PAGE;
       if (ds.status === 'archive' && !S.archived) { loadArchived(); renderToolbar(); return; }
-      vt(() => { renderToolbar(); renderList(); }, 'list'); return;
+      renderToolbar(); renderBoard(); return;
     }
     if (ds.clear) return resetFilters();
-    if (t.classList.contains('row')) return S.sel === ds.id && S.panel === 'ticket' && !MOBILE.matches ? closePanel() : openTicket(ds.id);
+    if (t.classList.contains('row')) return pickPlanet(ds.id);
     if (ds.open) return openTicket(ds.open, true);
     if (ds.shot) return openLightbox(ds.shot, ds.name);
     if (ds.rm !== undefined) {
@@ -864,7 +1133,7 @@
 
     const cur = findTicket(S.sel);
     if (ds.setStatus && cur && cur.status !== ds.setStatus) return setField(cur, 'status', ds.setStatus, 'updateStatus', [cur.id, ds.setStatus], 'Status: ' + STATUSES[ds.setStatus] + '.');
-    if (ds.newsEdit) { const a = S.news.find(x => x.id === ds.newsEdit); S.compose = { id: a.id, title: a.title, body: a.body, type: a.type || 'anunt', files: [] }; S.newsConfirm = null; renderNews(); $('#nw-title').focus(); window.scrollTo(0, 0); return; }
+    if (ds.newsEdit) { const a = S.news.find(x => x.id === ds.newsEdit); S.compose = { id: a.id, title: a.title, body: a.body, type: a.type || 'anunt', files: [] }; S.newsConfirm = null; renderNews(); $('#nw-title').focus(); $('#page-news').scrollTo(0, 0); return; }
     if (ds.newsAsk) { S.newsConfirm = ds.newsAsk; renderNews(); return; }
     if (ds.newsCancel !== undefined) { S.newsConfirm = null; renderNews(); return; }
     if (ds.newsDel) {
@@ -881,6 +1150,7 @@
       case 'close': return closePanel();
       case 'reload': return load();
       case 'news-reload': return loadNews();
+      case 'goto-news': return setPage('news');
       case 'more': S.shown += PAGE; return renderList();
       case 'copy': {
         const code = ds.code, ok = () => { toast('Codul ' + code + ' a fost copiat.'); copied(t); };
@@ -894,30 +1164,25 @@
       case 'confirm-cancel': S.confirm = null; return renderPanel();
       case 'archive': {
         const prevList = S.tickets.slice();
-        S.panel = 'empty'; $('#panel').classList.remove('open');
+        S.panel = 'empty';
         return adminCall('deleteTicket', [cur.id], () => { S.tickets = S.tickets.filter(x => x !== cur); }, () => { S.tickets = prevList; }, cur.id + ' arhivat.');
       }
       case 'restore':
-        S.panel = 'empty'; $('#panel').classList.remove('open');
+        S.panel = 'empty';
         return adminCall('restoreTicket', [cur.id], () => { S.archived = S.archived.filter(x => x !== cur); }, () => { S.archived.push(cur); }, cur.id + ' restaurat.');
       case 'purge': {
         const prev = S.archived.slice();
-        S.panel = 'empty'; $('#panel').classList.remove('open');
+        S.panel = 'empty';
         return adminCall('purgeTicket', [cur.id], () => { S.archived = S.archived.filter(x => x !== cur); }, () => { S.archived = prev; }, cur.id + ' șters definitiv.');
       }
       case 'compose-cancel': S.compose = null; return renderNews();
     }
   });
-  // butonul de copiere: plăcuțele trec pe COPIAT, apoi revin
+  // butonul de copiere: „Copiat” 2 s, apoi revine
   function copied(btn) {
-    const set = (txt, label) => {
-      const el = $('.flap[data-key]', btn); if (!el) return;
-      el.outerHTML = flap(txt, el.dataset.key, 'sm', label, 7);
-      animateFlaps(btn);
-    };
-    set('Copiat', 'Copiat');
+    btn.textContent = 'Copiat';
     clearTimeout(btn._ct);
-    btn._ct = setTimeout(() => { if (btn.isConnected) set('Copiază', 'Copiază'); }, 2200);
+    btn._ct = setTimeout(() => { if (btn.isConnected) btn.textContent = 'Copiază'; }, 2200);
   }
   function fallbackCopy(text, ok) {
     const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
@@ -926,7 +1191,7 @@
 
   document.addEventListener('submit', e => {
     const f = e.target;
-    if (f.id === 'adminPop') return login(e);
+    if (f.id === 'pinForm') return login(e);
     e.preventDefault();
     if (f.id === 'newForm') return submitNew();
     if (f.id === 'composeForm') return publish();
@@ -942,27 +1207,30 @@
 
   document.addEventListener('change', e => {
     const el = e.target, t = findTicket(S.sel);
-    if (el.id === 'prioFilter') { S.f.prio = el.value; S.shown = PAGE; return vt(renderList, 'list'); }
-    if (el.id === 'sortSel') { S.f.sort = el.value; return vt(renderList, 'list'); }
+    if (el.id === 'prioFilter') { S.f.prio = el.value; S.shown = PAGE; return renderBoard(); }
+    if (el.id === 'zoneSel') { S.f.zone = el.value || null; S.shown = PAGE; return renderBoard(); }
+    if (el.id === 'sortSel') { S.f.sort = el.value; return renderBoard(); }
     if (el.id === 'ad-prio' && t) return setField(t, 'priority', el.value, 'updatePriority', [t.id, el.value], 'Prioritate: ' + PRIOS[el.value] + '.');
     if (el.id === 'ad-zone' && t) return setField(t, 'category', el.value, 'editTicket', [t.id, { category: el.value }], 'Zonă: ' + (el.value || 'fără zonă') + '.');
   });
 
   document.addEventListener('input', e => {
-    if (e.target.id === 'search') { S.f.q = e.target.value; S.shown = PAGE; renderList(); }
+    if (e.target.id === 'search') { S.f.q = e.target.value; S.shown = PAGE; renderBoard(); }
     if (e.target.id === 'cm-text' && S.sel) S.cmtDraft[S.sel] = e.target.value;
     if (e.target.id === 'cm-name') S.cmtName = e.target.value;
   });
 
   document.addEventListener('keydown', e => {
     if (!$('#lightbox').hidden) { if (e.key === 'Escape') closeLightbox(); return; }
+    const ctl = e.target.closest && e.target.closest('.planet, .rz');
+    if (ctl && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); ctl.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.tagName === 'TEXTAREA') {
       const f = e.target.closest('form'); if (f) { e.preventDefault(); f.requestSubmit(); } return;
     }
     if (e.key === 'Escape') {
       if (!$('#adminPop').hidden) { openPop(false); $('#adminBtn').focus(); return; }
       if (S.confirm) { S.confirm = null; renderPanel(); return; }
-      if (e.target.id === 'search' && S.f.q) { e.target.value = ''; S.f.q = ''; renderList(); return; }
+      if (e.target.id === 'search' && S.f.q) { e.target.value = ''; S.f.q = ''; renderBoard(); return; }
       if (S.panel !== 'empty' && S.page === 'tichete') { closePanel(); return; }
       return;
     }
@@ -981,9 +1249,10 @@
     if (S.page === 'news' && S.compose && !S.compose.id) { e.preventDefault(); addFiles(S.compose.files, imgs, () => { $('#nw-thumbs').innerHTML = thumbsHtml(S.compose.files); }); return; }
     if (S.page !== 'tichete') return;
     e.preventDefault();
-    const ready = S.panel !== 'new' ? openNew() : Promise.resolve();
-    addFiles(S.draft.files, imgs, () => ready.then(() => { const th = $('#nf-thumbs'); if (th) th.innerHTML = thumbsHtml(S.draft.files); }));
+    if (S.panel !== 'new') openNew();
+    addFiles(S.draft.files, imgs, () => { const th = $('#nf-thumbs'); if (th) th.innerHTML = thumbsHtml(S.draft.files); });
   });
+
 
   // ---------- lightbox ----------
   const LB = { s: 1, x: 0, y: 0, drag: false, sx: 0, sy: 0, ox: 0, oy: 0, ptr: {}, pd: 0, ps: 1, ret: null };
@@ -1035,7 +1304,7 @@
       gs('getTickets').then(list => {
         const s = sig(list || []); if (s === S.sig) return;
         S.tickets = list; S.sig = s;
-        renderZones(); renderToolbar(); renderList();
+        renderToolbar(); renderBoard();
         const inPanel = $('#panel').contains(document.activeElement) && isTyping();
         if (S.panel === 'ticket' && !S.editing && !inPanel) renderPanel();
       }).catch(() => {});
@@ -1045,8 +1314,10 @@
   }, 20000);
 
   // ---------- start ----------
-  $('#brandFlaps').innerHTML = flap('WFM', 'brand:wfm', '', 'WFM');
+  document.body.dataset.page = S.page;
+  sizeStars();
   renderAll();
   load();
+  loadNews();   // ticker-ul de sub hartă
 })();
 </script>

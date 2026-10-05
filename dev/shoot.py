@@ -3,10 +3,11 @@
     python3 dev/shoot.py <folder-iesire> [url]
 
 Captează pe desktop (1440x900) și mobil (390x844), doar dark:
-listă, detaliu tichet, formular tichet nou, admin, News, Jurnal.
+hartă, hartă cu card, listă, detaliu tichet, formular tichet nou, admin, News, Jurnal.
 Erorile din consolă se scriu în <folder>/console-errors.txt.
 """
-import os, sys, pathlib
+import re, sys, pathlib
+from browser import launch
 from playwright.sync_api import sync_playwright
 
 OUT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "screenshots")
@@ -22,7 +23,7 @@ def settle(page, ms=900):
 def as_admin(page):
     page.evaluate("sessionStorage.setItem('tis_pin','1234');sessionStorage.setItem('tis_admin','Admin Test')")
     page.reload()
-    settle(page)
+    settle(page, 1600)
 
 
 def run(browser, vname, size, scheme, errors):
@@ -31,47 +32,66 @@ def run(browser, vname, size, scheme, errors):
                               ignore_https_errors=True, color_scheme=scheme)
     page = ctx.new_page()
     tag = f"{vname}-{scheme}"
-    page.on("console", lambda m: m.type == "error" and "favicon" not in m.location.get("url", "") and errors.append(f"[{tag}] {m.text}"))
+    page.on("console", lambda m: m.type == "error" and not re.search("favicon|fonts\\.g", m.location.get("url", "")) and errors.append(f"[{tag}] {m.text}"))
     page.on("pageerror", lambda e: errors.append(f"[{tag}] {e}"))
     shot = lambda name: page.screenshot(path=OUT / f"{vname}-{scheme}-{name}.png")
+    mobile = vname == "mobil"
 
     page.goto(URL)
-    settle(page, 2600)  # intrarea: plăcuțele se așază în ~1.5s
-    shot("lista")
+    settle(page, 2600)
+    # vederea implicită: hartă pe desktop, listă pe mobil
+    shot("lista" if mobile else "harta")
+    page.click("#viewMap" if mobile else "#viewList")
+    settle(page, 900)
+    shot("harta" if mobile else "lista")
+
+    page.click("#viewMap")
+    settle(page, 700)
+    page.click(".planet[data-id='TIS-13']")
+    settle(page, 1300)
+    shot("harta-detaliu")
+    page.keyboard.press("Escape")
+    settle(page, 700)
+
+    page.click("#viewList")
+    settle(page, 500)
     page.click(".row[data-id='TIS-13']")
-    settle(page)
+    settle(page, 900)
     shot("detaliu")
-    if vname == "mobil":
-        page.click(".p-back")
-        settle(page)
+    page.keyboard.press("Escape")
+    settle(page, 700)
     page.click("#newBtn")
-    settle(page)
+    settle(page, 900)
     page.fill("#nf-title", "Importul nu completează data")
     settle(page, 300)
     shot("tichet-nou")
-    if scheme == "dark":
-        page.click("#nf-submit")
-        settle(page, 300)
-        shot("tichet-nou-erori")
+    page.click("#nf-submit")
+    settle(page, 300)
+    shot("tichet-nou-erori")
     page.keyboard.press("Escape")
+    settle(page, 700)
 
     as_admin(page)
+    page.click("#adminBtn")
+    settle(page, 400)
+    shot("admin-popover")
+    page.keyboard.press("Escape")
     page.click(".row[data-id='TIS-14']")
-    settle(page)
+    settle(page, 900)
     shot("admin-detaliu")
-    if scheme == "dark":
-        page.click(".tab[data-page='news']")
-        settle(page, 1200)
-        page.screenshot(path=OUT / f"{vname}-{scheme}-news.png", full_page=True)
-        page.click(".tab[data-page='jurnal']")
-        settle(page, 1200)
-        shot("jurnal")
+    page.keyboard.press("Escape")
+    settle(page, 700)
+    page.click(".tab[data-page='news']")
+    settle(page, 1200)
+    page.screenshot(path=OUT / f"{vname}-{scheme}-news.png", full_page=True)
+    page.click(".tab[data-page='jurnal']")
+    settle(page, 1200)
+    shot("jurnal")
     ctx.close()
 
 
 with sync_playwright() as p:
-    exe = os.environ.get("CHROMIUM_PATH") or ("/opt/pw-browsers/chromium" if os.path.exists("/opt/pw-browsers/chromium") else None)
-    browser = p.chromium.launch(executable_path=exe)
+    browser = launch(p)
     errors = []
     for vname, size in VIEWPORTS.items():
         for scheme in ("dark",):
