@@ -103,7 +103,8 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 ## Următorul pas
 
 1. Utilizatorul copiază `Tokens`, `Styles`, `Index`, `App` și `Icons` în Apps Script și testează „Panou calm” pe `/dev` (tema movă, bara neagră, panoul pe toată lățimea, rândul pe 4 coloane, finalul listei, News). De urmărit: dacă panoul pe toată lățimea în tema light pare prea întunecat și dacă pe mobil selecturile (ordine, prioritate) lasă prea puțin loc pentru status și zone.
-2. **Deploy automat și link scurt**: pregătit, așteaptă pașii utilizatorului din `docs/deploy.md` (Apps Script API On, `clasp login --no-localhost` în Cloud Shell, cele 3 secrete, branch implicit `main`, rulare manuală de test, TinyURL către `/exec`).
+2. **Deploy automat și link scurt**: secretele `CLASPRC_JSON`, `SCRIPT_ID`, `DEPLOYMENT_ID` sunt setate (login clasp cu `saiu.antonio.arrise@gmail.com`, doar cele 3 permisiuni Apps Script). Rularea manuală fără `deploy` a ieșit verde (run 37252776774): manifestul luat cu `clasp pull`, 7 fișiere împinse pe `/dev`. Rămân: utilizatorul verifică `/dev`, prima rulare cu `deploy` bifat (`DEPLOYMENT_ID` încă netestat), branch implicit `main` pe GitHub, link TinyURL către `/exec`.
+   - Secretul se ia cu `cloudshell download ~/.clasprc.json` + Notepad; copiat din terminal se strică (JSON invalid).
    - Workflow-ul folosește `@google/clasp@3` (Node 20); `deploy --deploymentId` e încă valid în v3. Aplicația rămâne pe Apps Script.
    - De confirmat cu utilizatorul: rularea de test verde și `/dev` actualizat. Dacă firma blochează Cloud Shell/clasp, varianta e `clasp login` local cu Node.js.
    - Vechiul branch `claude/sleepy-heisenberg-8bihmr` se șterge doar dacă utilizatorul confirmă.
