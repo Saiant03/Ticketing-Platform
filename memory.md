@@ -22,6 +22,7 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 | Screenshot-uri ale versiunii „Panou split-flap” (runda finală) | `.impeccable/review/` |
 | Workflow și deploy | `docs/workflow.md` |
 | Skill-uri vendorizate | `.claude/skills/` (`SOURCES.md`) |
+| Agenți pentru delegare | `.claude/agents/` (`runner` Haiku, `executor` Sonnet) |
 | Reguli pentru Claude | `CLAUDE.md` |
 
 ## Istoric
@@ -39,6 +40,9 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    Utilizatorul încă nu l-a văzut pe Apps Script.
 
 ## Decizii confirmate de utilizator
+
+- Execuția se deleagă mereu la agenți pe model mai slab: `runner` (Haiku) pentru verificări și căutări, `executor` (Sonnet) pentru cod după specificație. Designul, review-ul, commit-ul și push-ul rămân la agentul principal (vezi `CLAUDE.md`).
+- Skill-ul `ponytail` e folosit pentru orice cod (copiat în `.claude/skills/`, fără hook-urile plugin-ului).
 
 - Utilizator principal: specialiști, pe desktop.
 - Temă light + dark după sistem. Direcția split-flap: panoul e mereu dark, holul urmează tema.
@@ -74,7 +78,7 @@ python3 dev/perf.py                    # ms/s de task-uri în repaus (țintă < 
 - `script.google.com` și `impeccable.style` sunt blocate de politica de rețea. Site-ul live nu poate fi deschis, iar rolul de direcții impeccable rulează degradat, fără challengeri.
 - Google Fonts se încarcă uneori prin proxy cu `ERR_TOO_MANY_RETRIES`; atunci screenshot-urile apar cu fontul de rezervă. Nu e bug de cod.
 - În Chromium headless (randare software) o View Transition are ~150ms până la randare; de aceea `flow.py` așteaptă 500ms după filtre și deschideri. Pe GPU real e 1–2 cadre.
-- Nu porni sub-agenți decât dacă utilizatorul cere explicit. Review-ul final impeccable se face inline, iar asta se spune utilizatorului.
+- Agenții definiți în `.claude/agents/` se încarcă doar la pornirea sesiunii; după ce se schimbă, delegarea merge din sesiunea următoare.
 
 ## Cum pune utilizatorul codul în Apps Script
 

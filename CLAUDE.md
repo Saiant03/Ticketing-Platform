@@ -27,6 +27,15 @@ Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlSer
 - Design tokens (culori, spatiere, fonturi) ca CSS custom properties intr-un singur fisier.
 - Inainte de orice schimbare vizuala, verifica `DESIGN.md` (radacina repo-ului). Culorile de zona sunt doar pentru zone.
 
+## Delegare la agenti
+
+Agentul principal planifica, ia deciziile de design si face review-ul final. Executia se deleaga mereu, prin tool-ul Agent, la agentii din `.claude/agents/`:
+
+- `runner` (Haiku): verificari si cautari - preview, `flow.py`, `a11y.py`, `perf.py`, `shoot.py`, `impeccable detect`, grep. Nu modifica fisiere.
+- `executor` (Sonnet): schimbari de cod dupa o specificatie precisa (fisiere, ce se schimba, criteriu de verificare). Aplica `ponytail`.
+
+Raman la agentul principal: directia vizuala, deciziile din `DESIGN.md`, review-ul (impeccable), commit-ul si push-ul, raspunsul catre utilizator. Rezultatele agentilor se verifica inainte de commit.
+
 ## Skill-uri si cand se folosesc
 
 | Faza | Skill |
@@ -35,4 +44,5 @@ Platforma de tickete pentru munca, rulata ca web app Google Apps Script (HtmlSer
 | Design system | `ui-ux-pro-max` (`--design-system`), `frontend-design` pentru directie |
 | Redesign pagini | `redesign-existing-projects`, `impeccable` (layout, typeset, colorize) |
 | Cod Apps Script | `google-apps-script` |
+| Orice cod (JS, `.gs`, scripturi `dev/`) | `ponytail` (minim, YAGNI); `ponytail-review` / `ponytail-audit` pentru supra-inginerie |
 | Finisare / QA | `impeccable` (polish, harden, adapt), `webapp-testing` |
