@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WFM Extended — AFIȘ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDE8DE; --ink:#151515; --pink:#FF3EA5; --blue:#1F5FFF;
+  --display:"Anton","Impact","Arial Narrow",sans-serif;
+  --mono:"Space Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--mono);width:1440px;height:900px;overflow:hidden;position:relative}
+a{color:inherit}
+
+/* hârtie: granulație */
+.grain{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.18;mix-blend-mode:multiply;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.6 -.2'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>")}
+
+/* supratipar: copie de culoare decalată */
+.ov{position:relative;display:inline-block}
+.ov::after{content:attr(data-t);position:absolute;left:3px;top:2px;color:var(--blue);mix-blend-mode:multiply;pointer-events:none;white-space:inherit}
+
+/* masthead */
+.mast{display:flex;align-items:flex-end;height:146px;padding:4px 40px 0;gap:28px}
+.wfm{font-family:var(--display);font-size:156px;line-height:140px;letter-spacing:-2px;position:relative;color:var(--ink);height:142px;display:block;isolation:isolate}
+.wfm::before{content:attr(data-t);position:absolute;left:-7px;top:5px;color:var(--pink);z-index:-1;mix-blend-mode:multiply}
+.wfm span{position:relative;z-index:1}
+.mast-r{display:flex;flex-direction:column;gap:7px;padding-bottom:18px;flex:1}
+.cover{font-size:15px;font-weight:700;letter-spacing:.08em;font-variant:small-caps;text-transform:uppercase;max-width:640px;line-height:1.35}
+.nav{display:flex;gap:10px;align-items:baseline;font-size:15px;font-weight:700;letter-spacing:.06em}
+.nav a{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px}
+.nav a.on{text-decoration-color:var(--pink)}
+.admin{position:absolute;right:40px;top:14px;font-size:11px}
+.rule{height:4px;background:var(--ink);margin:0 0}
+.ticker{background:var(--pink);height:30px;overflow:hidden;white-space:nowrap;font-size:13px;font-weight:700;line-height:30px;letter-spacing:.04em;border-bottom:3px solid var(--ink)}
+
+/* corp */
+.page{display:grid;grid-template-columns:1fr 268px;gap:0 36px;padding:0 40px 0 40px}
+.search{display:block;width:100%;margin-top:12px;border:0;border-bottom:4px solid var(--ink);background:transparent;outline:0;
+  font-family:var(--display);font-size:40px;line-height:1.1;padding:0 0 2px;color:var(--ink);text-transform:uppercase;transform:rotate(-.25deg)}
+.search::placeholder{font-family:var(--display);color:var(--ink);opacity:.9}
+.search:focus{border-bottom-color:var(--pink)}
+.filters{display:flex;gap:10px;font-size:14px;font-weight:700;letter-spacing:.06em;margin:10px 0 8px;align-items:center;text-transform:uppercase}
+.filters .sl{opacity:.55}
+.filters a{text-decoration:none;padding:1px 7px}
+.filters a.on{background:var(--pink)}
+
+/* tichete */
+.list{list-style:none;border-bottom:4px solid var(--ink)}
+.t{display:grid;grid-template-columns:150px 1fr 118px 142px;align-items:center;gap:0 16px;border-top:4px solid var(--ink);height:96px;
+  transition:transform .12s ease;position:relative;cursor:pointer}
+.t:nth-child(even){margin-left:24px}
+.t:hover{transform:translateX(6px)}
+.num{font-family:var(--display);font-size:92px;line-height:.9;color:transparent;-webkit-text-stroke:2px var(--ink);letter-spacing:-1px;transition:color .12s;text-align:right;padding-right:6px}
+.t:hover .num{color:var(--ink)}
+.ti{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ti h2{font-family:var(--display);font-weight:400;font-size:34px;line-height:1;text-transform:uppercase;max-height:2em;overflow:hidden;letter-spacing:.005em}
+.ti h2.ov{display:block}
+.meta{font-size:12px;line-height:1.2;letter-spacing:.02em}
+.meta b{font-weight:700}
+.pri{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.stars{font-size:26px;line-height:1;letter-spacing:1px;font-weight:700;white-space:nowrap}
+.stars i{font-style:normal;opacity:.14}
+.stars.crit{color:var(--pink)}
+.stars.crit i{opacity:1}
+.pl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+
+/* ștampilă */
+.stampwrap{display:flex;justify-content:center;align-items:center;filter:url(#rough)}
+.stamp{display:inline-block;border:3px solid currentColor;padding:6px 12px 5px;font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.12em;text-transform:uppercase;text-align:center;line-height:1.1;white-space:nowrap}
+.stamp.o{color:var(--pink);border-radius:50px;padding:8px 14px}
+.stamp.w{color:var(--blue);border-radius:6px;padding:7px 10px;font-size:14px}
+.stamp.r{color:var(--ink);opacity:.5;border-radius:6px;padding:9px 10px;border-style:double;border-width:5px}
+
+/* lateral */
+.side{padding-top:12px;display:flex;flex-direction:column;gap:18px}
+.news{border:3px solid var(--ink);padding:14px 14px 16px;background:var(--paper);transform:rotate(1.6deg);box-shadow:6px 6px 0 var(--blue)}
+.news small{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.news small em{font-style:normal;background:var(--ink);color:var(--paper);padding:1px 6px;margin-right:6px}
+.news p{font-family:var(--display);font-size:32px;line-height:1.02;text-transform:uppercase}
+.news .d{font-family:var(--mono);font-size:11px;margin-top:10px;display:block;text-transform:uppercase;letter-spacing:.08em}
+
+/* autocolant */
+.sticker{position:fixed;right:28px;bottom:24px;width:240px;height:90px;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:var(--pink);color:var(--ink);font-family:var(--display);font-size:38px;letter-spacing:.03em;text-transform:uppercase;text-decoration:none;
+  transform:rotate(-6deg);box-shadow:6px 6px 0 var(--ink);white-space:nowrap}
+.sticker:hover{transform:rotate(-4deg) translateY(-2px)}
+.sticker:focus-visible,.t a:focus-visible,.nav a:focus-visible,.filters a:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency=".055" numOctaves="2" seed="4" result="w"/>
+    <feDisplacementMap in="SourceGraphic" in2="w" scale="3" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="9" result="n"/>
+    <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -9 7.4" result="m"/>
+    <feComposite in="d" in2="m" operator="in"/>
+  </filter>
+</svg>
+<div class="grain"></div>
+
+<a class="admin" href="#">Admin</a>
+<header>
+  <div class="mast">
+    <div class="wfm" data-t="WFM"><span>WFM</span></div>
+    <div class="mast-r">
+      <p class="cover">Extended — Nr. 14 — Probleme cunoscute — Oct. 2026</p>
+      <nav class="nav" aria-label="Navigație"><a class="on" href="#">TICHETE</a><span>/</span><a href="#">NEWS</a></nav>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <div class="ticker" aria-hidden="true">ULTIMA ORĂ: IMPORT AUTOMAT ACTIVAT PENTRU TOATE ECHIPELE ✶ 5 ACTIVE ✶ 3 DESCHISE ✶ 2 ÎN LUCRU ✶ &nbsp;ULTIMA ORĂ: IMPORT AUTOMAT ACTIVAT PENTRU TOATE ECHIPELE ✶ 5 ACTIVE ✶ 3 DESCHISE ✶ 2 ÎN LUCRU ✶ &nbsp;ULTIMA ORĂ: IMPORT AUTOMAT ACTIVAT PENTRU TOATE ECHIPELE ✶ 5 ACTIVE ✶ 3 DESCHISE ✶ 2 ÎN LUCRU ✶</div>
+</header>
+
+<main class="page">
+  <section>
+    <input class="search" type="search" placeholder="Caută o problemă…" aria-label="Caută o problemă">
+    <nav class="filters" aria-label="Filtre"><a class="on" href="#">Active 5</a><span class="sl">/</span><a href="#">Deschise 3</a><span class="sl">/</span><a href="#">În lucru 2</a><span class="sl">/</span><a href="#">Rezolvate 1</a></nav>
+
+    <ol class="list">
+      <li class="t">
+        <div class="num">14</div>
+        <div class="ti"><h2 class="ov" data-t="Câmpul dată nu se completează automat la import">Câmpul dată nu se completează automat la import</h2>
+          <p class="meta"><b>Import</b> · Andrei Popa · acum 2 ore (2 capturi)</p></div>
+        <div class="pri"><span class="stars crit" aria-label="Critică">✶✶✶✶</span><span class="pl">Critică</span></div>
+        <div class="stampwrap"><span class="stamp o" style="transform:rotate(-9deg)">Deschis</span></div>
+      </li>
+      <li class="t">
+        <div class="num">13</div>
+        <div class="ti"><h2 class="ov" data-t="Raportul săptămânal afișează totaluri duble">Raportul săptămânal afișează totaluri duble</h2>
+          <p class="meta"><b>Raportare</b> · Ioana Marin · acum 14 ore (2 comentarii)</p></div>
+        <div class="pri"><span class="stars" aria-label="Ridicată">✶✶✶<i>✶</i></span><span class="pl">Ridicată</span></div>
+        <div class="stampwrap"><span class="stamp w" style="transform:rotate(6deg)">În lucru</span></div>
+      </li>
+      <li class="t">
+        <div class="num">12</div>
+        <div class="ti"><h2 class="ov" data-t="Butonul Export nu răspunde pe Safari">Butonul Export nu răspunde pe Safari</h2>
+          <p class="meta"><b>Interfață</b> · Mihai Ionescu · 3 oct.</p></div>
+        <div class="pri"><span class="stars" aria-label="Medie">✶✶<i>✶✶</i></span><span class="pl">Medie</span></div>
+        <div class="stampwrap"><span class="stamp o" style="transform:rotate(-3deg)">Deschis</span></div>
+      </li>
+      <li class="t">
+        <div class="num">11</div>
+        <div class="ti"><h2 class="ov" data-t="Lipsesc turele din 3 octombrie">Lipsesc turele din 3 octombrie</h2>
+          <p class="meta"><b>Date</b> · Elena Dobre · 2 oct.</p></div>
+        <div class="pri"><span class="stars" aria-label="Ridicată">✶✶✶<i>✶</i></span><span class="pl">Ridicată</span></div>
+        <div class="stampwrap"><span class="stamp o" style="transform:rotate(-12deg)">Deschis</span></div>
+      </li>
+      <li class="t">
+        <div class="num">10</div>
+        <div class="ti"><h2 class="ov" data-t="Filtrul pe echipă se resetează la refresh">Filtrul pe echipă se resetează la refresh</h2>
+          <p class="meta"><b>Interfață</b> · Radu Stan · 2 oct.</p></div>
+        <div class="pri"><span class="stars" aria-label="Scăzută">✶<i>✶✶✶</i></span><span class="pl">Scăzută</span></div>
+        <div class="stampwrap"><span class="stamp w" style="transform:rotate(8deg)">În lucru</span></div>
+      </li>
+      <li class="t">
+        <div class="num">09</div>
+        <div class="ti"><h2 class="ov" data-t="Import CSV respinge diacriticele din nume">Import CSV respinge diacriticele din nume</h2>
+          <p class="meta"><b>Import</b> · Ana Georgescu · 30 sept.</p></div>
+        <div class="pri"><span class="stars" aria-label="Medie">✶✶<i>✶✶</i></span><span class="pl">Medie</span></div>
+        <div class="stampwrap"><span class="stamp r" style="transform:rotate(-5deg)">Rezolvat</span></div>
+      </li>
+    </ol>
+  </section>
+
+  <aside class="side">
+    <article class="news">
+      <small><em>News</em>Update</small>
+      <p>Import automat activat pentru toate echipele</p>
+      <span class="d">ieri</span>
+    </article>
+  </aside>
+</main>
+
+<a class="sticker" href="#">+ Raportează</a>
+
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>WFM Extended – Orbită (concept B)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06050C;
+    --violet: #8A7BFF;
+    --red: #FF4D3D;
+    --ink: #F4F4F0;
+    --ui: "Space Grotesk", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1440px; height: 900px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--ui); }
+  .stage { position: relative; width: 1440px; height: 900px; overflow: hidden; }
+  .glow { position: absolute; left: 0; top: 0; width: 1440px; height: 900px;
+    background: radial-gradient(ellipse 700px 600px at 560px 470px, rgba(42,27,94,.40) 0%, rgba(42,27,94,.26) 45%, rgba(42,27,94,0) 100%); }
+  .stars, .map { position: absolute; left: 0; top: 0; }
+  .map { width: 1040px; height: 900px; }
+  .zone { font: 400 11px var(--mono); letter-spacing: .2em; fill: rgba(255,255,255,.45); }
+  .code { font: 500 11px var(--mono); fill: rgba(255,255,255,.6); letter-spacing: .04em; }
+  .code.sel { fill: var(--violet); }
+  .ttl { font: 400 13px var(--ui); fill: rgba(255,255,255,.85); }
+  .core-t { font: 500 11px var(--mono); fill: #1a1240; letter-spacing: .12em; }
+
+  header { position: absolute; left: 32px; right: 30px; top: 24px; height: 44px; display: flex; align-items: center; }
+  .brand { font: 500 20px var(--ui); letter-spacing: -.01em; }
+  .brand i { font-style: normal; color: rgba(255,255,255,.45); }
+  nav { display: flex; gap: 6px; margin-left: 36px; }
+  nav a { display: flex; align-items: center; gap: 8px; padding: 8px 14px; font: 500 14px var(--ui); color: rgba(255,255,255,.55); text-decoration: none; border-radius: 999px; }
+  nav a.on { color: var(--ink); }
+  nav a.on::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 8px var(--violet); }
+  .tools { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .search { width: 230px; height: 38px; padding: 0 16px; display: flex; align-items: center; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); font: 400 13px var(--ui); color: rgba(255,255,255,.45); }
+  .pill { height: 38px; padding: 0 18px; border-radius: 999px; font: 500 13px var(--ui); display: inline-flex; align-items: center; border: 1px solid transparent; }
+  .pill.solid { background: var(--violet); color: #000; }
+  .pill.ghost { color: rgba(255,255,255,.7); }
+
+  .card { position: absolute; left: 1040px; top: 110px; width: 370px; padding: 28px; border-radius: 20px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .card .code { font: 500 12px var(--mono); color: var(--violet); letter-spacing: .06em; }
+  .card h1 { font: 500 26px/1.18 var(--ui); letter-spacing: -.01em; margin: 12px 0 20px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); font: 500 12px var(--ui); color: rgba(255,255,255,.85); }
+  .chip.crit { border-color: var(--red); color: #FF8A7E; }
+  .who { display: flex; align-items: center; gap: 10px; margin: 22px 0 22px; font: 400 13px var(--ui); color: rgba(255,255,255,.7); }
+  .who b { font-weight: 500; color: var(--ink); }
+  .av { width: 28px; height: 28px; border-radius: 50%; background: rgba(138,123,255,.25); border: 1px solid rgba(138,123,255,.6); display: grid; place-items: center; font: 500 10px var(--mono); color: var(--ink); }
+  .who time { font: 400 11px var(--mono); color: rgba(255,255,255,.5); margin-left: auto; }
+  .cap { font: 400 11px var(--mono); color: rgba(255,255,255,.45); letter-spacing: .1em; margin-bottom: 10px; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .shot { height: 108px; border-radius: 14px; border: 1px solid rgba(255,255,255,.1);
+    background: repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 10px), #0B0914; }
+  .acts { display: flex; gap: 10px; margin-top: 26px; }
+  .acts .pill { flex: 1; justify-content: center; border-color: rgba(255,255,255,.28); color: var(--ink); }
+
+  .legend { position: absolute; left: 32px; bottom: 22px; font: 400 11px/1 var(--mono); color: rgba(255,255,255,.55); }
+  .legend .row { display: flex; align-items: center; gap: 18px; }
+  .legend .row + .row { margin-top: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .dot { display: inline-block; border-radius: 50%; }
+  .counts { color: rgba(255,255,255,.85); letter-spacing: .04em; }
+  .ticker { position: absolute; left: 0; width: 1440px; bottom: 22px; text-align: center; font: 400 11px/1 var(--mono); color: rgba(255,255,255,.45); letter-spacing: .04em; pointer-events: none; }
+  .ticker b { color: var(--violet); font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="glow"></div>
+  <svg class="stars" width="1440" height="900" viewBox="0 0 1440 900" aria-hidden="true"><circle cx="466" cy="136" r="0.6" fill="#fff" opacity="0.20"/><circle cx="772" cy="329" r="0.6" fill="#fff" opacity="0.79"/><circle cx="309" cy="77" r="1" fill="#fff" opacity="0.20"/><circle cx="131" cy="382" r="1.2" fill="#fff" opacity="0.24"/><circle cx="321" cy="565" r="0.6" fill="#fff" opacity="0.55"/><circle cx="571" cy="879" r="0.6" fill="#fff" opacity="0.54"/><circle cx="192" cy="377" r="1.2" fill="#fff" opacity="0.23"/><circle cx="444" cy="735" r="0.8" fill="#fff" opacity="0.22"/><circle cx="823" cy="169" r="0.6" fill="#fff" opacity="0.53"/><circle cx="90" cy="54" r="0.8" fill="#fff" opacity="0.50"/><circle cx="766" cy="700" r="1" fill="#fff" opacity="0.56"/><circle cx="653" cy="270" r="0.8" fill="#fff" opacity="0.64"/><circle cx="351" cy="517" r="1.2" fill="#fff" opacity="0.50"/><circle cx="495" cy="404" r="1.2" fill="#fff" opacity="0.84"/><circle cx="170" cy="376" r="1" fill="#fff" opacity="0.26"/><circle cx="704" cy="35" r="0.6" fill="#fff" opacity="0.69"/><circle cx="825" cy="788" r="1" fill="#fff" opacity="0.39"/><circle cx="504" cy="447" r="1" fill="#fff" opacity="0.20"/><circle cx="135" cy="243" r="0.6" fill="#fff" opacity="0.19"/><circle cx="1010" cy="582" r="1" fill="#fff" opacity="0.35"/><circle cx="556" cy="602" r="0.6" fill="#fff" opacity="0.81"/><circle cx="512" cy="550" r="1" fill="#fff" opacity="0.19"/><circle cx="1106" cy="116" r="0.8" fill="#fff" opacity="0.43"/><circle cx="1320" cy="447" r="0.8" fill="#fff" opacity="0.46"/><circle cx="791" cy="795" r="1" fill="#fff" opacity="0.75"/><circle cx="401" cy="374" r="1" fill="#fff" opacity="0.63"/><circle cx="548" cy="208" r="0.6" fill="#fff" opacity="0.27"/><circle cx="334" cy="210" r="1" fill="#fff" opacity="0.73"/><circle cx="263" cy="254" r="0.8" fill="#fff" opacity="0.44"/><circle cx="532" cy="510" r="0.8" fill="#fff" opacity="0.63"/><circle cx="742" cy="556" r="0.6" fill="#fff" opacity="0.47"/><circle cx="1254" cy="857" r="1.2" fill="#fff" opacity="0.42"/><circle cx="575" cy="93" r="1" fill="#fff" opacity="0.19"/><circle cx="97" cy="188" r="0.8" fill="#fff" opacity="0.23"/><circle cx="865" cy="92" r="1.2" fill="#fff" opacity="0.26"/><circle cx="146" cy="327" r="0.6" fill="#fff" opacity="0.20"/><circle cx="299" cy="339" r="1" fill="#fff" opacity="0.82"/><circle cx="867" cy="427" r="0.6" fill="#fff" opacity="0.74"/><circle cx="1430" cy="419" r="1" fill="#fff" opacity="0.37"/><circle cx="208" cy="675" r="1" fill="#fff" opacity="0.49"/><circle cx="997" cy="465" r="0.8" fill="#fff" opacity="0.82"/><circle cx="761" cy="132" r="1.2" fill="#fff" opacity="0.79"/><circle cx="1092" cy="268" r="0.6" fill="#fff" opacity="0.64"/><circle cx="376" cy="330" r="0.8" fill="#fff" opacity="0.40"/><circle cx="321" cy="487" r="1.2" fill="#fff" opacity="0.38"/><circle cx="321" cy="730" r="0.8" fill="#fff" opacity="0.71"/><circle cx="1178" cy="666" r="0.8" fill="#fff" opacity="0.29"/><circle cx="710" cy="658" r="0.6" fill="#fff" opacity="0.70"/><circle cx="680" cy="174" r="1.2" fill="#fff" opacity="0.82"/><circle cx="644" cy="843" r="1" fill="#fff" opacity="0.82"/><circle cx="525" cy="198" r="0.8" fill="#fff" opacity="0.48"/><circle cx="486" cy="434" r="1.2" fill="#fff" opacity="0.74"/><circle cx="690" cy="588" r="0.6" fill="#fff" opacity="0.73"/><circle cx="173" cy="350" r="0.8" fill="#fff" opacity="0.48"/><circle cx="257" cy="710" r="1" fill="#fff" opacity="0.21"/><circle cx="1362" cy="650" r="1" fill="#fff" opacity="0.43"/><circle cx="1363" cy="652" r="0.8" fill="#fff" opacity="0.85"/><circle cx="40" cy="532" r="1" fill="#fff" opacity="0.71"/><circle cx="210" cy="744" r="1" fill="#fff" opacity="0.61"/><circle cx="505" cy="494" r="0.8" fill="#fff" opacity="0.16"/><circle cx="1151" cy="654" r="0.6" fill="#fff" opacity="0.52"/><circle cx="1344" cy="390" r="0.8" fill="#fff" opacity="0.73"/><circle cx="304" cy="227" r="1" fill="#fff" opacity="0.50"/><circle cx="1100" cy="293" r="1.2" fill="#fff" opacity="0.44"/><circle cx="189" cy="819" r="1" fill="#fff" opacity="0.78"/><circle cx="954" cy="734" r="1.2" fill="#fff" opacity="0.44"/><circle cx="1322" cy="451" r="1.2" fill="#fff" opacity="0.26"/><circle cx="735" cy="786" r="0.8" fill="#fff" opacity="0.58"/><circle cx="1117" cy="135" r="0.8" fill="#fff" opacity="0.48"/><circle cx="1044" cy="501" r="1" fill="#fff" opacity="0.63"/><circle cx="764" cy="434" r="0.6" fill="#fff" opacity="0.77"/><circle cx="82" cy="172" r="0.6" fill="#fff" opacity="0.69"/><circle cx="731" cy="506" r="0.6" fill="#fff" opacity="0.46"/><circle cx="882" cy="455" r="1.2" fill="#fff" opacity="0.29"/><circle cx="399" cy="457" r="1" fill="#fff" opacity="0.51"/><circle cx="357" cy="471" r="1" fill="#fff" opacity="0.80"/><circle cx="1286" cy="182" r="1" fill="#fff" opacity="0.25"/><circle cx="175" cy="398" r="0.6" fill="#fff" opacity="0.62"/><circle cx="617" cy="191" r="1" fill="#fff" opacity="0.70"/><circle cx="1292" cy="139" r="1" fill="#fff" opacity="0.25"/><circle cx="1271" cy="871" r="0.8" fill="#fff" opacity="0.67"/><circle cx="136" cy="796" r="0.8" fill="#fff" opacity="0.84"/><circle cx="1199" cy="145" r="1" fill="#fff" opacity="0.85"/><circle cx="581" cy="379" r="1" fill="#fff" opacity="0.37"/><circle cx="1040" cy="18" r="1.2" fill="#fff" opacity="0.47"/><circle cx="1013" cy="346" r="1.2" fill="#fff" opacity="0.59"/><circle cx="738" cy="58" r="0.8" fill="#fff" opacity="0.83"/><circle cx="151" cy="239" r="0.6" fill="#fff" opacity="0.78"/><circle cx="261" cy="680" r="1" fill="#fff" opacity="0.74"/><circle cx="973" cy="851" r="1" fill="#fff" opacity="0.25"/><circle cx="1324" cy="514" r="1" fill="#fff" opacity="0.21"/><circle cx="83" cy="619" r="1" fill="#fff" opacity="0.78"/><circle cx="387" cy="15" r="0.6" fill="#fff" opacity="0.71"/><circle cx="121" cy="771" r="0.6" fill="#fff" opacity="0.34"/><circle cx="175" cy="10" r="1.2" fill="#fff" opacity="0.44"/><circle cx="1318" cy="560" r="0.6" fill="#fff" opacity="0.52"/><circle cx="343" cy="99" r="0.8" fill="#fff" opacity="0.33"/><circle cx="261" cy="839" r="1" fill="#fff" opacity="0.52"/><circle cx="296" cy="401" r="0.8" fill="#fff" opacity="0.34"/><circle cx="1157" cy="895" r="0.6" fill="#fff" opacity="0.16"/><circle cx="1056" cy="496" r="0.8" fill="#fff" opacity="0.51"/><circle cx="354" cy="402" r="1" fill="#fff" opacity="0.61"/><circle cx="786" cy="800" r="1.2" fill="#fff" opacity="0.37"/><circle cx="310" cy="207" r="0.8" fill="#fff" opacity="0.73"/><circle cx="1018" cy="572" r="1" fill="#fff" opacity="0.84"/><circle cx="1414" cy="753" r="0.6" fill="#fff" opacity="0.20"/><circle cx="1067" cy="230" r="0.8" fill="#fff" opacity="0.19"/><circle cx="958" cy="343" r="1.2" fill="#fff" opacity="0.62"/><circle cx="406" cy="218" r="1" fill="#fff" opacity="0.18"/><circle cx="267" cy="242" r="0.6" fill="#fff" opacity="0.33"/><circle cx="1385" cy="875" r="1.2" fill="#fff" opacity="0.38"/><circle cx="50" cy="794" r="0.8" fill="#fff" opacity="0.40"/><circle cx="2" cy="343" r="1" fill="#fff" opacity="0.35"/><circle cx="945" cy="223" r="0.6" fill="#fff" opacity="0.21"/><circle cx="1177" cy="129" r="1.2" fill="#fff" opacity="0.18"/><circle cx="32" cy="274" r="0.8" fill="#fff" opacity="0.21"/><circle cx="1379" cy="768" r="0.8" fill="#fff" opacity="0.61"/><circle cx="1031" cy="791" r="1" fill="#fff" opacity="0.69"/><circle cx="1038" cy="445" r="1" fill="#fff" opacity="0.66"/><circle cx="926" cy="39" r="1.2" fill="#fff" opacity="0.59"/></svg>
+
+  <svg class="map" viewBox="0 0 1040 900" role="img" aria-label="Harta tichetelor active, pe zone">
+    <defs>
+      <radialGradient id="core">
+        <stop offset="0" stop-color="#fff"/>
+        <stop offset=".45" stop-color="#8A7BFF"/>
+        <stop offset="1" stop-color="#8A7BFF" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="corehalo">
+        <stop offset="0" stop-color="#8A7BFF" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#8A7BFF" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+    </defs>
+    <circle cx="560" cy="470" r="110" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+<circle cx="560" cy="470" r="185" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+<circle cx="560" cy="470" r="260" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1" stroke-dasharray="2 7"/>
+<circle cx="560" cy="470" r="335" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+    <path id="rp0" d="M450,470 A110,110 0 0 1 670,470" fill="none"/>
+<text class="zone" dy="-7"><textPath href="#rp0" startOffset="50%" text-anchor="middle">IMPORT</textPath></text>
+<path id="rp1" d="M375,470 A185,185 0 0 1 745,470" fill="none"/>
+<text class="zone" dy="-7"><textPath href="#rp1" startOffset="50%" text-anchor="middle">INTERFAȚĂ</textPath></text>
+<path id="rp2" d="M300,470 A260,260 0 0 1 820,470" fill="none"/>
+<text class="zone" dy="-7"><textPath href="#rp2" startOffset="50%" text-anchor="middle">DATE</textPath></text>
+<path id="rp3" d="M225,470 A335,335 0 0 1 895,470" fill="none"/>
+<text class="zone" dy="-7"><textPath href="#rp3" startOffset="50%" text-anchor="middle">RAPORTARE</textPath></text>
+    <circle cx="560" cy="470" r="80" fill="url(#corehalo)"/>
+    <circle cx="560" cy="470" r="38" fill="url(#core)"/>
+    <text class="core-t" x="560" y="474" text-anchor="middle">WFM</text>
+    <line x1="405.4" y1="460.5" x2="206" y2="461" stroke="#8A7BFF" stroke-opacity="1" stroke-width="1"/>
+<line x1="272.1" y1="269.2" x2="236" y2="246" stroke="#fff" stroke-opacity=".3" stroke-width="1"/>
+<line x1="727.4" y1="367.9" x2="850" y2="205" stroke="#fff" stroke-opacity=".3" stroke-width="1"/>
+<line x1="401.8" y1="696.1" x2="352" y2="768" stroke="#fff" stroke-opacity=".3" stroke-width="1"/>
+<line x1="449.5" y1="310.6" x2="372" y2="170" stroke="#fff" stroke-opacity=".3" stroke-width="1"/>
+<line x1="636.4" y1="564.8" x2="748" y2="772" stroke="#fff" stroke-opacity=".3" stroke-width="1"/>
+    <g id="TIS-14"><circle cx="450.4" cy="460.4" r="28" fill="none" stroke="#FF4D3D" stroke-opacity=".38" stroke-width="1.5"/><circle cx="450.4" cy="460.4" r="34" fill="none" stroke="#8A7BFF" stroke-opacity=".6" stroke-width="1.2"/><circle cx="450.4" cy="460.4" r="44" fill="none" stroke="#8A7BFF" stroke-opacity=".25" stroke-width="1"/><circle cx="450.4" cy="460.4" r="18" fill="#F4F4F0"/></g>
+<g id="TIS-13"><circle cx="285.6" cy="277.9" r="16" fill="none" stroke="#8A7BFF" stroke-width="5" opacity=".9" filter="url(#glow)"/><circle cx="285.6" cy="277.9" r="13" fill="#8A7BFF"/></g>
+<g id="TIS-12"><circle cx="720.2" cy="377.5" r="9" fill="#F4F4F0"/></g>
+<g id="TIS-11"><circle cx="410.9" cy="683.0" r="13" fill="#F4F4F0"/></g>
+<g id="TIS-10"><circle cx="453.9" cy="318.5" r="9" fill="none" stroke="#8A7BFF" stroke-width="5" opacity=".9" filter="url(#glow)"/><circle cx="453.9" cy="318.5" r="6" fill="#8A7BFF"/></g>
+<g id="TIS-09"><circle cx="630.7" cy="554.3" r="9" fill="#06050C" stroke="#fff" stroke-opacity=".35" stroke-width="1.5"/></g>
+    <text class="code sel" x="198" y="465" text-anchor="end">TIS-14</text><text class="ttl" x="198" y="483" text-anchor="end">Câmpul dată nu se</text><text class="ttl" x="198" y="500" text-anchor="end">completează automat</text><text class="ttl" x="198" y="517" text-anchor="end">la import</text>
+<text class="code" x="228" y="250" text-anchor="end">TIS-13</text><text class="ttl" x="228" y="268" text-anchor="end">Raportul săptămânal</text><text class="ttl" x="228" y="285" text-anchor="end">afișează totaluri duble</text>
+<text class="code" x="858" y="209" text-anchor="start">TIS-12</text><text class="ttl" x="858" y="227" text-anchor="start">Butonul Export nu</text><text class="ttl" x="858" y="244" text-anchor="start">răspunde pe Safari</text>
+<text class="code" x="344" y="772" text-anchor="end">TIS-11</text><text class="ttl" x="344" y="790" text-anchor="end">Lipsesc turele din</text><text class="ttl" x="344" y="807" text-anchor="end">3 octombrie</text>
+<text class="code" x="364" y="174" text-anchor="end">TIS-10</text><text class="ttl" x="364" y="192" text-anchor="end">Filtrul pe echipă se</text><text class="ttl" x="364" y="209" text-anchor="end">resetează la refresh</text>
+<text class="code" x="756" y="776" text-anchor="start">TIS-09</text><text class="ttl" x="756" y="794" text-anchor="start">Import CSV respinge</text><text class="ttl" x="756" y="811" text-anchor="start">diacriticele din nume</text>
+  </svg>
+
+  <header>
+    <div class="brand">wfm<i>/</i>extended</div>
+    <nav><a class="on" href="#">Tichete</a><a href="#">News</a></nav>
+    <div class="tools">
+      <div class="search">Caută pe hartă…</div>
+      <span class="pill solid">+ Tichet nou</span>
+      <span class="pill ghost">Admin</span>
+    </div>
+  </header>
+
+  <aside class="card">
+    <div class="code">TIS-14</div>
+    <h1>Câmpul dată nu se completează automat la import</h1>
+    <div class="chips"><span class="chip crit">Critică</span><span class="chip">Deschis</span><span class="chip">Import</span></div>
+    <div class="who"><span class="av">AP</span><span>Raportat de <b>Andrei Popa</b></span><time>acum 2 ore</time></div>
+    <div class="cap">2 CAPTURI</div>
+    <div class="shots"><div class="shot"></div><div class="shot"></div></div>
+    <div class="acts"><span class="pill">Comentează</span><span class="pill">Urmărește</span></div>
+  </aside>
+
+  <div class="legend">
+    <div class="row">
+      <span>size = prioritate</span>
+      <span><i class="dot" style="width:9px;height:9px;background:#F4F4F0"></i>white = deschis</span>
+      <span><i class="dot" style="width:9px;height:9px;background:#8A7BFF;box-shadow:0 0 7px #8A7BFF"></i>violet = în lucru</span>
+      <span><i class="dot" style="width:9px;height:9px;border:1.5px solid rgba(255,255,255,.4)"></i>ring = rezolvat</span>
+    </div>
+    <div class="row counts">5 active · 3 deschise · 2 în lucru</div>
+  </div>
+  <div class="ticker"><b>news ▸</b> Import automat activat pentru toate echipele · ieri</div>
+</div>
+</body>
+</html>
