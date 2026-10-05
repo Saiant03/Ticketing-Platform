@@ -70,6 +70,14 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - verificări: `flow.py` 42 OK, `a11y.py` curat, `perf.py` 4.5 ms/s animat / 0.2 repaus; trace CPU 4x: rotație 1% din fir (era 9%), tranziții 16–35% (erau 61–90%).
    - Notă: o rulare automată a rămas fără runner GitHub (anulată după 15 min, `runner_id: 0`); re-rularea a trecut.
 
+10. **„Orbită” runda 4** (commit `ca6a7b1`, publicată pe `/exec`: rularea automată pe `/dev` și „Deploy Apps Script” cu `deploy: true` verzi): meniurile derulante custom și fixul la numerele de prioritate.
+   - cele 5 `<select>` (`#prioFilter`, `#zoneSel`, `#sortSel`, `#ad-prio`, `#ad-zone`) sunt butoane `.select.dd` (pill de sticlă) cu un singur listbox comun `#ddList` în `body` (position:fixed, ca să nu fie tăiat de card); funcțiile `ddSet`/`ddOpen`/`ddActive`/`ddClose`/`ddPick` în `App.html`, opțiunile în `DD.opts[id]`;
+   - alegerea pune `button.value` și emite `change` pe buton, deci handler-ul `change` existent (filtre, sortare, `setField`) a rămas neschimbat; focusul revine pe buton și după ce cardul de admin se redesenează;
+   - WAI-ARIA buton + listbox cu `aria-activedescendant`; săgeți, Home/End, Enter/Space, Escape, Tab, click în afară, prima literă fără diacritice; deschidere 160ms, fade la reduced-motion;
+   - numerele din meniul de prioritate vin din `scope()`;
+   - verificări: `flow.py` toate OK (teste noi: tastatură, numere, încadrare la 390), `a11y.py` curat, `perf.py` 4.0 ms/s animat / 0.2 repaus, `trace.py` rotație 1%, tranziții 10–21%; capturi `*meniu*` în `.impeccable/review/`;
+   - `a11y.py` raportează uneori `overflow: ['shoot']` la 390: e steaua căzătoare (element temporar), apare și înainte de runda 4.
+
 ## Decizii confirmate de utilizator
 
 - Execuția se deleagă mereu la agenți pe model mai slab: `runner` (Haiku) pentru verificări și căutări, `executor` (Sonnet) pentru cod după specificație. Designul, review-ul, commit-ul și push-ul rămân la agentul principal (vezi `CLAUDE.md`).
@@ -100,7 +108,7 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
 pip install playwright                 # o dată pe sesiune (Chromium e deja în /opt/pw-browsers/chromium)
 python3 dev/preview.py &               # http://localhost:8080/, google.script.run simulat, cod admin de test 1234
 python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390, doar dark
-python3 dev/flow.py                    # 34 de pași funcționali („Orbită”), inclusiv coliziuni de etichete și tranziții
+python3 dev/flow.py                    # pașii funcționali („Orbită”): coliziuni de etichete, tranziții, meniuri derulante
 python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
 python3 dev/perf.py                    # ms/s de task-uri: < 15 cu animația pornită, < 5 în repaus (~100 s)
 python3 dev/trace.py                   # % ocupare a firului principal cu CPU 4x (rotație, tranziții, mouse)
@@ -126,8 +134,9 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 4: meniurile derulante (`<select>` native) arată ca meniurile Windows (alb, selecție albastră) și nu-i plac utilizatorului. Decizie confirmată: **meniu custom în JS** (nu `appearance: base-select`), chiar dacă e mai mult cod, ca să arate la fel în orice browser. Plus bug: numerele din meniul de prioritate („Critică · 0”) numără doar tichetele active (`renderToolbar`, `pn` cu `status !== 'rezolvat'`), chiar când filtrul de status e „Toate”; trebuie să urmeze `scope()`.
+Utilizatorul testează runda 4 pe `/exec`. Așteaptă feedback-ul lui.
 
 Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
 - `TaskDuration` din `Performance.getMetrics` e în secunde.
+- Meniurile noi se fac doar cu componenta `.dd` (fără `<select>` nativ).
