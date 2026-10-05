@@ -126,6 +126,6 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 3 e pe `/exec`. Așteaptă feedback-ul utilizatorului pe fluiditate și încărcare (pe calculatorul lui de birou). Note:
+Runda 3 e pe `/exec`; utilizatorul a confirmat că acum merge fluid. Nu e nimic deschis; următoarea cerere vine de la utilizator. Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
 - `TaskDuration` din `Performance.getMetrics` e în secunde.
