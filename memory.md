@@ -134,7 +134,7 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Utilizatorul testează runda 4 pe `/exec`. Așteaptă feedback-ul lui.
+Runda 4 confirmată de utilizator pe `/exec` („meniurile merg bine”). Nu e nimic în lucru; așteaptă următoarea cerere.
 
 Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
