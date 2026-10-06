@@ -1,7 +1,7 @@
 /**
  * Tichete TIS - backend Google Apps Script
  * Datele se salvează în foaia "Tichete". Capturile se salvează în Google Drive (folder dedicat).
- * Jurnal de acțiuni în foaia "Jurnal". Ștergerea = arhivare (recuperabilă); există și ștergere definitivă.
+ * Comentariile stau în foaia "Comentarii" (câte un rând). Jurnal de acțiuni în foaia "Jurnal". Ștergerea = arhivare (recuperabilă); există și ștergere definitivă.
  */
 
 // Codurile de admin NU stau în cod (repo-ul e public).
@@ -11,6 +11,7 @@
 var SHEET_NAME = 'Tichete';
 var NEWS_SHEET = 'News';
 var JOURNAL_SHEET = 'Jurnal';
+var COMMENTS_SHEET = 'Comentarii';
 var FOLDER_NAME = 'Tichete TIS - Capturi';
 var MAX_FILES = 5;
 var MAX_BYTES = 5 * 1024 * 1024;
@@ -18,6 +19,7 @@ var UP_HOUR = 60, UP_DAY = 300;   // limită globală de upload-uri pe oră / pe
 var HEADERS = ['Cod', 'N', 'Raportat', 'Titlu', 'Descriere', 'Prioritate', 'Status', 'Creat', 'Raspuns', 'RaspunsDe', 'Atasamente', 'Arhivat', 'ModificatDe', 'ModificatLa', 'Categorie', 'Comentarii'];
 var NEWS_HEADERS = ['Id', 'N', 'Titlu', 'Continut', 'Tip', 'Autor', 'Creat', 'Atasamente'];
 var JOURNAL_HEADERS = ['Data', 'Admin', 'Actiune', 'Cod', 'Detaliu'];
+var COMMENT_HEADERS = ['Cod', 'Autor', 'Admin', 'Text', 'Data'];
 var NEWS_TYPES = ['update', 'fix', 'anunt'];
 
 function doGet() {
@@ -53,6 +55,17 @@ function getJournalSheet_() {
   if (!sh) {
     sh = ss.insertSheet(JOURNAL_SHEET);
     sh.getRange(1, 1, 1, JOURNAL_HEADERS.length).setValues([JOURNAL_HEADERS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function getCommentsSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(COMMENTS_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(COMMENTS_SHEET);
+    sh.getRange(1, 1, 1, COMMENT_HEADERS.length).setValues([COMMENT_HEADERS]).setFontWeight('bold');
     sh.setFrozenRows(1);
   }
   return sh;
@@ -134,17 +147,31 @@ function parseAtt_(raw) {
   try { var a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
 }
 
-function parseComments_(r) {
+/** Comentariile din foaia "Comentarii", grupate pe cod: {cod: [{author, admin, text, at}]}. O singură citire; nu creează foaia (citire fără lock). */
+function commentsByCod_() {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(COMMENTS_SHEET);
+  var by = {};
+  if (!sh || sh.getLastRow() < 2) return by;
+  var last = sh.getLastRow();
+  sh.getRange(2, 1, last - 1, COMMENT_HEADERS.length).getValues().forEach(function (r) {
+    (by[r[0]] = by[r[0]] || []).push({ author: str_(r[1]), admin: !!r[2], text: str_(r[3]), at: r[4] ? new Date(r[4]).getTime() : null });
+  });
+  return by;
+}
+
+/** Comentariile unui tichet: cele vechi (JSON în coloana 16, sau răspunsul vechi din 9 dacă 16 e goală) + `extra` din foaia "Comentarii", după `at`. */
+function parseComments_(r, extra) {
   var arr = [];
   try { var a = JSON.parse(r[15] || '[]'); if (Array.isArray(a)) arr = a; } catch (e) {}
-  var out = arr.map(function (c) { return { author: c.a || '', admin: !!c.ad, text: c.t || '', at: c.at ? Number(c.at) : null }; });
-  if (!out.length && r[8]) {
+  var out = arr.map(function (c) { return { author: String(c.a || ''), admin: !!c.ad, text: String(c.t || ''), at: c.at ? Number(c.at) : null }; })
+    .concat(extra || []).sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+  if (!arr.length && r[8]) {   // răspunsul vechi stă primul: ModificatLa (folosit ca dată) se mută la fiecare comentariu de admin
     var at = r[13] ? new Date(r[13]).getTime() : (r[7] ? new Date(r[7]).getTime() : null);
-    out.push({ author: r[9] || 'Admin', admin: true, text: String(r[8]), at: at });
+    out.unshift({ author: r[9] || 'Admin', admin: true, text: String(r[8]), at: at });
   }
   return out;
 }
-function mapTicket_(r) {
+function mapTicket_(r, cm) {
   return {
     id: r[0], n: r[1], reporter: str_(r[2]), title: str_(r[3]), desc: str_(r[4]),
     priority: r[5], status: r[6],
@@ -155,7 +182,7 @@ function mapTicket_(r) {
     updatedBy: r[12] || '',
     updatedAt: r[13] ? new Date(r[13]).getTime() : null,
     category: str_(r[14]),
-    comments: parseComments_(r),
+    comments: parseComments_(r, cm && cm[r[0]]),
   };
 }
 
@@ -165,7 +192,8 @@ function getTickets() {
   var last = sh.getLastRow();
   if (last < 2) return [];
   var values = sh.getRange(2, 1, last - 1, HEADERS.length).getValues();
-  var out = values.filter(function (r) { return !r[11]; }).map(mapTicket_);
+  var cm = commentsByCod_();
+  var out = values.filter(function (r) { return !r[11]; }).map(function (r) { return mapTicket_(r, cm); });
   out.sort(function (a, b) { return b.n - a.n; });
   return out;
 }
@@ -181,7 +209,8 @@ function archived_() {
   var last = sh.getLastRow();
   if (last < 2) return [];
   var values = sh.getRange(2, 1, last - 1, HEADERS.length).getValues();
-  var out = values.filter(function (r) { return !!r[11]; }).map(mapTicket_);
+  var cm = commentsByCod_();
+  var out = values.filter(function (r) { return !!r[11]; }).map(function (r) { return mapTicket_(r, cm); });
   out.sort(function (a, b) { return b.n - a.n; });
   return out;
 }
@@ -345,18 +374,7 @@ function addComment(cod, text, name, pin) {
   try {
     var sh = getSheet_(); var row = findRow_(sh, cod);
     if (row > 0) {
-      var raw = sh.getRange(row, 16).getValue();
-      var arr = [];
-      try { var a = JSON.parse(raw || '[]'); if (Array.isArray(a)) arr = a; } catch (e) {}
-      if (!arr.length) {
-        var legacy = sh.getRange(row, 9).getValue();
-        if (legacy) {
-          var la = sh.getRange(row, 14).getValue() || sh.getRange(row, 8).getValue();
-          arr.push({ a: sh.getRange(row, 10).getValue() || 'Admin', ad: true, t: String(legacy), at: la ? new Date(la).getTime() : Date.now() });
-        }
-      }
-      arr.push({ a: author, ad: isAdmin, t: clean, at: Date.now() });
-      sh.getRange(row, 16).setValue(JSON.stringify(arr));
+      getCommentsSheet_().appendRow([txt_(cod, 40), txt_(author, 120), isAdmin, txt_(clean, 4000), new Date()]);
       if (isAdmin) setMeta_(sh, row, author);
       SpreadsheetApp.flush();
     }
@@ -474,6 +492,11 @@ function purgeTicket(cod, pin) {
       var atts = parseAtt_(sh.getRange(row, 11).getValue());
       atts.forEach(function (a) { try { DriveApp.getFileById(a.id).setTrashed(true); } catch (e) {} });
       sh.deleteRow(row);
+      var cs = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(COMMENTS_SHEET), cl = cs ? cs.getLastRow() : 0;
+      if (cl >= 2) {
+        var codes = cs.getRange(2, 1, cl - 1, 1).getValues();
+        for (var i = codes.length - 1; i >= 0; i--) { if (String(codes[i][0]) === cod) cs.deleteRow(i + 2); }
+      }
       SpreadsheetApp.flush();
     }
   } finally { lock.releaseLock(); }

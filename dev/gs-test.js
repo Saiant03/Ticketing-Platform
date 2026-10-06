@@ -1,11 +1,13 @@
 // Rulează src/Code.gs real în Node, cu serviciile Apps Script simulate în memorie. Rulare: node dev/gs-test.js
-// Foaia păstrează valorile exact cum sunt scrise (nu le interpretează), ca să se vadă ce ajunge în Sheet.
+// Foaia păstrează valorile exact cum sunt scrise (`rows`, ca să se vadă ce ajunge în Sheet), dar ca Sheets real:
+// getValues scoate apostroful de la început din text, iar o celulă peste 50.000 de caractere aruncă eroare.
 var fs = require('fs'), vm = require('vm'), path = require('path');
 var failed = false;
 function ok(c, m) { console.log((c ? 'OK  ' : 'FAIL') + ' ' + m); if (!c) failed = true; }
 
 function Sheet() {
   var rows = [];
+  function chk(v) { if (typeof v === 'string' && v.length > 50000) throw new Error('Celula depășește 50000 de caractere'); return v; }
   var sh = {
     getLastRow: function () { return rows.length; },
     getLastColumn: function () { return rows.reduce(function (m, r) { return Math.max(m, r.length); }, 0); },
@@ -14,11 +16,11 @@ function Sheet() {
       var rg = {
         getValues: function () {
           var out = [];
-          for (var i = 0; i < nr; i++) { var row = rows[r - 1 + i] || [], o = []; for (var j = 0; j < nc; j++) { var v = row[c - 1 + j]; o.push(v === undefined ? '' : v); } out.push(o); }
+          for (var i = 0; i < nr; i++) { var row = rows[r - 1 + i] || [], o = []; for (var j = 0; j < nc; j++) { var v = row[c - 1 + j]; o.push(v === undefined ? '' : typeof v === 'string' ? v.replace(/^'/, '') : v); } out.push(o); }
           return out;
         },
         setValues: function (vals) {
-          vals.forEach(function (vr, i) { var row = rows[r - 1 + i] = rows[r - 1 + i] || []; vr.forEach(function (v, j) { row[c - 1 + j] = v; }); });
+          vals.forEach(function (vr, i) { var row = rows[r - 1 + i] = rows[r - 1 + i] || []; vr.forEach(function (v, j) { row[c - 1 + j] = chk(v); }); });
           return rg;
         },
         getValue: function () { return rg.getValues()[0][0]; },
@@ -27,7 +29,7 @@ function Sheet() {
       };
       return rg;
     },
-    appendRow: function (row) { rows.push(row.slice()); },
+    appendRow: function (row) { rows.push(row.map(chk)); },
     deleteRow: function (r) { rows.splice(r - 1, 1); },
     setFrozenRows: function () {},
     rows: rows
@@ -172,10 +174,10 @@ ok(ctx.verifyPin('0000') === '' && JSON.parse(props.PINLOCK).fails === 1, 'bloca
 reset();
 for (i = 0; i < 10; i++) ctx.addComment('TIS-01', 'salut ' + i, 'Ana', undefined);
 ok(!props.PINLOCK, 'addComment fără cod x10: nicio blocare');
-ok(JSON.parse(T().rows[1][15]).length === 10, 'addComment: comentariile sunt salvate');
+ok(sheets['Comentarii'].rows.length === 11 && sheets['Comentarii'].rows.slice(1).every(function (r) { return r[0] === "'TIS-01"; }), 'addComment: comentariile sunt salvate în foaia Comentarii');
 ctx.addComment('TIS-01', 'cu cod greșit', 'Ana', '0000');
-var cm = JSON.parse(T().rows[1][15]).pop();
-ok(cm.ad === false && cm.a === 'Ana', 'addComment: cod greșit nu face admin');
+var cm = sheets['Comentarii'].rows.pop();
+ok(cm[2] === false && cm[1] === "'Ana" && cm[3] === "'cu cod greșit", 'addComment: cod greșit nu face admin');
 reset();
 
 // 6. export CSV
@@ -260,6 +262,80 @@ delete sheets['Tichete']; delete sheets['News'];
 var fE = drive.add(3 * DAY);
 ok(ctx.cleanupOrphans_() === 0 && !fE.isTrashed(), 'curățare: foi fără atașamente -> nimic la coș');
 sheets['Tichete'] = saveT; sheets['News'] = saveN;
+
+// 9. comentarii în foaia "Comentarii" (fără limita de 50.000 de caractere pe celulă)
+var C = function () { return sheets['Comentarii']; };
+function tkt(cod, list) { return (list || ctx.getTickets()).filter(function (x) { return x.id === cod; })[0]; }
+function mk(cod, n, extra) { T().appendRow([cod, n, 'x', 't', 'd', 'medie', 'deschis', '', '', '', '[]', '', '', '', '', extra === undefined ? '' : extra]); }
+mk('TIS-C1', 101);
+var cmts = [];
+for (i = 0; i < 20; i++) { var big = new Array(3997).join('x') + ('000' + i).slice(-4); cmts.push(big); ctx.addComment('TIS-C1', big, 'Ana', undefined); }
+ok(cmts.length === 20 && cmts[0].length === 4000, 'comentarii: 20 x 4000 de caractere (80.000 în total) se salvează fără eroare');
+var got = tkt('TIS-C1').comments;
+ok(got.length === 20 && got.every(function (c, k) { return c.text === cmts[k]; }), 'comentarii: getTickets le întoarce pe toate 20, în ordine');
+ok(T().rows.every(function (r) { return r.every(function (v) { return typeof v !== 'string' || v.length <= 50000; }); }) && C().rows.every(function (r) { return r.every(function (v) { return typeof v !== 'string' || v.length <= 50000; }); }), 'comentarii: nicio celulă peste 50.000 de caractere');
+ok(T().rows[T().rows.length - 1][15] === '', 'comentarii: coloana 16 din Tichete nu se mai scrie');
+var chkThrow = thrown(function () { sheets['Comentarii'].appendRow(['x', 'a', false, new Array(50002).join('x'), '']); });
+ok(/50000/.test(chkThrow || ''), 'stub: o celulă peste 50.000 de caractere aruncă, ca Sheets');
+
+// JSON vechi în coloana 16 (2 comentarii) + 1 nou -> 3, după `at`
+var oldJson = JSON.stringify([{ a: 'Vechi1', ad: false, t: 'v1', at: 1000 }, { a: 'Vechi2', ad: true, t: 'v2', at: 2000 }]);
+mk('TIS-C2', 102, oldJson);
+ctx.addComment('TIS-C2', 'nou', 'Ana', undefined);
+var c2 = tkt('TIS-C2').comments;
+ok(c2.length === 3 && c2.map(function (c) { return c.text; }).join() === 'v1,v2,nou' && c2[0].at === 1000 && c2[2].at > 2000, 'comentarii: 2 vechi (col. 16) + 1 nou = 3, după at');
+ok(T().rows[T().rows.length - 1][15] === oldJson, 'comentarii: JSON-ul vechi din coloana 16 rămâne neatins');
+
+// răspuns vechi în coloana 9, coloana 16 goală + 1 nou -> 2
+T().appendRow(['TIS-C3', 103, 'x', 't', 'd', 'medie', 'deschis', new Date(5000), 'răspuns vechi', 'Admin Vechi', '[]', '', '', '', '', '']);
+ctx.addComment('TIS-C3', 'nou', 'Ana', undefined);
+var c3 = tkt('TIS-C3').comments;
+ok(c3.length === 2 && c3[0].text === 'răspuns vechi' && c3[0].admin === true && c3[0].author === 'Admin Vechi' && c3[1].text === 'nou', 'comentarii: răspunsul vechi (col. 9) + 1 nou = 2');
+
+// txt_ pe autor și text
+ctx.addComment('TIS-C3', '=1+1', '=HYPERLINK("http://x")', undefined);
+var last9 = C().rows[C().rows.length - 1];
+ok(last9[1] === "'=HYPERLINK(\"http://x\")" && last9[3] === "'=1+1" && last9[0] === "'TIS-C3", 'comentarii: autor, text și cod scrise cu \'');
+var c3b = tkt('TIS-C3').comments.pop();
+ok(c3b.author === '=HYPERLINK("http://x")' && c3b.text === '=1+1', 'comentarii: la citire apostroful nu apare');
+
+// cod inexistent
+var n9 = C().rows.length;
+ctx.addComment('TIS-NU', 'fantomă', 'Ana', undefined);
+ok(C().rows.length === n9, 'comentarii: cod inexistent -> nimic adăugat în Comentarii');
+ok(/Comentariul este gol/.test(thrown(function () { ctx.addComment('TIS-C1', '', 'Ana'); }) || '') && C().rows.length === n9, 'comentarii: text gol -> eroare, nimic scris');
+
+// comentariu de admin: autor = numele adminului, admin = true
+reset();
+ctx.addComment('TIS-C1', 'de la admin', 'Altcineva', '1234');
+var ca = C().rows[C().rows.length - 1];
+ok(ca[1] === "'Admin Test" && ca[2] === true && T().rows[1 + T().rows.slice(1).findIndex(function (r) { return r[0] === 'TIS-C1'; })][12] === 'Admin Test', 'comentarii: admin -> autor = numele din cod, Admin = true, ModificatDe setat');
+
+// purgeTicket + arhivă
+ctx.deleteTicket('TIS-C3', '1234');
+var arch = ctx.getArchived('1234');
+var ac = tkt('TIS-C3', arch);
+ok(ac && ac.comments.length === 3 && ac.comments[2].text === '=1+1' && !hasDate(arch), 'getArchived: include comentariile tichetului arhivat, fără valori Date');
+ok(!hasDate(ctx.getTickets()), 'getTickets: nicio valoare Date în răspuns');
+var otherBefore = C().rows.filter(function (r) { return r[0] !== "'TIS-C3"; }).length;
+ok(C().rows.some(function (r) { return r[0] === "'TIS-C3"; }), 'purgeTicket: (înainte) există rânduri pentru TIS-C3');
+var after = ctx.purgeTicket('TIS-C3', '1234');
+ok(!C().rows.some(function (r) { return r[0] === "'TIS-C3"; }), 'purgeTicket: rândurile TIS-C3 din Comentarii au dispărut');
+ok(C().rows.filter(function (r) { return r[0] !== "'TIS-C3"; }).length === otherBefore && tkt('TIS-C1').comments.length === 21, 'purgeTicket: comentariile altor tichete rămân');
+ok(!tkt('TIS-C3', after) && after.every(function (x) { return x.id !== 'TIS-C3'; }), 'purgeTicket: tichetul nu mai e în arhivă');
+reset();
+
+// citirea și ștergerea definitivă nu creează foaia Comentarii (doar addComment, sub lock)
+var saveC = sheets['Comentarii'];
+delete sheets['Comentarii'];
+ok(ctx.getTickets().length > 0 && !sheets['Comentarii'], 'getTickets: fără foaia Comentarii nu o creează');
+ok(Array.isArray(ctx.getArchived('1234')) && !sheets['Comentarii'], 'getArchived: fără foaia Comentarii nu o creează');
+mk('TIS-C9', 109); ctx.deleteTicket('TIS-C9', '1234');
+ok(Array.isArray(ctx.purgeTicket('TIS-C9', '1234')) && !sheets['Comentarii'], 'purgeTicket: fără foaia Comentarii nu o creează');
+ctx.addComment('TIS-C1', 'creează foaia', 'Ana', undefined);
+ok(!!sheets['Comentarii'] && sheets['Comentarii'].rows.length === 2, 'addComment: creează foaia Comentarii la prima utilizare');
+sheets['Comentarii'] = saveC;
+reset();
 
 console.log(failed ? 'EȘEC' : 'toate OK');
 process.exit(failed ? 1 : 0);
