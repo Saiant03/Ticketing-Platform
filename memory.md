@@ -83,8 +83,14 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - `txt_` pune prefixul `'` pe textul utilizatorilor (Sheets îl păstrează ca text: fără formule `=…`, fără date `1/2`; verificat de utilizator în Sheet-ul real); `str_` la citire, ca o dată rămasă într-o coloană text să nu strice răspunsul `google.script.run`; CSV-ul prefixează `= + - @`;
    - status și prioritate validate pe server; `addTicket` cere titlu;
    - `dev/gs-test.js` (`node dev/gs-test.js`) rulează `Code.gs` real cu servicii Apps Script simulate; `mock-gas.js` oglindește blocarea și validarea; `flow.py` le testează.
-   - Rămase nefăcute (discutate): upload-ul public fără limită și capturile orfane în Drive; comentariile unui tichet într-o singură celulă (max 50.000 caractere).
+   - Rămas nefăcut (discutat): comentariile unui tichet într-o singură celulă (max 50.000 caractere). Upload-ul și capturile orfane s-au rezolvat în runda 6.
    - `flow.py`: testul de coliziuni de etichete la 1440 pică rar, intermitent (o rulare din 4), și pe codul vechi; depinde de momentul rotației.
+
+12. **Limită pe upload și curățarea capturilor orfane** (runda 6, commit `eeb1648`, publicată pe `/exec` după verificarea utilizatorului pe `/dev`; plan în `docs/plan-uploads.md`):
+   - `uploadAttachment`: cel mult 60 de capturi pe oră și 300 pe zi pentru toată aplicația (contoare în `CacheService`, sub lock); doar JPEG real (`FF D8 FF`), clientul trimite oricum JPEG;
+   - `cleanupOrphans_` rulează cel mult o dată la 24 h din `uploadAttachment` (marcaj `CLEANUP_AT`): capturile nefolosite de tichete (inclusiv arhivate) sau News, mai vechi de 24 h, merg la coșul Drive; 20 s pe rulare; nu face nimic dacă nu găsește nicio referință; intrare „curățare capturi” în Jurnal;
+   - fără trigger cu timp: `ScriptApp` ar cere un scope nou și reautorizare; `src/appsscript.json` nu e în repo (deploy-ul ia manifestul live), deci orice serviciu cu scope nou trebuie evitat sau anunțat utilizatorului;
+   - limită cunoscută: cu mii de capturi în folder, cele 20 s pot să nu ajungă la toate (iterația începe mereu de la capăt).
 
 ## Decizii confirmate de utilizator
 
@@ -143,7 +149,7 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 4 (meniuri) și runda 5 (întărirea serverului) sunt pe `/exec`. Nu e nimic în lucru; așteaptă următoarea cerere. Candidați dacă se cere mai multă robustețe: limită pe `uploadAttachment` și curățarea capturilor orfane.
+Rundele 4 (meniuri), 5 (întărirea serverului) și 6 (upload, capturi orfane) sunt pe `/exec`. Nu e nimic în lucru; așteaptă următoarea cerere. Rămas din lista de robustețe: comentariile unui tichet într-o singură celulă (max 50.000 caractere).
 
 Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
