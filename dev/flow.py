@@ -187,5 +187,20 @@ with sync_playwright() as p:
     r = pm.evaluate("""()=>{const b=document.getElementById('ddList').getBoundingClientRect();return {l:b.left,r:b.right,b:b.bottom,sw:document.documentElement.scrollWidth,iw:innerWidth,h:Math.min(...[...document.querySelectorAll('#ddList [role=option]')].map(o=>o.getBoundingClientRect().height))}}""")
     ok(r['l'] >= 0 and r['r'] <= 390 and r['b'] <= 844 and r['sw'] <= r['iw'] and r['h'] >= 32, f"dropdown 390: #ddList inside the viewport, no horizontal scroll, options >= 32px tall: {r}")
     pm.keyboard.press("Escape")
+    # --- blocarea codului de admin și validarea, pe o pagină nouă (mock-ul se resetează la reîncărcare) ---
+    pk = b.new_page(viewport={'width': 1440, 'height': 900}, ignore_https_errors=True)
+    pk.on("pageerror", lambda e: errs.append(str(e)))
+    pk.goto("http://localhost:8080/"); pk.wait_for_timeout(1200)
+    pk.evaluate("""()=>{ window.call = (fn, ...a) => new Promise(res => google.script.run
+      .withSuccessHandler(v => res({ ok: true, v })).withFailureHandler(e => res({ ok: false, err: String(e.message || e) }))[fn](...a)); }""")
+    wrong = [pk.evaluate("call('updateStatus','TIS-14','in_lucru','0000')") for _ in range(5)]
+    ok(all(not r['ok'] and 'invalid' in r['err'] for r in wrong), "lock: 5 wrong codes are rejected as invalid")
+    r = pk.evaluate("call('updateStatus','TIS-14','in_lucru','1234')")
+    ok(not r['ok'] and 'Prea multe' in r['err'], f"lock: the correct code is refused after 5 wrong ones: {r}")
+    r = pk.evaluate("call('updateStatus','TIS-14','in_lucru','cod-lung-de-test')")
+    ok(r['ok'], "lock: the long code passes during the lock")
+    r = pk.evaluate("call('updateStatus','TIS-14','hack','cod-lung-de-test')")
+    ok(not r['ok'] and r['err'] == 'Status invalid.', f"validation: invalid status rejected: {r}")
+    pk.close()
     b.close()
 print("page errors:", errs or "none")

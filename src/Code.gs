@@ -60,7 +60,7 @@ function getJournalSheet_() {
 /** Adaugă o intrare în jurnal (cine, ce, când). Nu blochează fluxul dacă eșuează. */
 function log_(admin, action, cod, detail) {
   try {
-    getJournalSheet_().appendRow([new Date(), admin || '', action || '', cod || '', String(detail || '').slice(0, 500)]);
+    getJournalSheet_().appendRow([new Date(), txt_(admin, 120), action || '', txt_(cod, 40), txt_(detail, 500)]);
   } catch (e) {}
 }
 
@@ -85,28 +85,49 @@ function adminName_(pin) {
 // Codurile de cel puțin atâtea caractere nu pot fi ghicite prin încercări și trec
 // și în timpul blocării, ca încercările greșite ale altcuiva să nu blocheze adminii.
 var LONG_PIN = 12;
+var WINDOW = 60000, MAXF = 5;   // blocare 60s după 5 greșeli
+var STATUS_KEYS = ['deschis', 'in_lucru', 'rezolvat'];
+var PRIO_KEYS = ['scazuta', 'medie', 'ridicata', 'critica'];
 
-/** Verifică codul de admin, cu protecție la încercări repetate (blocare 60s după 5 greșeli). */
-function verifyPin(pin) {
-  var props = PropertiesService.getScriptProperties();
-  var WINDOW = 60000, MAXF = 5;
-  var raw = props.getProperty('PINLOCK');
-  var st = raw ? JSON.parse(raw) : { fails: 0, since: 0 };
-  var now = Date.now();
-  var longName = String(pin).length >= LONG_PIN ? adminName_(pin) : '';
-  if (longName) return longName;
-  if (st.fails >= MAXF && (now - st.since) < WINDOW) {
-    var wait = Math.ceil((WINDOW - (now - st.since)) / 1000);
-    throw new Error('Prea multe încercări greșite. Reîncearcă în ' + wait + ' secunde.');
-  }
-  if (st.fails >= MAXF) st = { fails: 0, since: 0 };
+/** Contorul de greșeli {fails, since} din PINLOCK; tolerant la JSON stricat. */
+function lockState_(props) {
+  try {
+    var s = JSON.parse(props.getProperty('PINLOCK') || 'null');
+    return { fails: Number(s && s.fails) || 0, since: Number(s && s.since) || 0 };
+  } catch (e) { return { fails: 0, since: 0 }; }
+}
+
+/** Numele adminului pentru cod, sau '' (cod gol/greșit). Cod greșit = încercare numărată; blocare 60s după 5. */
+function admin_(pin) {
+  pin = String(pin == null ? '' : pin);
+  if (!pin) return '';
   var name = adminName_(pin);
-  if (name) { props.deleteProperty('PINLOCK'); return name; }
-  st.fails = (st.fails || 0) + 1;
-  if (st.fails >= MAXF) st.since = now;
-  props.setProperty('PINLOCK', JSON.stringify(st));
+  if (name && pin.length >= LONG_PIN) return name;
+  var props = PropertiesService.getScriptProperties();
+  var st = lockState_(props);
+  var now = Date.now();
+  if (st.fails >= MAXF && now - st.since < WINDOW) throw new Error('Prea multe încercări greșite. Reîncearcă în ' + Math.ceil((WINDOW - (now - st.since)) / 1000) + ' secunde.');
+  if (name) { if (st.fails) props.deleteProperty('PINLOCK'); return name; }
+  var lock = LockService.getScriptLock(); lock.waitLock(5000);
+  try {
+    st = lockState_(props);   // re-citit sub lock: alt apel a putut număra între timp
+    if (st.fails >= MAXF && now - st.since >= WINDOW) st = { fails: 0, since: 0 };   // fereastra a expirat
+    if (st.fails < MAXF) {   // blocare deja activă: nu o prelungi
+      st.fails++; if (st.fails >= MAXF) st.since = now;
+      props.setProperty('PINLOCK', JSON.stringify(st));
+    }
+  } finally { lock.releaseLock(); }
   return '';
 }
+
+/** Verifică codul de admin (vezi admin_). */
+function verifyPin(pin) { return admin_(pin); }
+
+/** Text de utilizator pentru foaie: prefixul ' face Sheets să-l păstreze ca text (nu formulă =…, nu dată 1/2); getValue îl omite. */
+function txt_(v, max) { var s = String(v == null ? '' : v).slice(0, max); return s ? "'" + s : s; }
+
+/** Text din foaie; o dată rămasă într-o coloană text devine string (Date nu trece prin google.script.run). */
+function str_(v) { return v instanceof Date ? Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(v == null ? '' : v); }
 
 function parseAtt_(raw) {
   try { var a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
@@ -124,15 +145,15 @@ function parseComments_(r) {
 }
 function mapTicket_(r) {
   return {
-    id: r[0], n: r[1], reporter: r[2], title: r[3], desc: r[4],
+    id: r[0], n: r[1], reporter: str_(r[2]), title: str_(r[3]), desc: str_(r[4]),
     priority: r[5], status: r[6],
     created: r[7] ? new Date(r[7]).getTime() : null,
-    reply: r[8] || '', replyBy: r[9] || '',
+    reply: str_(r[8]), replyBy: str_(r[9]),
     attachments: parseAtt_(r[10]),
     archived: !!r[11],
     updatedBy: r[12] || '',
     updatedAt: r[13] ? new Date(r[13]).getTime() : null,
-    category: r[14] || '',
+    category: str_(r[14]),
     comments: parseComments_(r),
   };
 }
@@ -150,7 +171,11 @@ function getTickets() {
 
 /** Tichete arhivate. REZERVAT ADMINILOR. */
 function getArchived(pin) {
-  if (!adminName_(pin)) throw new Error('Doar adminii pot vedea arhiva.');
+  if (!admin_(pin)) throw new Error('Doar adminii pot vedea arhiva.');
+  return archived_();
+}
+
+function archived_() {
   var sh = getSheet_();
   var last = sh.getLastRow();
   if (last < 2) return [];
@@ -162,14 +187,14 @@ function getArchived(pin) {
 
 /** Ultimele intrări din jurnal. REZERVAT ADMINILOR. */
 function getJournal(pin, limit) {
-  if (!adminName_(pin)) throw new Error('Doar adminii pot vedea jurnalul.');
+  if (!admin_(pin)) throw new Error('Doar adminii pot vedea jurnalul.');
   var sh = getJournalSheet_();
   var last = sh.getLastRow();
   if (last < 2) return [];
   var n = Math.min(last - 1, limit || 100);
   var values = sh.getRange(last - n + 1, 1, n, JOURNAL_HEADERS.length).getValues();
   var out = values.map(function (r) {
-    return { at: r[0] ? new Date(r[0]).getTime() : null, admin: r[1], action: r[2], cod: r[3], detail: r[4] };
+    return { at: r[0] ? new Date(r[0]).getTime() : null, admin: str_(r[1]), action: str_(r[2]), cod: str_(r[3]), detail: str_(r[4]) };
   });
   out.reverse();
   return out;
@@ -212,8 +237,11 @@ function getAttachmentThumb(id) {
 
 /** Adaugă un tichet. Public. Returnează {code, tickets}. */
 function addTicket(payload) {
+  payload = payload || {};
+  if (!String(payload.title || '').trim()) throw new Error('Titlul este obligatoriu.');
+  var prio = PRIO_KEYS.indexOf(payload.priority) >= 0 ? payload.priority : 'medie';
   var atts = [];
-  if (payload && Array.isArray(payload.attachments)) {
+  if (Array.isArray(payload.attachments)) {
     payload.attachments.slice(0, MAX_FILES).forEach(function (a) {
       if (a && typeof a.id === 'string') atts.push({ id: a.id, name: String(a.name || 'captura') });
     });
@@ -233,19 +261,19 @@ function addTicket(payload) {
     cod = 'TIS-' + pad2_(n);
     sh.appendRow([
       cod, n,
-      String(payload.reporter || '').slice(0, 200),
-      String(payload.title || '').slice(0, 300),
-      String(payload.desc || '').slice(0, 4000),
-      payload.priority || 'medie',
+      txt_(payload.reporter, 200),
+      txt_(payload.title, 300),
+      txt_(payload.desc, 4000),
+      prio,
       'deschis', new Date(), '', '',
       JSON.stringify(atts),
       '', '', '',
-      String((payload && payload.category) || '').slice(0, 60),
+      txt_(payload.category, 60),
       '',
     ]);
     SpreadsheetApp.flush();
   } finally { lock.releaseLock(); }
-  log_(String(payload.reporter || '?'), 'creat', cod, String(payload.title || ''));
+  log_(payload.reporter || '?', 'creat', cod, payload.title);
   return { code: cod, tickets: getTickets() };
 }
 
@@ -261,7 +289,7 @@ function findRow_(sh, cod) {
 function addComment(cod, text, name, pin) {
   var clean = String(text || '').slice(0, 4000);
   if (!clean) throw new Error('Comentariul este gol.');
-  var adminN = adminName_(pin);
+  var adminN = admin_(pin);
   var author = adminN || String(name || '').slice(0, 120) || 'Anonim';
   var isAdmin = !!adminN;
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
@@ -295,8 +323,9 @@ function setMeta_(sh, row, name) {
 }
 
 function updateStatus(cod, status, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să schimbi statusul.');
+  if (STATUS_KEYS.indexOf(status) < 0) throw new Error('Status invalid.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     var sh = getSheet_(); var row = findRow_(sh, cod);
@@ -307,8 +336,9 @@ function updateStatus(cod, status, pin) {
 }
 
 function updatePriority(cod, priority, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să schimbi prioritatea.');
+  if (PRIO_KEYS.indexOf(priority) < 0) throw new Error('Prioritate invalidă.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     var sh = getSheet_(); var row = findRow_(sh, cod);
@@ -319,13 +349,13 @@ function updatePriority(cod, priority, pin) {
 }
 
 function replyTicket(cod, text, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să răspunzi.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     var sh = getSheet_(); var row = findRow_(sh, cod);
     if (row > 0) {
-      var clean = String(text || '').slice(0, 4000);
+      var clean = txt_(text, 4000);
       sh.getRange(row, 9).setValue(clean);
       sh.getRange(row, 10).setValue(clean ? name : '');
       setMeta_(sh, row, name);
@@ -338,16 +368,18 @@ function replyTicket(cod, text, pin) {
 
 /** Editează titlul/descrierea/prioritatea unui tichet. REZERVAT ADMINILOR. */
 function editTicket(cod, payload, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să editezi.');
+  payload = payload || {};
+  if (payload.priority != null && PRIO_KEYS.indexOf(payload.priority) < 0) throw new Error('Prioritate invalidă.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     var sh = getSheet_(); var row = findRow_(sh, cod);
     if (row > 0) {
-      if (payload.title != null) sh.getRange(row, 4).setValue(String(payload.title).slice(0, 300));
-      if (payload.desc != null) sh.getRange(row, 5).setValue(String(payload.desc).slice(0, 4000));
+      if (payload.title != null) sh.getRange(row, 4).setValue(txt_(payload.title, 300));
+      if (payload.desc != null) sh.getRange(row, 5).setValue(txt_(payload.desc, 4000));
       if (payload.priority != null) sh.getRange(row, 6).setValue(payload.priority);
-      if (payload.category != null) sh.getRange(row, 15).setValue(String(payload.category).slice(0, 60));
+      if (payload.category != null) sh.getRange(row, 15).setValue(txt_(payload.category, 60));
       setMeta_(sh, row, name);
       SpreadsheetApp.flush();
     }
@@ -358,7 +390,7 @@ function editTicket(cod, payload, pin) {
 
 /** Arhivează un tichet (recuperabil). REZERVAT ADMINILOR. Îl scoate din lista activă. */
 function deleteTicket(cod, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să arhivezi tichete.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
@@ -371,7 +403,7 @@ function deleteTicket(cod, pin) {
 
 /** Restaurează un tichet arhivat. REZERVAT ADMINILOR. */
 function restoreTicket(cod, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să restaurezi.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
@@ -379,12 +411,12 @@ function restoreTicket(cod, pin) {
     if (row > 0) { sh.getRange(row, 12).setValue(false); setMeta_(sh, row, name); SpreadsheetApp.flush(); }
   } finally { lock.releaseLock(); }
   log_(name, 'restaurat', cod, '');
-  return getArchived(pin);
+  return archived_();
 }
 
 /** Șterge DEFINITIV un tichet arhivat și mută capturile la coș. REZERVAT ADMINILOR. */
 function purgeTicket(cod, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să ștergi definitiv.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
@@ -397,12 +429,12 @@ function purgeTicket(cod, pin) {
     }
   } finally { lock.releaseLock(); }
   log_(name, 'șters definitiv', cod, '');
-  return getArchived(pin);
+  return archived_();
 }
 
 /** Export CSV al tuturor tichetelor (active + arhivate). REZERVAT ADMINILOR. */
 function exportTicketsCsv(pin) {
-  if (!adminName_(pin)) throw new Error('Doar adminii pot exporta.');
+  if (!admin_(pin)) throw new Error('Doar adminii pot exporta.');
   var sh = getSheet_();
   var last = sh.getLastRow();
   var tz = Session.getScriptTimeZone();
@@ -418,6 +450,7 @@ function exportTicketsCsv(pin) {
   return rows.map(function (row) {
     return row.map(function (c) {
       var s = String(c == null ? '' : c);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // fără formule în Excel
       if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
       return s;
     }).join(',');
@@ -449,8 +482,8 @@ function getNews() {
   var values = sh.getRange(2, 1, last - 1, NEWS_HEADERS.length).getValues();
   var out = values.map(function (r) {
     return {
-      id: r[0], n: r[1], title: r[2], body: r[3],
-      type: r[4] || 'anunt', author: r[5],
+      id: r[0], n: r[1], title: str_(r[2]), body: str_(r[3]),
+      type: r[4] || 'anunt', author: str_(r[5]),
       created: r[6] ? new Date(r[6]).getTime() : null,
       attachments: parseAtt_(r[7]),
     };
@@ -460,11 +493,12 @@ function getNews() {
 }
 
 function addNews(payload, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să publici anunțuri.');
+  payload = payload || {};
   var tip = NEWS_TYPES.indexOf(payload.type) >= 0 ? payload.type : 'anunt';
   var atts = [];
-  if (payload && Array.isArray(payload.attachments)) {
+  if (Array.isArray(payload.attachments)) {
     payload.attachments.slice(0, MAX_FILES).forEach(function (a) {
       if (a && typeof a.id === 'string') atts.push({ id: a.id, name: String(a.name || 'captura') });
     });
@@ -483,13 +517,13 @@ function addNews(payload, pin) {
     nid = 'NW-' + pad2_(n);
     sh.appendRow([
       nid, n,
-      String(payload.title || '').slice(0, 300),
-      String(payload.body || '').slice(0, 8000),
+      txt_(payload.title, 300),
+      txt_(payload.body, 8000),
       tip, name, new Date(), JSON.stringify(atts),
     ]);
     SpreadsheetApp.flush();
   } finally { lock.releaseLock(); }
-  log_(name, 'anunț publicat', nid, String(payload.title || ''));
+  log_(name, 'anunț publicat', nid, payload.title);
   return getNews();
 }
 
@@ -503,14 +537,15 @@ function findNewsRow_(sh, id) {
 
 /** Editează un anunț. REZERVAT ADMINILOR. */
 function editNews(id, payload, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să editezi anunțuri.');
+  payload = payload || {};
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     var sh = getNewsSheet_(); var row = findNewsRow_(sh, id);
     if (row > 0) {
-      if (payload.title != null) sh.getRange(row, 3).setValue(String(payload.title).slice(0, 300));
-      if (payload.body != null) sh.getRange(row, 4).setValue(String(payload.body).slice(0, 8000));
+      if (payload.title != null) sh.getRange(row, 3).setValue(txt_(payload.title, 300));
+      if (payload.body != null) sh.getRange(row, 4).setValue(txt_(payload.body, 8000));
       if (payload.type != null && NEWS_TYPES.indexOf(payload.type) >= 0) sh.getRange(row, 5).setValue(payload.type);
       SpreadsheetApp.flush();
     }
@@ -521,7 +556,7 @@ function editNews(id, payload, pin) {
 
 /** Șterge un anunț și capturile lui. REZERVAT ADMINILOR. */
 function deleteNews(id, pin) {
-  var name = adminName_(pin);
+  var name = admin_(pin);
   if (!name) throw new Error('Cod de admin invalid. Nu ai dreptul să ștergi anunțuri.');
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {

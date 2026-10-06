@@ -40,9 +40,9 @@ Schimbarea:
 
 ## Stare
 
-- [ ] 1–3 implementate (executor)
-- [ ] `gs-test.js`, mock, flow (executor)
-- [ ] review (`ponytail-review`, `security-review`) + verificări (runner)
-- [ ] push `/dev`
+- [x] 1–3 implementate (executor)
+- [x] `gs-test.js`, mock, flow (executor)
+- [x] review (`ponytail-review`; `security-review` manual, skill-ul cere diff față de `origin/HEAD`) + verificări (runner): `gs-test.js` toate OK, `flow.py` fără FAIL (o singură suprapunere intermitentă de etichete la 1440 într-o rulare din 4, fără legătură cu runda: UI neatins)
+- [x] push `/dev`
 - [ ] confirmare utilizator pe `/dev`
 - [ ] `/exec` + `memory.md`

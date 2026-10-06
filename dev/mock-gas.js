@@ -35,10 +35,24 @@
         body: 'Raportul săptămânal calculează corect totalurile.', attachments: [] }
     ]
   };
-  function need(pin) { if (!ADMINS[pin]) throw new Error('Cod de admin invalid.'); return ADMINS[pin]; }
+  // blocare ca în Code.gs: 5 greșeli -> 60 s; codurile >= 12 caractere ocolesc; codul gol nu contează
+  var fails = 0, since = 0;
+  function admin(pin) {
+    pin = String(pin == null ? '' : pin);
+    if (!pin) return '';
+    var name = ADMINS[pin] || '', t = Date.now();
+    if (name && pin.length >= 12) return name;
+    if (fails >= 5 && t - since < 60000) throw new Error('Prea multe încercări greșite. Reîncearcă în ' + Math.ceil((60000 - (t - since)) / 1000) + ' secunde.');
+    if (name) { fails = 0; return name; }
+    if (fails >= 5) fails = 0;
+    if (++fails >= 5) since = t;
+    return '';
+  }
+  function need(pin) { var n = admin(pin); if (!n) throw new Error('Cod de admin invalid.'); return n; }
+  var STATUS = ['deschis', 'in_lucru', 'rezolvat'], PRIO = ['scazuta', 'medie', 'ridicata', 'critica'];
   function find(cod) { return db.tickets.filter(function (x) { return x.id === cod; })[0]; }
   var api = {
-    verifyPin: function (pin) { return ADMINS[pin] || ''; },
+    verifyPin: function (pin) { return admin(pin); },
     getTickets: function () { return db.tickets; },
     getArchived: function (pin) { need(pin); return db.archived; },
     getNews: function () { return db.news; },
@@ -46,18 +60,21 @@
     getAttachmentThumb: function () { return { data: IMG, mime: 'image/svg+xml' }; },
     uploadAttachment: function (b64, mime, name) { return { id: 'up' + Date.now(), name: name }; },
     addTicket: function (p) {
+      p = p || {};
+      if (!String(p.title || '').trim()) throw new Error('Titlul este obligatoriu.');
+      if (PRIO.indexOf(p.priority) < 0) p.priority = 'medie';
       var n = Math.max.apply(null, db.tickets.map(function (x) { return x.n; }).concat([0])) + 1;
       var tk = t(n, p.title, 'deschis', p.priority, p.category, p.reporter, 0, { desc: p.desc, attachments: p.attachments || [] });
       db.tickets.unshift(tk); return { code: tk.id, tickets: db.tickets };
     },
     addComment: function (cod, text, name, pin) {
-      var x = find(cod); var a = ADMINS[pin];
+      var x = find(cod); var a = admin(pin);
       if (x) x.comments.push({ author: a || name || 'Anonim', admin: !!a, text: text, at: Date.now() });
       return db.tickets;
     },
-    updateStatus: function (cod, s, pin) { var n = need(pin), x = find(cod); if (x) { x.status = s; x.updatedBy = n; x.updatedAt = Date.now(); } return db.tickets; },
-    updatePriority: function (cod, p, pin) { var n = need(pin), x = find(cod); if (x) { x.priority = p; x.updatedBy = n; x.updatedAt = Date.now(); } return db.tickets; },
-    editTicket: function (cod, p, pin) { var n = need(pin), x = find(cod); if (x) { Object.assign(x, p); x.updatedBy = n; x.updatedAt = Date.now(); } return db.tickets; },
+    updateStatus: function (cod, s, pin) { var n = need(pin); if (STATUS.indexOf(s) < 0) throw new Error('Status invalid.'); var x = find(cod); if (x) { x.status = s; x.updatedBy = n; x.updatedAt = Date.now(); } return db.tickets; },
+    updatePriority: function (cod, p, pin) { var n = need(pin); if (PRIO.indexOf(p) < 0) throw new Error('Prioritate invalidă.'); var x = find(cod); if (x) { x.priority = p; x.updatedBy = n; x.updatedAt = Date.now(); } return db.tickets; },
+    editTicket: function (cod, p, pin) { var n = need(pin); p = p || {}; if (p.priority != null && PRIO.indexOf(p.priority) < 0) throw new Error('Prioritate invalidă.'); var x = find(cod); if (x) { Object.assign(x, p); x.updatedBy = n; x.updatedAt = Date.now(); } return db.tickets; },
     replyTicket: function (cod, text, pin) { var n = need(pin), x = find(cod); if (x) { x.reply = text; x.replyBy = n; } return db.tickets; },
     deleteTicket: function (cod, pin) { need(pin); var x = find(cod); db.tickets = db.tickets.filter(function (y) { return y !== x; }); if (x) { x.archived = true; db.archived.unshift(x); } return db.tickets; },
     restoreTicket: function (cod, pin) { need(pin); var x = db.archived.filter(function (y) { return y.id === cod; })[0]; db.archived = db.archived.filter(function (y) { return y !== x; }); if (x) { x.archived = false; db.tickets.unshift(x); } return db.archived; },
