@@ -78,6 +78,14 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - verificări: `flow.py` toate OK (teste noi: tastatură, numere, încadrare la 390), `a11y.py` curat, `perf.py` 4.0 ms/s animat / 0.2 repaus, `trace.py` rotație 1%, tranziții 10–21%; capturi `*meniu*` în `.impeccable/review/`;
    - `a11y.py` raportează uneori `overflow: ['shoot']` la 390: e steaua căzătoare (element temporar), apare și înainte de runda 4.
 
+11. **Întărirea serverului** (runda 5, commit `4efc234`, publicată pe `/exec` după verificarea utilizatorului pe `/dev`; plan în `docs/plan-hardening.md`):
+   - `admin_(pin)` aplică blocarea (5 greșeli → 60 s) la toate funcțiile de admin, nu doar la `verifyPin`; contorul `PINLOCK` se scrie sub `LockService`; codul gol nu contează; codurile ≥ 12 caractere ocolesc blocarea;
+   - `txt_` pune prefixul `'` pe textul utilizatorilor (Sheets îl păstrează ca text: fără formule `=…`, fără date `1/2`; verificat de utilizator în Sheet-ul real); `str_` la citire, ca o dată rămasă într-o coloană text să nu strice răspunsul `google.script.run`; CSV-ul prefixează `= + - @`;
+   - status și prioritate validate pe server; `addTicket` cere titlu;
+   - `dev/gs-test.js` (`node dev/gs-test.js`) rulează `Code.gs` real cu servicii Apps Script simulate; `mock-gas.js` oglindește blocarea și validarea; `flow.py` le testează.
+   - Rămase nefăcute (discutate): upload-ul public fără limită și capturile orfane în Drive; comentariile unui tichet într-o singură celulă (max 50.000 caractere).
+   - `flow.py`: testul de coliziuni de etichete la 1440 pică rar, intermitent (o rulare din 4), și pe codul vechi; depinde de momentul rotației.
+
 ## Decizii confirmate de utilizator
 
 - Execuția se deleagă mereu la agenți pe model mai slab: `runner` (Haiku) pentru verificări și căutări, `executor` (Sonnet) pentru cod după specificație. Designul, review-ul, commit-ul și push-ul rămân la agentul principal (vezi `CLAUDE.md`).
@@ -111,6 +119,7 @@ python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390
 python3 dev/flow.py                    # pașii funcționali („Orbită”): coliziuni de etichete, tranziții, meniuri derulante
 python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
 python3 dev/perf.py                    # ms/s de task-uri: < 15 cu animația pornită, < 5 în repaus (~100 s)
+node dev/gs-test.js                    # Code.gs real cu servicii Apps Script simulate (blocare, text, validare)
 python3 dev/trace.py                   # % ocupare a firului principal cu CPU 4x (rotație, tranziții, mouse)
 .claude/skills/impeccable/scripts/impeccable detect --json src/*.html
 ```
@@ -134,7 +143,7 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Runda 4 confirmată de utilizator pe `/exec` („meniurile merg bine”). Nu e nimic în lucru; așteaptă următoarea cerere.
+Runda 4 (meniuri) și runda 5 (întărirea serverului) sunt pe `/exec`. Nu e nimic în lucru; așteaptă următoarea cerere. Candidați dacă se cere mai multă robustețe: limită pe `uploadAttachment` și curățarea capturilor orfane.
 
 Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
