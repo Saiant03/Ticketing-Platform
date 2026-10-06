@@ -97,6 +97,13 @@ Platformă de tichete pentru WFM Extended (un tool intern), rulată ca web app G
    - citirea combină JSON-ul vechi din coloana 16 (și răspunsul vechi din coloana 9) cu rândurile noi, ordonate după dată; fără migrare, datele vechi rămân unde sunt;
    - citirea nu creează foaia (doar `addComment`, sub lock); `purgeTicket` șterge și rândurile de comentarii.
 
+14. **Limită anti-spam și teste în deploy** (runda 8, commit `991c6ba`, publicată pe `/exec`; plan în `docs/plan-antispam.md`):
+   - `hourQuota_(prefix, max, msg)` în `Code.gs`: contor pe oră în `CacheService` (cheie `<prefix>-<oră>`, 3600 s), apelat în lock-ul deja luat, după validări (cererile invalide nu consumă);
+   - `addTicket`: 20 de tichete noi pe oră (`TK_HOUR`); `addComment`: 60 de comentarii de specialist pe oră (`CM_HOUR`), adminii cu cod valid fără limită; limitele sunt globale (fără identitate), deci spam-ul poate consuma ora pentru toți, cel mult o oră;
+   - mesajele („Prea multe tichete noi/comentarii în ultima oră. Reîncearcă mai târziu.”) apar fără schimbări de UI: în formular (`S.formErr.form`, ciorna rămâne), respectiv în toast (textul rămâne în câmp);
+   - `.github/workflows/deploy.yml`: pasul „Teste (gs-test)” (`node dev/gs-test.js`) rulează mereu, înainte de `clasp push`; un test picat oprește și `/dev`, și `/exec`. `setup-node` nu mai depinde de secrete;
+   - verificări: `gs-test.js` 70 OK, `flow.py` 59 OK (teste noi „anti-spam” pentru formular și comentariu), rularea automată pe `/dev` verde cu pasul de teste.
+
 ## Decizii confirmate de utilizator
 
 - Execuția se deleagă mereu la agenți pe model mai slab: `runner` (Haiku) pentru verificări și căutări, `executor` (Sonnet) pentru cod după specificație. Designul, review-ul, commit-ul și push-ul rămân la agentul principal (vezi `CLAUDE.md`).
@@ -130,7 +137,7 @@ python3 dev/shoot.py <folder>          # screenshot-uri desktop 1440 + mobil 390
 python3 dev/flow.py                    # pașii funcționali („Orbită”): coliziuni de etichete, tranziții, meniuri derulante
 python3 dev/a11y.py                    # contrast tokeni panou + hol, etichete, ținte, scroll orizontal la 4 lățimi
 python3 dev/perf.py                    # ms/s de task-uri: < 15 cu animația pornită, < 5 în repaus (~100 s)
-node dev/gs-test.js                    # Code.gs real cu servicii Apps Script simulate (blocare, text, validare)
+node dev/gs-test.js                    # Code.gs real cu servicii Apps Script simulate (blocare, text, validare, limite); rulat și în deploy.yml
 python3 dev/trace.py                   # % ocupare a firului principal cu CPU 4x (rotație, tranziții, mouse)
 .claude/skills/impeccable/scripts/impeccable detect --json src/*.html
 ```
@@ -154,11 +161,7 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Rundele 4 (meniuri), 5 (întărirea serverului), 6 (upload, capturi orfane) și 7 (comentarii în foaia proprie) sunt pe `/exec`.
-
-Runda 8 (aprobată de utilizator, de făcut într-o conversație nouă):
-1. Limită anti-spam pe `addTicket` și `addComment` (publice, fără limită acum): limită globală pe oră, cu același mecanism ca la upload (`CacheService` + `LockService`, fără scope-uri noi).
-2. `node dev/gs-test.js` rulat în `.github/workflows/deploy.yml` înainte de `clasp push`, ca un `Code.gs` stricat să nu ajungă pe `/dev`.
+Rundele 4 (meniuri), 5 (întărirea serverului), 6 (upload, capturi orfane), 7 (comentarii în foaia proprie) și 8 (limită anti-spam, teste în deploy) sunt pe `/exec`. Nu există o rundă nouă aprobată.
 
 Decizii din discuția de robustețe:
 - Codurile de admin rămân cum sunt (utilizatorul nu vrea coduri de 12+ caractere).

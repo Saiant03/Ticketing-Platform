@@ -53,5 +53,5 @@ Push pe `main` → `/dev`. Utilizatorul testează un tichet și un comentariu no
 - [x] implementare (executor)
 - [x] review + verificări (runner): `gs-test.js` 70 OK, `flow.py` 59 OK, fără erori de pagină
 - [x] push `/dev` (commit `991c6ba`), rularea automată verde: „Teste (gs-test)” „toate OK”, apoi `clasp push`
-- [ ] test utilizator pe `/dev`
-- [ ] `/exec` + `memory.md`
+- [x] test utilizator pe `/dev` (confirmat)
+- [x] `/exec` („Deploy Apps Script” cu `deploy: true`, verde, inclusiv „Teste (gs-test)”) + `memory.md`
