@@ -33,7 +33,7 @@ Push pe `main` → `/dev`. Nimic vizibil de testat manual în afară de un uploa
 
 ## Stare
 
-- [ ] implementare (executor)
-- [ ] review + verificări (runner)
+- [x] implementare (executor); din review: dacă nu găsește niciun atașament referit (ex. foaia Tichete recreată goală), curățarea nu mută nimic la coș
+- [x] review + verificări (runner): `gs-test.js` 54 OK, `flow.py` 55 OK, fără erori
 - [ ] push `/dev`, upload verificat
 - [ ] `/exec` + `memory.md`

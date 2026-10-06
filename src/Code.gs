@@ -14,6 +14,7 @@ var JOURNAL_SHEET = 'Jurnal';
 var FOLDER_NAME = 'Tichete TIS - Capturi';
 var MAX_FILES = 5;
 var MAX_BYTES = 5 * 1024 * 1024;
+var UP_HOUR = 60, UP_DAY = 300;   // limită globală de upload-uri pe oră / pe zi
 var HEADERS = ['Cod', 'N', 'Raportat', 'Titlu', 'Descriere', 'Prioritate', 'Status', 'Creat', 'Raspuns', 'RaspunsDe', 'Atasamente', 'Arhivat', 'ModificatDe', 'ModificatLa', 'Categorie', 'Comentarii'];
 var NEWS_HEADERS = ['Id', 'N', 'Titlu', 'Continut', 'Tip', 'Autor', 'Creat', 'Atasamente'];
 var JOURNAL_HEADERS = ['Data', 'Admin', 'Actiune', 'Cod', 'Detaliu'];
@@ -200,11 +201,59 @@ function getJournal(pin, limit) {
   return out;
 }
 
+/** Limită globală pe upload (60/oră, 300/zi), contoare în cache sub lock. */
+function uploadQuota_() {
+  var lock = LockService.getScriptLock(); lock.waitLock(5000);
+  try {
+    var cache = CacheService.getScriptCache(), now = Date.now();
+    var hk = 'up-h-' + Math.floor(now / 3600000), dk = 'up-d-' + Math.floor(now / 86400000);
+    var h = Number(cache.get(hk)) || 0, d = Number(cache.get(dk)) || 0;
+    if (h >= UP_HOUR || d >= UP_DAY) throw new Error('Prea multe capturi încărcate. Reîncearcă mai târziu.');
+    cache.put(hk, String(h + 1), 3600);
+    cache.put(dk, String(d + 1), 21600);   // maximul CacheService e 6 h: contorul zilnic = cel mult 300 în ultimele ≤ 6 h din zi
+  } finally { lock.releaseLock(); }
+}
+
+/** Curățarea capturilor orfane cel mult o dată la 24 h (marcaj CLEANUP_AT); fără trigger, ca să nu cerem scope nou. */
+function maybeCleanup_() {
+  var props = PropertiesService.getScriptProperties();
+  var at = Number(props.getProperty('CLEANUP_AT')) || 0;
+  if (at && Date.now() - at < 86400000) return;
+  props.setProperty('CLEANUP_AT', String(Date.now()));   // întâi marcajul, ca apelurile paralele să nu pornească a doua curățare
+  cleanupOrphans_();
+}
+
+/** Mută la coș capturile din folder care nu sunt în Tichete (inclusiv arhivate) sau News și au peste 24 h. Returnează numărul. */
+function cleanupOrphans_() {
+  var start = Date.now(), used = {}, n = 0;
+  function collect(sh, col) {
+    var last = sh.getLastRow();
+    if (last < 2) return;
+    sh.getRange(2, col, last - 1, 1).getValues().forEach(function (r) {
+      parseAtt_(r[0]).forEach(function (a) { if (a && a.id) used[a.id] = true; });
+    });
+  }
+  collect(getSheet_(), 11);
+  collect(getNewsSheet_(), 8);
+  if (!Object.keys(used).length) return 0;   // nicio referință: foaie redenumită/ștearsă (getSheet_ o recreează goală), nu trimite tot la coș
+  var it = getFolder_().getFiles();
+  while (it.hasNext() && Date.now() - start < 20000) {
+    var f = it.next();
+    if (!used[f.getId()] && start - f.getDateCreated().getTime() > 86400000) { f.setTrashed(true); n++; }
+  }
+  if (n > 0) log_('sistem', 'curățare capturi', '', n + ' capturi orfane mutate la coș');
+  return n;
+}
+
 /** Încarcă o captură în Drive. Public. Returnează {id, name}. */
 function uploadAttachment(b64, mime, name) {
   if (!/^image\//.test(String(mime || ''))) throw new Error('Doar imagini sunt permise.');
   var bytes = Utilities.base64Decode(String(b64 || ''));
   if (bytes.length > MAX_BYTES) throw new Error('Imaginea depășește 5 MB.');
+  // octeți cu semn în Apps Script, de aici & 255
+  if (!((bytes[0] & 255) === 0xFF && (bytes[1] & 255) === 0xD8 && (bytes[2] & 255) === 0xFF)) throw new Error('Doar imagini JPEG sunt permise.');
+  uploadQuota_();
+  try { maybeCleanup_(); } catch (e) {}
   var safeName = String(name || 'captura.jpg').replace(/[^\w.\-]+/g, '_').slice(0, 80);
   var blob = Utilities.newBlob(bytes, mime, safeName);
   var f = getFolder_().createFile(blob);

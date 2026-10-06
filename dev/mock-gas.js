@@ -49,6 +49,7 @@
     return '';
   }
   function need(pin) { var n = admin(pin); if (!n) throw new Error('Cod de admin invalid.'); return n; }
+  var upHour = 0, upCount = 0;
   var STATUS = ['deschis', 'in_lucru', 'rezolvat'], PRIO = ['scazuta', 'medie', 'ridicata', 'critica'];
   function find(cod) { return db.tickets.filter(function (x) { return x.id === cod; })[0]; }
   var api = {
@@ -58,7 +59,15 @@
     getNews: function () { return db.news; },
     getAttachment: function () { return { data: IMG, mime: 'image/svg+xml' }; },
     getAttachmentThumb: function () { return { data: IMG, mime: 'image/svg+xml' }; },
-    uploadAttachment: function (b64, mime, name) { return { id: 'up' + Date.now(), name: name }; },
+    // ca în Code.gs: JPEG real (FF D8 FF = /9j/ în base64) și 60 pe oră; fără Drive, fără curățare
+    uploadAttachment: function (b64, mime, name) {
+      if (!/^\/9j\//.test(String(b64 || ''))) throw new Error('Doar imagini JPEG sunt permise.');
+      var h = Math.floor(Date.now() / 3600000);
+      if (upHour !== h) { upHour = h; upCount = 0; }
+      if (upCount >= 60) throw new Error('Prea multe capturi încărcate. Reîncearcă mai târziu.');
+      upCount++;
+      return { id: 'up' + Date.now(), name: name };
+    },
     addTicket: function (p) {
       p = p || {};
       if (!String(p.title || '').trim()) throw new Error('Titlul este obligatoriu.');

@@ -37,6 +37,42 @@ function Sheet() {
 
 var sheets = {}, props = { ADMINS: '{"1234":"Admin Test","cod-lung-de-test":"Admin Lung"}' };
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
+var clock = Date.now();   // ceasul simulat (Date.now din Code.gs), mutat mai jos
+// CacheService în memorie, cu expirare după ceasul simulat
+var cacheStore = {};
+var cacheSvc = {
+  getScriptCache: function () {
+    return {
+      get: function (k) { var e = cacheStore[k]; return e && e.exp > clock ? e.v : null; },
+      put: function (k, v, sec) { cacheStore[k] = { v: String(v), exp: clock + sec * 1000 }; }
+    };
+  }
+};
+// Drive cu un singur folder în memorie; fișierele se creează cu ceasul simulat
+var drive = { files: [], n: 0 };
+var folder = {
+  getId: function () { return 'FOLDER1'; },
+  createFile: function (blob) { return drive.add(0, blob); },
+  getFiles: function () {
+    var list = drive.files.filter(function (f) { return !f.isTrashed(); }), i = 0;
+    return { hasNext: function () { return i < list.length; }, next: function () { return list[i++]; } };
+  }
+};
+drive.add = function (ageMs, blob) {
+  var created = new Date(clock - ageMs), trashed = false, id = 'file' + (++drive.n);
+  var f = {
+    blob: blob, getId: function () { return id; }, getDateCreated: function () { return created; },
+    setTrashed: function (v) { trashed = v; return f; }, isTrashed: function () { return trashed; },
+    getParents: function () { var d = false; return { hasNext: function () { return !d; }, next: function () { d = true; return folder; } }; }
+  };
+  drive.files.push(f); return f;
+};
+var driveSvc = {
+  getFolderById: function (id) { if (id !== 'FOLDER1') throw new Error('nu există'); return folder; },
+  getFoldersByName: function () { var d = true; return { hasNext: function () { return !d; }, next: function () { return folder; } }; },
+  createFolder: function () { return folder; },
+  getFileById: function (id) { return drive.files.filter(function (f) { return f.getId() === id; })[0]; }
+};
 var ctx = vm.createContext({
   SpreadsheetApp: {
     getActiveSpreadsheet: function () {
@@ -57,7 +93,12 @@ var ctx = vm.createContext({
     }
   },
   LockService: { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } },
+  CacheService: cacheSvc,
+  DriveApp: driveSvc,
   Utilities: {
+    // octeți cu semn, ca în Apps Script
+    base64Decode: function (s) { return Array.from(Buffer.from(s, 'base64')).map(function (b) { return b > 127 ? b - 256 : b; }); },
+    newBlob: function (bytes, mime, name) { return { bytes: bytes, mime: mime, name: name }; },
     formatDate: function (d, tz, f) {
       return f.replace('yyyy', d.getUTCFullYear()).replace('MM', pad(d.getUTCMonth() + 1)).replace('dd', pad(d.getUTCDate()))
         .replace('HH', pad(d.getUTCHours())).replace('mm', pad(d.getUTCMinutes()));
@@ -66,7 +107,6 @@ var ctx = vm.createContext({
   Session: { getScriptTimeZone: function () { return 'UTC'; } }
 });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'Code.gs'), 'utf8'), ctx);
-var clock = Date.now();
 ctx.__clock = function () { return clock; };
 vm.runInContext('Date.now = function () { return __clock(); };', ctx);
 
@@ -164,6 +204,62 @@ ok(ctx.restoreTicket('TIS-01', '1234').length === 0 && ctx.getArchived('1234').l
 
 ctx.updateStatus('=1+1', 'deschis', '1234');
 ok(sheets['Jurnal'].rows.some(function (r) { return r[3] === "'=1+1"; }), 'log_: codul din jurnal are \'');
+
+// 8. upload: JPEG real, limită pe oră/zi, curățare orfani
+var HOUR = 3600000, DAY = 86400000;
+function b64(bytes) { return Buffer.from(bytes).toString('base64'); }
+function up() { return ctx.uploadAttachment(b64([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3]), 'image/jpeg', 'a b.jpg'); }
+function trashedIds() { return drive.files.filter(function (f) { return f.isTrashed(); }).map(function (f) { return f.getId(); }); }
+var r8 = up();
+ok(r8 && r8.id && r8.name === 'a_b.jpg', 'uploadAttachment: JPEG valid -> {id, name}');
+ok(/Doar imagini JPEG/.test(thrown(function () { ctx.uploadAttachment(b64([0x89, 0x50, 0x4E, 0x47, 1, 2]), 'image/png', 'x.png'); }) || ''), 'uploadAttachment: octeți PNG -> Doar imagini JPEG');
+ok(/Doar imagini JPEG/.test(thrown(function () { ctx.uploadAttachment(b64([0xFF, 0xD8, 1]), 'image/jpeg', 'x.jpg'); }) || ''), 'uploadAttachment: mime JPEG dar octeți fără FF D8 FF -> respins');
+ok(drive.files.length === 1, 'uploadAttachment: respingerile nu creează fișiere');
+
+// limita pe oră: 60 trec, al 61-lea nu; după o oră trece iar
+cacheStore = {}; props.CLEANUP_AT = String(clock);
+var allOk = true;
+for (i = 0; i < 60; i++) allOk = allOk && thrown(up) === null;
+ok(allOk, 'limită: 60 de upload-uri în aceeași oră trec');
+ok(/Prea multe capturi/.test(thrown(up) || ''), 'limită: al 61-lea în aceeași oră -> Prea multe capturi');
+clock += HOUR;
+ok(thrown(up) === null, 'limită: după o oră trece din nou');
+// limita pe zi: cheia zilei la 300 oprește chiar și cu contor orar liber
+cacheStore = {}; cacheStore['up-d-' + Math.floor(clock / DAY)] = { v: '300', exp: clock + HOUR };
+ok(/Prea multe capturi/.test(thrown(up) || ''), 'limită: 300 pe zi -> Prea multe capturi');
+cacheStore = {};
+
+// curățare: doar orfanul vechi merge la coș
+drive.files = []; delete props.CLEANUP_AT;
+var fT = drive.add(2 * DAY), fA = drive.add(2 * DAY), fN = drive.add(2 * DAY), fO = drive.add(2 * DAY), fNew = drive.add(HOUR);
+T().appendRow(['TIS-90', 90, 'x', 't', 'd', 'medie', 'deschis', '', '', '', JSON.stringify([{ id: fT.getId(), name: 'a.jpg' }]), '', '', '', '', '']);
+T().appendRow(['TIS-91', 91, 'x', 't', 'd', 'medie', 'deschis', '', '', '', JSON.stringify([{ id: fA.getId(), name: 'a.jpg' }]), true, '', '', '', '']);
+sheets['News'].appendRow(['NW-90', 90, 't', 'b', 'fix', 'x', '', JSON.stringify([{ id: fN.getId(), name: 'a.jpg' }])]);
+up();
+ok(trashedIds().join() === fO.getId(), 'curățare: doar orfanul vechi la coș (coș: ' + trashedIds().join() + ')');
+ok(sheets['Jurnal'].rows.some(function (r) { return r[2] === 'curățare capturi' && /1 capturi orfane/.test(r[4]); }), 'curățare: jurnalul are „curățare capturi”');
+ok(Number(props.CLEANUP_AT) === clock, 'curățare: CLEANUP_AT setat');
+var fO2 = drive.add(2 * DAY);
+up();
+ok(!fO2.isTrashed(), 'curățare: al doilea upload în aceeași zi nu o mai rulează');
+clock += 25 * HOUR;
+up();
+ok(fO2.isTrashed() && !fT.isTrashed() && !fA.isTrashed() && !fN.isTrashed(), 'curățare: după +25 h rulează din nou (referitele rămân)');
+
+// o eroare în curățare nu oprește upload-ul și nu trimite nimic la coș
+var realNews = ctx.getNewsSheet_, fO3 = drive.add(2 * DAY);
+ctx.getNewsSheet_ = function () { throw new Error('boom'); };
+delete props.CLEANUP_AT;
+var r9; ok(thrown(function () { r9 = up(); }) === null && r9 && r9.id, 'curățare: eroare în curățare -> upload-ul merge');
+ok(!fO3.isTrashed(), 'curățare: citirea ID-urilor a eșuat -> nu se șterge nimic');
+ctx.getNewsSheet_ = realNews;
+
+// fără nicio referință (foi goale/redenumite): curățarea nu mută nimic la coș
+var saveT = sheets['Tichete'], saveN = sheets['News'];
+delete sheets['Tichete']; delete sheets['News'];
+var fE = drive.add(3 * DAY);
+ok(ctx.cleanupOrphans_() === 0 && !fE.isTrashed(), 'curățare: foi fără atașamente -> nimic la coș');
+sheets['Tichete'] = saveT; sheets['News'] = saveN;
 
 console.log(failed ? 'EȘEC' : 'toate OK');
 process.exit(failed ? 1 : 0);
