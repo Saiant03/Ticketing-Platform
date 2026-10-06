@@ -16,6 +16,7 @@ var FOLDER_NAME = 'Tichete TIS - Capturi';
 var MAX_FILES = 5;
 var MAX_BYTES = 5 * 1024 * 1024;
 var UP_HOUR = 60, UP_DAY = 300;   // limită globală de upload-uri pe oră / pe zi
+var TK_HOUR = 20, CM_HOUR = 60;   // limită globală de tichete noi / comentarii de specialist pe oră
 var HEADERS = ['Cod', 'N', 'Raportat', 'Titlu', 'Descriere', 'Prioritate', 'Status', 'Creat', 'Raspuns', 'RaspunsDe', 'Atasamente', 'Arhivat', 'ModificatDe', 'ModificatLa', 'Categorie', 'Comentarii'];
 var NEWS_HEADERS = ['Id', 'N', 'Titlu', 'Continut', 'Tip', 'Autor', 'Creat', 'Atasamente'];
 var JOURNAL_HEADERS = ['Data', 'Admin', 'Actiune', 'Cod', 'Detaliu'];
@@ -243,6 +244,14 @@ function uploadQuota_() {
   } finally { lock.releaseLock(); }
 }
 
+/** Limită globală pe oră (contor în cache); se apelează sub lock-ul deja luat. */
+function hourQuota_(prefix, max, msg) {
+  var cache = CacheService.getScriptCache(), k = prefix + '-' + Math.floor(Date.now() / 3600000);
+  var n = Number(cache.get(k)) || 0;
+  if (n >= max) throw new Error(msg);
+  cache.put(k, String(n + 1), 3600);
+}
+
 /** Curățarea capturilor orfane cel mult o dată la 24 h (marcaj CLEANUP_AT); fără trigger, ca să nu cerem scope nou. */
 function maybeCleanup_() {
   var props = PropertiesService.getScriptProperties();
@@ -328,6 +337,7 @@ function addTicket(payload) {
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
+    hourQuota_('tk-h', TK_HOUR, 'Prea multe tichete noi în ultima oră. Reîncearcă mai târziu.');
     var sh = getSheet_();
     var last = sh.getLastRow();
     var maxN = 0;
@@ -372,6 +382,7 @@ function addComment(cod, text, name, pin) {
   var isAdmin = !!adminN;
   var lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
+    if (!isAdmin) hourQuota_('cm-h', CM_HOUR, 'Prea multe comentarii în ultima oră. Reîncearcă mai târziu.');
     var sh = getSheet_(); var row = findRow_(sh, cod);
     if (row > 0) {
       getCommentsSheet_().appendRow([txt_(cod, 40), txt_(author, 120), isAdmin, txt_(clean, 4000), new Date()]);

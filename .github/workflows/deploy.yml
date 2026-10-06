@@ -32,9 +32,11 @@ jobs:
           fi
 
       - uses: actions/setup-node@v4
-        if: steps.check.outputs.ready == 'true'
         with:
           node-version: 20
+
+      - name: Teste (gs-test)
+        run: node dev/gs-test.js
 
       - name: clasp push
         if: steps.check.outputs.ready == 'true'

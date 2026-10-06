@@ -202,5 +202,31 @@ with sync_playwright() as p:
     r = pk.evaluate("call('updateStatus','TIS-14','hack','cod-lung-de-test')")
     ok(not r['ok'] and r['err'] == 'Status invalid.', f"validation: invalid status rejected: {r}")
     pk.close()
+    # --- limită anti-spam: 20 de tichete pe oră, apoi mesajul în formular (pagină nouă, contor nou) ---
+    ps = b.new_page(viewport={'width': 1440, 'height': 900}, ignore_https_errors=True)
+    ps.on("pageerror", lambda e: errs.append(str(e)))
+    ps.goto("http://localhost:8080/"); ps.wait_for_timeout(1200)
+    ps.evaluate("""()=>{ window.call = (fn, ...a) => new Promise(res => google.script.run
+      .withSuccessHandler(v => res({ ok: true, v })).withFailureHandler(e => res({ ok: false, err: String(e.message || e) }))[fn](...a)); }""")
+    res = [ps.evaluate("call('addTicket', {reporter:'Spam', title:'t%d', desc:'', priority:'medie', category:'', attachments:[]})" % i) for i in range(20)]
+    ok(all(r['ok'] for r in res), "anti-spam: 20 addTicket calls pass")
+    ps.keyboard.press("n"); ps.wait_for_timeout(W)
+    ps.fill("#nf-reporter", "Test User"); ps.fill("#nf-title", "Tichetul 21"); ps.fill("#nf-desc", "pasi")
+    ps.click("#nf-submit"); ps.wait_for_timeout(1500)
+    ok("Prea multe tichete noi" in ps.inner_text("#nf-err") and ps.locator("#nf-title").input_value() == "Tichetul 21", "anti-spam: the 21st ticket from the form shows the limit message and keeps the draft")
+    ps.close()
+    # --- limită anti-spam: 60 de comentarii de specialist pe oră, apoi mesajul în toast ---
+    pt = b.new_page(viewport={'width': 1440, 'height': 900}, ignore_https_errors=True)
+    pt.on("pageerror", lambda e: errs.append(str(e)))
+    pt.goto("http://localhost:8080/"); pt.wait_for_timeout(1200)
+    pt.evaluate("""()=>{ window.call = (fn, ...a) => new Promise(res => google.script.run
+      .withSuccessHandler(v => res({ ok: true, v })).withFailureHandler(e => res({ ok: false, err: String(e.message || e) }))[fn](...a)); }""")
+    res = [pt.evaluate("call('addComment','TIS-14','c%d','Ana','')" % i) for i in range(60)]
+    ok(all(r['ok'] for r in res), "anti-spam: 60 addComment calls pass")
+    pt.click("#viewList"); pt.click(".row[data-id='TIS-14']"); pt.wait_for_timeout(W)
+    if pt.locator("#cm-name").count(): pt.fill("#cm-name", "Ana")
+    pt.fill("#cm-text", "peste limită"); pt.click(".composer button[type=submit]"); pt.wait_for_timeout(800)
+    ok("Prea multe comentarii" in pt.inner_text("#toasts") and pt.locator("#cm-text").input_value() == "peste limită", "anti-spam: the 61st comment shows the limit toast and keeps the text in the field")
+    pt.close()
     b.close()
 print("page errors:", errs or "none")

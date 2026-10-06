@@ -337,5 +337,32 @@ ok(!!sheets['Comentarii'] && sheets['Comentarii'].rows.length === 2, 'addComment
 sheets['Comentarii'] = saveC;
 reset();
 
+// 10. limită anti-spam pe tichete și comentarii
+cacheStore = {};
+function tk10(title) { return function () { return ctx.addTicket({ reporter: 'Spam', title: title }); }; }
+for (i = 0, n = 0; i < 20; i++) n += thrown(tk10('t' + i)) === null ? 1 : 0;
+ok(n === 20, 'limită tichete: 20 în aceeași oră trec');
+var n10 = T().rows.length;
+ok(/Prea multe tichete noi/.test(thrown(tk10('t20')) || '') && T().rows.length === n10, 'limită tichete: al 21-lea dă mesajul și nu scrie rând');
+ok(/Titlul este obligatoriu/.test(thrown(tk10('  ')) || ''), 'limită tichete: titlu gol după limită -> tot eroarea de validare');
+clock += HOUR;
+ok(thrown(tk10('după oră')) === null, 'limită tichete: după o oră trece iar');
+cacheStore = {};
+for (i = 0, n = 0; i < 1; i++) n += thrown(tk10('')) === null ? 1 : 0;
+for (i = 0; i < 20; i++) n += thrown(tk10('v' + i)) === null ? 1 : 0;
+ok(n === 20, 'limită tichete: un tichet fără titlu nu consumă din limită (1 invalid + 20 valide)');
+
+cacheStore = {};
+function cm10(pin) { return function () { return ctx.addComment('TIS-C1', 'spam', 'Ana', pin); }; }
+for (i = 0, n = 0; i < 60; i++) n += thrown(cm10(undefined)) === null ? 1 : 0;
+ok(n === 60, 'limită comentarii: 60 de specialist în aceeași oră trec');
+n10 = C().rows.length;
+ok(/Prea multe comentarii/.test(thrown(cm10(undefined)) || '') && C().rows.length === n10, 'limită comentarii: al 61-lea dă mesajul și nu scrie rând');
+reset();
+ok(thrown(cm10('1234')) === null && C().rows.length === n10 + 1, 'limită comentarii: adminul cu cod valid trece peste limită');
+clock += HOUR;
+ok(thrown(cm10(undefined)) === null, 'limită comentarii: după o oră specialistul poate din nou');
+reset();
+
 console.log(failed ? 'EȘEC' : 'toate OK');
 process.exit(failed ? 1 : 0);

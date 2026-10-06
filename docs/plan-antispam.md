@@ -50,8 +50,8 @@ Push pe `main` → `/dev`. Utilizatorul testează un tichet și un comentariu no
 ## Stare
 
 - [x] plan
-- [ ] implementare (executor)
-- [ ] review + verificări (runner): `gs-test.js`, `flow.py`
+- [x] implementare (executor)
+- [x] review + verificări (runner): `gs-test.js` 70 OK, `flow.py` 59 OK, fără erori de pagină
 - [ ] push `/dev`, rularea automată cu pasul de teste verde
 - [ ] test utilizator pe `/dev`
 - [ ] `/exec` + `memory.md`

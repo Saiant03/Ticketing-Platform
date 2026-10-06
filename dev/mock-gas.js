@@ -50,6 +50,14 @@
   }
   function need(pin) { var n = admin(pin); if (!n) throw new Error('Cod de admin invalid.'); return n; }
   var upHour = 0, upCount = 0;
+  // ca hourQuota_ din Code.gs: contor pe oră, la fel ca upload-ul
+  var hq = { tk: { h: 0, n: 0, max: 20, msg: 'Prea multe tichete noi în ultima oră. Reîncearcă mai târziu.' }, cm: { h: 0, n: 0, max: 60, msg: 'Prea multe comentarii în ultima oră. Reîncearcă mai târziu.' } };
+  function hourQuota(k) {
+    var q = hq[k], h = Math.floor(Date.now() / 3600000);
+    if (q.h !== h) { q.h = h; q.n = 0; }
+    if (q.n >= q.max) throw new Error(q.msg);
+    q.n++;
+  }
   var STATUS = ['deschis', 'in_lucru', 'rezolvat'], PRIO = ['scazuta', 'medie', 'ridicata', 'critica'];
   function find(cod) { return db.tickets.filter(function (x) { return x.id === cod; })[0]; }
   var api = {
@@ -71,6 +79,7 @@
     addTicket: function (p) {
       p = p || {};
       if (!String(p.title || '').trim()) throw new Error('Titlul este obligatoriu.');
+      hourQuota('tk');
       if (PRIO.indexOf(p.priority) < 0) p.priority = 'medie';
       var n = Math.max.apply(null, db.tickets.map(function (x) { return x.n; }).concat([0])) + 1;
       var tk = t(n, p.title, 'deschis', p.priority, p.category, p.reporter, 0, { desc: p.desc, attachments: p.attachments || [] });
@@ -78,6 +87,7 @@
     },
     addComment: function (cod, text, name, pin) {
       var x = find(cod); var a = admin(pin);
+      if (!a) hourQuota('cm');
       if (x) x.comments.push({ author: a || name || 'Anonim', admin: !!a, text: text, at: Date.now() });
       return db.tickets;
     },
