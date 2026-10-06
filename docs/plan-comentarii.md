@@ -30,5 +30,5 @@ Push pe `main` → `/dev`. Utilizatorul verifică: comentariile vechi ale unui t
 
 - [x] implementare (executor); din review: citirea nu creează foaia Comentarii (doar `addComment`, sub lock); răspunsul vechi din coloana 9 stă primul (data lui e `ModificatLa`, care se mută)
 - [x] review + verificări (runner): `gs-test.js` 75 OK, `flow.py` fără FAIL
-- [ ] push `/dev`, verificat de utilizator
-- [ ] `/exec` + `memory.md`
+- [x] push `/dev`, verificat de utilizator
+- [x] `/exec` + `memory.md`
