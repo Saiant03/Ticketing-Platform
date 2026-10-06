@@ -154,7 +154,16 @@ Pașii trebuie explicați foarte simplu, click cu click: utilizatorul nu e famil
 
 ## Următorul pas
 
-Rundele 4 (meniuri), 5 (întărirea serverului), 6 (upload, capturi orfane) și 7 (comentarii în foaia proprie) sunt pe `/exec`. Lista de robustețe discutată e închisă. Nu e nimic în lucru; așteaptă următoarea cerere.
+Rundele 4 (meniuri), 5 (întărirea serverului), 6 (upload, capturi orfane) și 7 (comentarii în foaia proprie) sunt pe `/exec`.
+
+Runda 8 (aprobată de utilizator, de făcut într-o conversație nouă):
+1. Limită anti-spam pe `addTicket` și `addComment` (publice, fără limită acum): limită globală pe oră, cu același mecanism ca la upload (`CacheService` + `LockService`, fără scope-uri noi).
+2. `node dev/gs-test.js` rulat în `.github/workflows/deploy.yml` înainte de `clasp push`, ca un `Code.gs` stricat să nu ajungă pe `/dev`.
+
+Decizii din discuția de robustețe:
+- Codurile de admin rămân cum sunt (utilizatorul nu vrea coduri de 12+ caractere).
+- Accesul la web app rămâne cum e: colegii trebuie să poată intra în continuare, iar contul Google al proprietarului e unul generic, nu operațional. Nu se propune restrângerea accesului.
+- Cache pe server pentru `getTickets` doar când volumul (sute de tichete) face reîmprospătarea lentă.
 
 Note:
 - Profilarea: `python3 dev/trace.py` (CDP tracing cu CPU încetinit 4x, % ocupare a firului principal pe scenarii). Orice efect continuu nou trebuie să fie WAAPI/tranziție pe `transform`/`opacity`.
